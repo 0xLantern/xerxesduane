@@ -39,6 +39,17 @@ export default function TabbedViews({ views, label, className = "" }: TabbedView
   const first = views[0].id;
   const [active, setActive] = useState(first);
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // Keep the open tab in view when the row scrolls sideways. Scrolls the row
+  // itself, never the page, so it is safe on load and on every switch.
+  useEffect(() => {
+    const list = listRef.current;
+    const tab = tabs.current[views.findIndex((v) => v.id === active)];
+    if (!list || !tab || list.scrollWidth <= list.clientWidth) return;
+    const left = tab.offsetLeft - (list.clientWidth - tab.offsetWidth) / 2;
+    list.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
+  }, [active, views]);
 
   // `views` is rebuilt on every render, so the ids are joined into a plain
   // string the callback can depend on without re-subscribing each time.
@@ -85,7 +96,11 @@ export default function TabbedViews({ views, label, className = "" }: TabbedView
       <div
         role="tablist"
         aria-label={label}
-        className="mb-3 flex flex-wrap gap-1.5 rounded-full border border-line bg-panel p-1 sm:w-fit"
+        ref={listRef}
+        // One row that swipes sideways on a narrow screen, never a wrap: a
+        // wrapped pill row split "Sermons & worship" over three lines and left
+        // one tab stranded on a row of its own.
+        className="mb-3 flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain rounded-full border border-line bg-panel p-1 [scrollbar-width:none] sm:w-fit [&::-webkit-scrollbar]:hidden"
       >
         {views.map((view, i) => {
           const on = active === view.id;
@@ -103,7 +118,7 @@ export default function TabbedViews({ views, label, className = "" }: TabbedView
               tabIndex={on ? 0 : -1}
               onClick={() => show(view.id)}
               onKeyDown={onKey(i)}
-              className={`flex min-h-9 flex-1 items-baseline justify-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold transition board:min-h-8 board:py-1 sm:flex-none ${
+              className={`flex min-h-10 shrink-0 grow items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-bold transition board:min-h-8 board:py-1 sm:min-h-9 sm:grow-0 ${
                 on
                   ? "bg-navy text-fg-onSolid shadow-solid"
                   : "text-fg-soft hover:bg-panel-alt hover:text-accent-deep"
