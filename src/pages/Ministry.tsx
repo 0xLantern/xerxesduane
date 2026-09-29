@@ -840,9 +840,10 @@ export default function Ministry() {
                 <Card>
                   <div className={prose}>
                     <p>
-                      I speak and lead training on digital ministry, discipleship, and missions, for
-                      churches, youth camps, and conferences across the Philippines, the Gulf, and
-                      beyond.
+                      I speak and lead training on digital ministry, discipleship, and missions. It
+                      began in the Philippines, in churches, youth camps, campuses and the 57th
+                      CAMACOP General Assembly, and carried on to Phayao, Thailand. Today it happens
+                      here in the Gulf.
                     </p>
                     <p>
                       Beyond the stage, much of my work is hands-on training: coaching leaders and
@@ -862,34 +863,10 @@ export default function Ministry() {
                     ))}
                   </ul>
                 </Card>
+
+                {/* The road, in order: the Philippines and Thailand first, then the Gulf. */}
+                <H2>In the Philippines and Thailand</H2>
                 <div className="grid gap-2 sm:grid-cols-2">
-                  <Card>
-                    <Figure photo={{ src: "talk-movement-day", alt: "Workshop participants at Movement Day Middle East", w: 1342, h: 1125 }} />
-                    <H3>Movement Day Middle East · 2026</H3>
-                    <p className="mt-1 text-[0.9rem] leading-snug text-fg-soft">
-                      I led a workshop on FaithTech and discipleship through sports, exploring how
-                      technology and sport can open everyday doors for the gospel across the region.
-                    </p>
-                    <p className="mt-2 text-[0.9rem]">
-                      <Ext href="https://youtu.be/pNR2HftvTbA">Watch on YouTube</Ext>
-                    </p>
-                  </Card>
-                  <Card>
-                    <Figure photo={{ src: "talk-faithtech", alt: "A participant smiling beside the website he is building with AI tools at the FaithTech Dubai workshop", w: 1600, h: 1200 }} />
-                    <H3>FaithTech Dubai workshop · 2026</H3>
-                    <p className="mt-1 text-[0.9rem] leading-snug text-fg-soft">
-                      A practical session on personal branding and building websites with AI tools,
-                      where participants built and launched real sites in the room.
-                    </p>
-                    <blockquote className="mt-2 border-l-2 border-accent/60 pl-3 text-[0.9rem] italic leading-snug text-fg">
-                      &ldquo;An impactful session on personal branding and building websites with AI
-                      tools. I was able to build and host my website during the session itself.&rdquo;
-                      <footer className="mt-1 not-italic text-fg-faint">
-                        FaithTech Dubai participant ·{" "}
-                        <Ext href="https://chidigfx.com">chidigfx.com</Ext>
-                      </footer>
-                    </blockquote>
-                  </Card>
                   <Card>
                     <Figure photo={{ src: "talk-apologetics", alt: "Young people gathered outside a church after the apologetics training", w: 681, h: 372 }} />
                     <H3>Apologetics for youth · 2022</H3>
@@ -919,11 +896,13 @@ export default function Ministry() {
                     </p>
                   </Card>
                 </div>
-
-                <H2>More places I&rsquo;ve served</H2>
-                <ul className="grid gap-2 sm:grid-cols-2 board:grid-cols-3">
+                <div className="pt-2"><H3>More places I&rsquo;ve served</H3></div>
+                {/* A swipeable strip on a phone, a grid from sm up. */}
+                <ul
+                  className="-mx-4 flex snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 board:grid-cols-3"
+                >
                   {PLACES.map((p) => (
-                    <li key={p.name}>
+                    <li key={p.name} className="w-[78%] shrink-0 snap-start sm:w-auto">
                       <Card className="h-full">
                         <Figure photo={p.photo} />
                         <p className="text-[0.9rem] leading-snug text-fg-soft">
@@ -938,6 +917,37 @@ export default function Ministry() {
                     </li>
                   ))}
                 </ul>
+
+                <H2>Here in the Gulf</H2>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Card>
+                    <Figure photo={{ src: "talk-movement-day", alt: "Workshop participants at Movement Day Middle East", w: 1342, h: 1125 }} />
+                    <H3>Movement Day Middle East · 2026</H3>
+                    <p className="mt-1 text-[0.9rem] leading-snug text-fg-soft">
+                      I led a workshop on FaithTech and discipleship through sports, exploring how
+                      technology and sport can open everyday doors for the gospel across the region.
+                    </p>
+                    <p className="mt-2 text-[0.9rem]">
+                      <Ext href="https://youtu.be/pNR2HftvTbA">Watch on YouTube</Ext>
+                    </p>
+                  </Card>
+                  <Card>
+                    <Figure photo={{ src: "talk-faithtech", alt: "A participant smiling beside the website he is building with AI tools at the FaithTech Dubai workshop", w: 1600, h: 1200 }} />
+                    <H3>FaithTech Dubai workshop · 2026</H3>
+                    <p className="mt-1 text-[0.9rem] leading-snug text-fg-soft">
+                      A practical session on personal branding and building websites with AI tools,
+                      where participants built and launched real sites in the room.
+                    </p>
+                    <blockquote className="mt-2 border-l-2 border-accent/60 pl-3 text-[0.9rem] italic leading-snug text-fg">
+                      &ldquo;An impactful session on personal branding and building websites with AI
+                      tools. I was able to build and host my website during the session itself.&rdquo;
+                      <footer className="mt-1 not-italic text-fg-faint">
+                        FaithTech Dubai participant ·{" "}
+                        <Ext href="https://chidigfx.com">chidigfx.com</Ext>
+                      </footer>
+                    </blockquote>
+                  </Card>
+                </div>
               </div>
             ),
           },
