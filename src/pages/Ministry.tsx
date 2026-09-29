@@ -873,7 +873,7 @@ export default function Ministry() {
                   <H3>How God led me to Dubai</H3>
                   <p>
                     I was honestly overwhelmed when the invitation came to attend the 4th Lausanne
-                    Congress onsite. I was only beginning in ministry, with little to show next to
+                    Congress onsite. I was still young in ministry, with little to show next to
                     many who would be there, and the cost was high: over USD 2,000. In the
                     beginning, the doubt was very real.
                   </p>
