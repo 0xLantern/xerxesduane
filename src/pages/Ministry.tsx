@@ -379,13 +379,8 @@ const PLACES: { name: string; year: string; href?: string; photo: Photo }[] = [
   },
 ];
 
+/** In the order of the road: the seminary pulpit first, then the churches. */
 const SERMONS = [
-  {
-    title: "The Cross of Christ",
-    date: "Calintaan Evangelical Youth Churches Association, 2023",
-    href: "https://www.youtube.com/watch?v=SySRiLbAHVw",
-    where: "YouTube",
-  },
   {
     title: "Narrative Preaching on Acts 16",
     date: "Philippine Baptist Theological Seminary, 2020",
@@ -393,10 +388,10 @@ const SERMONS = [
     where: "YouTube",
   },
   {
-    title: "God's Fatherly Heart",
-    date: "June 18, 2023",
-    href: "https://www.youtube.com/watch?v=cc8OsK9mCH0",
-    where: "YouTube",
+    title: "Happiness or Joy? Choose Joy.",
+    date: "April 22, 2022",
+    href: "https://www.facebook.com/share/v/1bZCDGyGmq/",
+    where: "Facebook",
   },
   {
     title: "All New",
@@ -405,10 +400,16 @@ const SERMONS = [
     where: "Facebook",
   },
   {
-    title: "Happiness or Joy? Choose Joy.",
-    date: "April 22, 2022",
-    href: "https://www.facebook.com/share/v/1bZCDGyGmq/",
-    where: "Facebook",
+    title: "God's Fatherly Heart",
+    date: "June 18, 2023",
+    href: "https://www.youtube.com/watch?v=cc8OsK9mCH0",
+    where: "YouTube",
+  },
+  {
+    title: "The Cross of Christ",
+    date: "Calintaan Evangelical Youth Churches Association, 2023",
+    href: "https://www.youtube.com/watch?v=SySRiLbAHVw",
+    where: "YouTube",
   },
 ];
 
@@ -417,8 +418,8 @@ const SERMONS = [
  * frames from each clip, so the card reads before anything is played.
  */
 const WORSHIP_VIDEOS = [
-  { src: "worship-sharjah", caption: "Fellowship Sharjah, United Arab Emirates, 2026", w: 832, h: 464 },
   { src: "worship-ccac", caption: "Capital City Alliance Church, 2023", w: 960, h: 540 },
+  { src: "worship-sharjah", caption: "Fellowship Sharjah, United Arab Emirates, 2026", w: 832, h: 464 },
 ];
 
 const SOUTHERN_PH_PHOTO: Photo = {
@@ -427,6 +428,13 @@ const SOUTHERN_PH_PHOTO: Photo = {
   w: 1366,
   h: 768,
 };
+
+/**
+ * A title-and-link row. Stacked on a phone, so a long title never squeezes
+ * its link onto a ragged second line; side by side from sm up.
+ */
+const rowCls =
+  "flex flex-col items-start gap-1 py-2.5 text-[0.9rem] text-fg-soft sm:flex-row sm:items-baseline sm:justify-between sm:gap-4";
 
 /** Films from the road, in its order: the Philippines, then Thailand. */
 const OUTREACH: { title: string; note?: string; href?: string }[] = [
@@ -482,6 +490,7 @@ const DIGITAL_WORK: { title: string; body: string; where: "ph" | "gulf"; href?: 
   },
 ];
 
+/** In the order of the road: #HACK in Manila led to the Lausanne nomination. */
 const COLLABORATIONS: { title: string; body: string; href: string; link: string; photos: Photo[] }[] = [
   {
     title: "Christian-Muslim Dialogue",
@@ -493,6 +502,15 @@ const COLLABORATIONS: { title: string; body: string; href: string; link: string;
     ],
   },
   {
+    title: "Indigitous #HACK",
+    body: "Indigitous #HACK, a global Christian hackathon. Champion in 2023 and a coach in 2024 in Manila, and now a #HACK champion in Dubai.",
+    href: "https://indigitous.org/",
+    link: "indigitous.org",
+    photos: [
+      { src: "collab-hack", alt: "#HACK2024 certificate of appreciation presented to Xerxes Duane Magdaluyo for mentoring the champions", w: 1600, h: 1131 },
+    ],
+  },
+  {
     title: "4th Lausanne Congress",
     body: "A gathering of 5,000+ global church leaders to collaborate in fulfilling the Great Commission together. Through it, I was later selected for the Young Leaders Gathering in 2027.",
     href: "https://congress.lausanne.org/",
@@ -501,15 +519,6 @@ const COLLABORATIONS: { title: string; body: string; href: string; link: string;
       { src: "lausanne-4", alt: "The Philippine delegation with their flag outside the Lausanne Congress venue in Seoul", w: 1600, h: 1200 },
       { src: "collab-lausanne-b", alt: "The signed Collaborative Action Commitment from the Fourth Lausanne Congress", w: 810, h: 1166 },
       { src: "lausanne-3", alt: "Xerxes with fellow delegates at a table during the Lausanne Congress", w: 1600, h: 1200 },
-    ],
-  },
-  {
-    title: "Indigitous #HACK",
-    body: "Indigitous #HACK, a global Christian hackathon. Champion in 2023 and a coach in 2024 in Manila, and now a #HACK champion in Dubai.",
-    href: "https://indigitous.org/",
-    link: "indigitous.org",
-    photos: [
-      { src: "collab-hack", alt: "#HACK2024 certificate of appreciation presented to Xerxes Duane Magdaluyo for mentoring the champions", w: 1600, h: 1131 },
     ],
   },
   {
@@ -1019,16 +1028,17 @@ export default function Ministry() {
                   <div className={prose}>
                     <H2>Sermons</H2>
                     <p>
-                      Preaching is a sacred trust. I&rsquo;ve had the privilege of opening
-                      God&rsquo;s Word in local churches, youth gatherings, and the seminary pulpit.
-                      Here are a few of those moments, with several you can watch.
+                      Preaching is a sacred trust. It began for me in the seminary pulpit, and
+                      carried on in local churches and youth gatherings across the Philippines. Here
+                      in the UAE, I&rsquo;d count it a joy to open God&rsquo;s Word with your church
+                      too. These are a few of those moments, in the order they happened.
                     </p>
                   </div>
                   <ul className="mt-3 divide-y divide-line">
                     {SERMONS.map((s) => (
                       <li
                         key={s.title}
-                        className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2 text-[0.9rem] text-fg-soft"
+                        className={rowCls}
                       >
                         <span>
                           <strong className="font-bold text-fg">{s.title}</strong>{" "}
@@ -1043,8 +1053,9 @@ export default function Ministry() {
                   <div className={prose}>
                     <H2>Worship</H2>
                     <p>
-                      Worship leading has been part of my ministry for years, from churches in the
-                      Philippines to the nations gathered here in the UAE. These days I have the joy
+                      Worship leading has been part of my ministry for years, and it has followed
+                      the same road: from Alliance churches in the Philippines to the nations
+                      gathered here in the UAE. These days I have the joy
                       of helping lead worship in a multicultural Fellowship Dubai church plant in
                       Sharjah, where people from many languages and backgrounds lift one song to God.
                       Whatever the room, my heart is the same: to help people meet Jesus and respond
@@ -1052,23 +1063,6 @@ export default function Ministry() {
                     </p>
                   </div>
                   <ul className="mt-4 space-y-4">
-                    {WORSHIP_VIDEOS.map((v) => (
-                      <li key={v.src}>
-                        {/* preload="none": nothing downloads until someone presses play. */}
-                        <video
-                          controls
-                          playsInline
-                          preload="none"
-                          poster={`/ministry/${v.src}.webp`}
-                          width={v.w}
-                          height={v.h}
-                          className="h-auto w-full rounded-card border border-line bg-black"
-                        >
-                          <source src={`/ministry/${v.src}.mp4`} type="video/mp4" />
-                        </video>
-                        <p className="mt-1 text-[0.9rem] text-fg-soft">{v.caption}</p>
-                      </li>
-                    ))}
                     <li>
                       <a
                         href="https://youtu.be/aEjb5TPdt9M"
@@ -1091,6 +1085,23 @@ export default function Ministry() {
                         <Ext href="https://youtu.be/aEjb5TPdt9M">Watch King of Kings on YouTube</Ext>
                       </p>
                     </li>
+                    {WORSHIP_VIDEOS.map((v) => (
+                      <li key={v.src}>
+                        {/* preload="none": nothing downloads until someone presses play. */}
+                        <video
+                          controls
+                          playsInline
+                          preload="none"
+                          poster={`/ministry/${v.src}.webp`}
+                          width={v.w}
+                          height={v.h}
+                          className="h-auto w-full rounded-card border border-line bg-black"
+                        >
+                          <source src={`/ministry/${v.src}.mp4`} type="video/mp4" />
+                        </video>
+                        <p className="mt-1 text-[0.9rem] text-fg-soft">{v.caption}</p>
+                      </li>
+                    ))}
                   </ul>
                 </Card>
               </div>
@@ -1128,7 +1139,7 @@ export default function Ministry() {
                     {OUTREACH.map((o) => (
                       <li
                         key={o.title}
-                        className="flex flex-col gap-1 py-2.5 text-[0.9rem] text-fg-soft sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
+                        className={rowCls}
                       >
                         <span>
                           <span className="text-fg">{o.title}</span>
@@ -1159,7 +1170,8 @@ export default function Ministry() {
                   <div className={prose}>
                     <H2>Bible resources</H2>
                     <p>
-                      Since 2020 I&rsquo;ve taught and represented{" "}
+                      Training others began early on the road. Since 2020 I&rsquo;ve taught and
+                      represented{" "}
                       <Ext href="https://discoverybible.com/">The Discovery Bible</Ext>, an
                       exegetical study tool that opens up the emphasis and nuance of the original
                       Greek and Hebrew, helping everyday readers study Scripture more closely. As an
@@ -1177,31 +1189,32 @@ export default function Ministry() {
                     />
                   </div>
                   <ul className="mt-3 divide-y divide-line">
-                    <li className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2 text-[0.9rem] text-fg-soft">
-                      <span>
-                        <strong className="font-bold text-fg">Discovering John 3:16</strong>{" "}
-                        <span className="text-fg-faint">· The Discovery Bible, 2021</span>
-                      </span>
-                      <Ext href="https://youtu.be/jNr5tH6j6GQ">Watch on YouTube</Ext>
-                    </li>
-                    <li className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2 text-[0.9rem] text-fg-soft">
+                    <li className={rowCls}>
                       <span>
                         <strong className="font-bold text-fg">Pistis Christou Dialogue</strong>{" "}
                         <span className="text-fg-faint">· 2020</span>
                       </span>
                       <Ext href="https://youtu.be/c1Yo6VPZcGQ">Watch on YouTube</Ext>
                     </li>
+                    <li className={rowCls}>
+                      <span>
+                        <strong className="font-bold text-fg">Discovering John 3:16</strong>{" "}
+                        <span className="text-fg-faint">· The Discovery Bible, 2021</span>
+                      </span>
+                      <Ext href="https://youtu.be/jNr5tH6j6GQ">Watch on YouTube</Ext>
+                    </li>
                   </ul>
                 </Card>
                 <H2>Training & collaboration</H2>
                 <p className="max-w-[72ch] text-[0.95rem] leading-relaxed text-fg-soft">
-                  Some of the trainings I&rsquo;ve completed and the networks I&rsquo;ve been
-                  privileged to learn and collaborate with, from the global church to neighbors of
-                  other faiths.
+                  The trainings I&rsquo;ve completed and the networks I&rsquo;ve learned and
+                  collaborated with, in the order of the road: from Zamboanga and Manila, to Seoul,
+                  and on to Dubai.
                 </p>
-                <ul className="grid gap-2 sm:grid-cols-2">
+                {/* minmax(0,1fr): the Lausanne photo strip must not widen its column past the screen. */}
+                <ul className="grid grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-2">
                   {COLLABORATIONS.map((c) => (
-                    <li key={c.title}>
+                    <li key={c.title} className="min-w-0">
                       <Card className="h-full">
                         {c.photos.length === 1 ? (
                           <Figure photo={c.photos[0]} />
