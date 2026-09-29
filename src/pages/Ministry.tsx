@@ -640,6 +640,15 @@ export default function Ministry() {
                         could continue when gatherings could not. That season settled a conviction I
                         still hold: the tools of our age are meant to serve the mission of God.
                       </p>
+                      <p>
+                        The denomination saw that work and brought me into the National Office of
+                        CMA-Philippines, where I started the organization&rsquo;s digital ministry:
+                        pioneering its social media ministry, its websites and YouTube, and the filming
+                        of its church-planting ministry. From there I went on mission to islands across
+                        the Philippines, and to Phayao, Thailand, filming church-planting ministries.
+                        That road led me to Indigitous #HACK in Manila, then to the 4th Lausanne
+                        Congress in Seoul, South Korea, and on to Dubai.
+                      </p>
                       <H3>In Dubai today</H3>
                       <p>
                         From September 2025 to September 2026 I served an apprenticeship with{" "}
