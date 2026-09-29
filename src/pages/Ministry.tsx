@@ -260,30 +260,54 @@ const FOCUS = [
   },
 ];
 
-const MILESTONES = [
+/**
+ * "Along the way": the road in the order the story tells it (About, then
+ * Calling), then the work that ran alongside it. Every line here is also said
+ * elsewhere on the page; keep them in step when the story changes.
+ */
+const ROAD = [
   {
-    title: "Indigitous #HACK",
-    body: "Champion in 2023 and a coach in 2024 in Manila, and now a #HACK champion in Dubai. Through it I was nominated to the Fourth Lausanne Congress in Seoul (2024), and have since been selected for the Young Leaders Gathering in 2027.",
+    title: "Digital-ministry pastor",
+    body: "During the pandemic, at a local Christian and Missionary Alliance church: an e-learning platform so discipleship could continue when gatherings could not.",
   },
   {
-    title: "Fellowship Dubai apprenticeship",
-    body: "September 2025 to September 2026: coordinating Alpha and discipleship, coaching leaders to run Alpha themselves, and helping with communications and digital outreach. I now continue at Fellowship Dubai as a volunteer.",
+    title: "National Office, CMA-Philippines",
+    body: "The denomination brought me in to start its digital ministry: pioneering its social media ministry, its websites and YouTube, and the filming of its church-planting ministry.",
   },
+  {
+    title: "Filming church planting",
+    body: "On mission to islands across the Philippines and to Phayao, Thailand, filming church-planting ministries. One fundraising film helped fund a church-planting building in Batanes.",
+  },
+  {
+    title: "Indigitous #HACK, Manila",
+    body: "Champion in 2023 and a coach in 2024, and now a #HACK champion in Dubai.",
+  },
+  {
+    title: "4th Lausanne Congress, Seoul",
+    body: "Nominated through #HACK in 2024. There my call to missions in the Middle East was confirmed, and one meeting led, in time, to Dubai. I have since been selected for the Young Leaders Gathering in 2027.",
+  },
+  {
+    title: "Fellowship Dubai",
+    body: "An apprenticeship from September 2025 to September 2026: coordinating Alpha and discipleship, coaching leaders to run Alpha themselves, and helping with communications and digital outreach. I now continue there as a volunteer.",
+  },
+];
+
+const ALONGSIDE = [
   {
     title: "Cru Digital Strategies",
     body: "As a volunteer, I helped train more than 5,000 leaders across five denominations in the Philippines, supporting them as they launched digital outreach.",
   },
   {
     title: "The Discovery Bible (HELPS Ministries)",
-    body: "As an ambassador, I taught and coached pastors, churches, and denominations in this exegetical study tool: theological and pastoral training, not only software.",
+    body: "Since 2020, as an ambassador, I have taught and coached pastors, churches, and denominations in this exegetical study tool: theological and pastoral training, not only software.",
   },
   {
     title: "Ratio Christi",
     body: "Built an e-learning platform that let their professors teach and disciple learners remotely.",
   },
   {
-    title: "Films and digital infrastructure",
-    body: "Produced a fundraising film that helped fund a church-planting building in Batanes, and built websites and digital systems for denominations and local city churches.",
+    title: "Websites and digital systems",
+    body: "For denominations and local city churches, helping them be found and followed up with online.",
   },
 ];
 
@@ -692,9 +716,25 @@ export default function Ministry() {
                   </ul>
                   <Card>
                     <H2>Along the way</H2>
-                    <ul className="mt-3 space-y-3">
-                      {MILESTONES.map((m) => (
-                        <li key={m.title} className="text-[0.95rem] leading-relaxed text-fg-soft">
+                    {/* The road, as a timeline: one line down the side, a dot per step. */}
+                    <ol className="mt-4 space-y-4 border-s-2 border-accent/30 ps-5">
+                      {ROAD.map((m) => (
+                        <li key={m.title} className="relative">
+                          <span
+                            aria-hidden
+                            className="absolute -start-[1.72rem] top-[0.4rem] h-3 w-3 rounded-full border-2 border-panel bg-accent"
+                          />
+                          <H3>{m.title}</H3>
+                          <p className="mt-0.5 max-w-[72ch] text-[0.95rem] leading-relaxed text-fg-soft">{m.body}</p>
+                        </li>
+                      ))}
+                    </ol>
+                    <div className="mt-6">
+                      <H3>Alongside the road</H3>
+                    </div>
+                    <ul className="mt-2 space-y-3">
+                      {ALONGSIDE.map((m) => (
+                        <li key={m.title} className="max-w-[72ch] text-[0.95rem] leading-relaxed text-fg-soft">
                           <strong className="font-bold text-fg">{m.title}.</strong> {m.body}
                         </li>
                       ))}
