@@ -238,7 +238,7 @@ function Figure({ photo }: { photo: Photo }) {
 const prose = "max-w-[72ch] space-y-3 text-[0.95rem] leading-relaxed text-fg-soft";
 
 const STATS = [
-  { value: "7+", label: "years in ministry" },
+  { value: "9+", label: "years in ministry" },
   { value: "~2,000", label: "youths & students trained" },
   { value: "5,000+", label: "leaders equipped for digital outreach" },
 ];
@@ -265,28 +265,44 @@ const FOCUS = [
  * Calling), then the work that ran alongside it. Every line here is also said
  * elsewhere on the page; keep them in step when the story changes.
  */
-const ROAD = [
+const ROAD: { years: string; title: string; body: string }[] = [
   {
+    years: "2017–2018",
+    title: "Campus missionary",
+    body: "My first full-time ministry: campus ministry, as a missionary among students.",
+  },
+  {
+    years: "2018–2021",
+    title: "Youth pastor, Baguio",
+    body: "Youth pastor in a Southern Baptist church in Baguio.",
+  },
+  {
+    years: "2021–2022",
     title: "Digital-ministry pastor",
     body: "During the pandemic, at a local Christian and Missionary Alliance church: an e-learning platform so discipleship could continue when gatherings could not.",
   },
   {
-    title: "National Office, CMA-Philippines",
-    body: "The denomination brought me in to start its digital ministry: pioneering its social media ministry, its websites and YouTube, and the filming of its church-planting ministry.",
+    years: "2022–2023",
+    title: "Communications Officer, CMA-Philippines",
+    body: "At the National Office, where I started the denomination's digital ministry: pioneering its social media ministry, its websites and YouTube, and the filming of its church-planting ministry.",
   },
   {
-    title: "Filming church planting",
-    body: "On mission to islands across the Philippines and to Phayao, Thailand, filming church-planting ministries. One fundraising film helped fund a church-planting building in Batanes.",
+    years: "2023–2025",
+    title: "Freelance missionary",
+    body: "Sent out by my home church in the Philippines. On mission to islands across the Philippines and to Phayao, Thailand, filming church-planting ministries. One fundraising film helped fund a church-planting building in Batanes.",
   },
   {
+    years: "2023–2024",
     title: "Indigitous #HACK, Manila",
     body: "Champion in 2023 and a coach in 2024, and now a #HACK champion in Dubai.",
   },
   {
+    years: "2024",
     title: "4th Lausanne Congress, Seoul",
-    body: "Nominated through #HACK in 2024. There my call to missions in the Middle East was confirmed, and one meeting led, in time, to Dubai. I have since been selected for the Young Leaders Gathering in 2027.",
+    body: "Nominated through #HACK. There my call to missions in the Middle East was confirmed, and one meeting led, in time, to Dubai. I have since been selected for the Young Leaders Gathering in 2027.",
   },
   {
+    years: "2025–2026",
     title: "Fellowship Dubai",
     body: "An apprenticeship from September 2025 to September 2026: coordinating Alpha and discipleship, coaching leaders to run Alpha themselves, and helping with communications and digital outreach. I now continue there as a volunteer.",
   },
@@ -379,7 +395,7 @@ const PLACES: { name: string; year: string; href?: string; photo: Photo }[] = [
   },
 ];
 
-/** In the order of the road: the seminary pulpit first, then the churches. */
+/** In date order, 2020 onward. */
 const SERMONS = [
   {
     title: "Narrative Preaching on Acts 16",
@@ -691,24 +707,28 @@ export default function Ministry() {
                         people who have never heard the gospel.
                       </p>
                       <p>
-                        For more than seven years I&rsquo;ve worked mostly with the young: developing
-                        youth, training leaders, and helping students grow into people who can disciple
+                        Since 2017 I&rsquo;ve worked mostly with the young. My first full-time
+                        ministry was as a campus missionary, from 2017 to 2018, and from 2018 to 2021
+                        I was a youth pastor in a Southern Baptist church in Baguio: developing youth,
+                        training leaders, and helping students grow into people who can disciple
                         others. Across camps, conferences, and campuses I&rsquo;ve trained around 2,000
                         youths and students, and watched many of them begin to lead on their own.
                       </p>
                       <p>
-                        Along the way I kept finding myself where ministry meets technology. During the
-                        pandemic I served as a digital-ministry pastor in a local Christian and
+                        Along the way I kept finding myself where ministry meets technology. From 2021
+                        to 2022, during the pandemic, I served as a digital-ministry pastor in a local Christian and
                         Missionary Alliance church, building an e-learning platform so discipleship
                         could continue when gatherings could not. That season settled a conviction I
                         still hold: the tools of our age are meant to serve the mission of God.
                       </p>
                       <p>
                         The denomination saw that work and brought me into the National Office of
-                        CMA-Philippines, where I started the organization&rsquo;s digital ministry:
-                        pioneering its social media ministry, its websites and YouTube, and the filming
-                        of its church-planting ministry. From there I went on mission to islands across
-                        the Philippines, and to Phayao, Thailand, filming church-planting ministries.
+                        CMA-Philippines as Communications Officer, from 2022 to 2023. There I started
+                        the organization&rsquo;s digital ministry: pioneering its social media ministry,
+                        its websites and YouTube, and the filming of its church-planting ministry. From
+                        2023 to 2025 my home church in the Philippines sent me out as a freelance
+                        missionary, on mission to islands across the Philippines and to Phayao,
+                        Thailand, filming church-planting ministries.
                         That road led me to Indigitous #HACK in Manila, then to the 4th Lausanne
                         Congress in Seoul, South Korea, and on to Dubai.
                       </p>
@@ -763,6 +783,9 @@ export default function Ministry() {
                             aria-hidden
                             className="absolute -start-[1.72rem] top-[0.4rem] h-3 w-3 rounded-full border-2 border-panel bg-accent"
                           />
+                          <p className="text-[0.8rem] font-bold uppercase tracking-wide text-accent-deep">
+                            {m.years}
+                          </p>
                           <H3>{m.title}</H3>
                           <p className="mt-0.5 max-w-[72ch] text-[0.95rem] leading-relaxed text-fg-soft">{m.body}</p>
                         </li>
@@ -809,12 +832,18 @@ export default function Ministry() {
 
                   <H3>From the Philippines to the nations</H3>
                   <p>
-                    During the pandemic I served as a digital-ministry pastor in a local Christian
-                    and Missionary Alliance church. The denomination then brought me into the
-                    National Office of CMA-Philippines to start its digital ministry, including the
-                    filming of its church-planting ministry. That took me on mission to islands
-                    across the Philippines and to Phayao, Thailand, filming church planters at
-                    work. One fundraising film helped fund a church-planting building in Batanes.
+                    My first full-time ministry was on campus, as a campus missionary from 2017 to
+                    2018. From 2018 to 2021 I was a youth pastor in a Southern Baptist church in
+                    Baguio. Then, from 2021 to 2022, during the pandemic, I served as a
+                    digital-ministry pastor in a local Christian and Missionary Alliance church,
+                    and from 2022 to 2023 as Communications Officer at the National Office of
+                    CMA-Philippines, where I started its digital ministry.
+                  </p>
+                  <p>
+                    From 2023 to 2025 my home church in the Philippines sent me out as a freelance
+                    missionary. That took me on mission to islands across the Philippines and to
+                    Phayao, Thailand, filming church planters at work. One fundraising film helped
+                    fund a church-planting building in Batanes.
                   </p>
                   <p>
                     At Indigitous #HACK in Manila I was a champion in 2023 and a coach in 2024, and
@@ -1028,8 +1057,9 @@ export default function Ministry() {
                   <div className={prose}>
                     <H2>Sermons</H2>
                     <p>
-                      Preaching is a sacred trust. It began for me in the seminary pulpit, and
-                      carried on in local churches and youth gatherings across the Philippines. Here
+                      Preaching is a sacred trust. It grew in my years as a youth pastor in Baguio
+                      and in the seminary pulpit, and carried on in local churches and youth
+                      gatherings across the Philippines. Here
                       in the UAE, I&rsquo;d count it a joy to open God&rsquo;s Word with your church
                       too. These are a few of those moments, in the order they happened.
                     </p>
