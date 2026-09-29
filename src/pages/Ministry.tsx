@@ -428,16 +428,23 @@ const SOUTHERN_PH_PHOTO: Photo = {
   h: 768,
 };
 
-const OUTREACH: { title: string; href?: string }[] = [
-  { title: "Lanna Christian School, a ministry among the Thai", href: "https://youtu.be/-CH0mfTkfhU" },
-  { title: "Church Building Project in Batanes", href: "https://youtu.be/lyr5kgvR9gU" },
+/** Films from the road, in its order: the Philippines, then Thailand. */
+const OUTREACH: { title: string; note?: string; href?: string }[] = [
+  {
+    title: "Church Building Project in Batanes",
+    note: "A fundraising film that helped fund a church-planting building",
+    href: "https://youtu.be/lyr5kgvR9gU",
+  },
   { title: "Church Vision Film in Pampanga", href: "https://www.youtube.com/watch?v=OO_0Fzx4pyM" },
   { title: "Teaching Video with Discovery Bible", href: "https://youtu.be/YF4fhBL8xOA" },
+  { title: "Lanna Christian School, a ministry among the Thai", href: "https://youtu.be/-CH0mfTkfhU" },
 ];
 
-const DIGITAL_WORK: { title: string; body: string; href?: string; link?: string }[] = [
+/** `where` places each piece on the road: the Philippines first, then Dubai. */
+const DIGITAL_WORK: { title: string; body: string; where: "ph" | "gulf"; href?: string; link?: string }[] = [
   {
     title: "S.H.A.P.E. Discovery & SERVE Dashboard",
+    where: "gulf",
     body: "For Fellowship Dubai's SERVE Ministry: an interactive adaptation of the 24-page S.H.A.P.E. workbook that helps people understand how God has shaped them, and a dashboard that gives ministry leaders a scoped, auditable view of who is ready for a serving conversation. Discover, connect, serve.",
     href: "https://fellowship-serve-demo.vercel.app/",
     link: "Try the demo",
@@ -445,30 +452,32 @@ const DIGITAL_WORK: { title: string; body: string; href?: string; link?: string 
   {
     // No link: the repository is private and would 404 for visitors.
     title: "20th Anniversary Timeline",
+    where: "gulf",
     body: "For Fellowship Dubai's 20th anniversary: a looping display for an 8 × 2 m LED wall. Photos of more than 1,800 members of the congregation rotate through the grapes of a grapevine timeline, each beside the year their Fellowship journey began. It runs fully offline, with an operator page to import, preview, go live and roll back.",
   },
   {
     title: "Custom web apps for church ministries",
+    where: "gulf",
     body: "Purpose-built tools for Fellowship Dubai's ministries, made as a volunteer in Communications and Digital & Online Ministry, so teams can spend less time on admin and more on people.",
   },
   {
     title: "A digital front door for Alpha",
+    where: "gulf",
     body: "A warm, seeker-friendly invitation page that helps people take a first step toward an Alpha course.",
   },
   {
     title: "A mobilization app for Alpha leaders",
+    where: "gulf",
     body: "A simple tool that helps leaders run Alpha themselves, not only facilitate it.",
   },
   {
     title: "E-learning platforms for discipleship",
+    where: "ph",
     body: "Built so a local church could keep discipling through the pandemic, and so an apologetics ministry could teach learners remotely.",
   },
   {
-    title: "A fundraising film",
-    body: "Helped fund a church-planting building in Batanes.",
-  },
-  {
     title: "Websites and digital systems",
+    where: "ph",
     body: "For denominations and local city churches, helping them be found and followed up with online.",
   },
 ];
@@ -536,6 +545,27 @@ const SERVE: { title: string; body: string; icon: LucideIcon }[] = [
     body: "I can coach your leaders to run Alpha or disciple their friends and workmates themselves, or we can simply build something together.",
   },
 ];
+
+/** The digital-work cards for one stretch of the road. */
+function DigitalWork({ where }: { where: "ph" | "gulf" }) {
+  return (
+    <ul className="grid gap-2 sm:grid-cols-2 board:grid-cols-3">
+      {DIGITAL_WORK.filter((d) => d.where === where).map((d) => (
+        <li key={d.title}>
+          <Card className="h-full">
+            <H3>{d.title}</H3>
+            <p className="mt-1 text-[0.9rem] leading-snug text-fg-soft">{d.body}</p>
+            {d.href && (
+              <p className="mt-2 text-[0.9rem]">
+                <Ext href={d.href}>{d.link}</Ext>
+              </p>
+            )}
+          </Card>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default function Ministry() {
   return (
@@ -1075,45 +1105,48 @@ export default function Ministry() {
                   <div className={prose}>
                     <H2>Ministry projects</H2>
                     <p>
-                      A few of the ministries and tools I&rsquo;ve had a hand in, from on-the-ground
-                      outreach to films, websites, and discipleship platforms built to help the
-                      church reach people.
+                      The projects follow the same road as the story. It began with outreach, films
+                      and digital systems for the church in the Philippines and Thailand, much of it
+                      through the National Office of CMA-Philippines. Today it continues here in
+                      Dubai, with tools built for Fellowship Dubai&rsquo;s ministries and for Alpha.
                     </p>
                   </div>
-                  <div className="mt-4 max-w-2xl">
+                </Card>
+
+                <H2>In the Philippines and Thailand</H2>
+                <Card>
+                  <div className="max-w-2xl">
                     <Figure photo={SOUTHERN_PH_PHOTO} />
                     <p className="text-[0.9rem] text-fg-soft">
                       Sharing the gospel among unreached communities in the southern Philippines
                     </p>
                   </div>
-                  <ul className="mt-4 divide-y divide-line">
+                  <div className="mt-4">
+                    <H3>Films from the road</H3>
+                  </div>
+                  <ul className="mt-1 divide-y divide-line">
                     {OUTREACH.map((o) => (
                       <li
                         key={o.title}
-                        className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2 text-[0.9rem] text-fg-soft"
+                        className="flex flex-col gap-1 py-2.5 text-[0.9rem] text-fg-soft sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
                       >
-                        <span>{o.title}</span>
-                        {o.href && <Ext href={o.href}>Watch on YouTube</Ext>}
+                        <span>
+                          <span className="text-fg">{o.title}</span>
+                          {o.note && <span className="block text-fg-faint">{o.note}</span>}
+                        </span>
+                        {o.href && (
+                          <span className="shrink-0">
+                            <Ext href={o.href}>Watch on YouTube</Ext>
+                          </span>
+                        )}
                       </li>
                     ))}
                   </ul>
                 </Card>
-                <H2>Selected digital work</H2>
-                <ul className="grid gap-2 sm:grid-cols-2 board:grid-cols-3">
-                  {DIGITAL_WORK.map((d) => (
-                    <li key={d.title}>
-                      <Card className="h-full">
-                        <H3>{d.title}</H3>
-                        <p className="mt-1 text-[0.9rem] leading-snug text-fg-soft">{d.body}</p>
-                        {d.href && (
-                          <p className="mt-2 text-[0.9rem]">
-                            <Ext href={d.href}>{d.link}</Ext>
-                          </p>
-                        )}
-                      </Card>
-                    </li>
-                  ))}
-                </ul>
+                <DigitalWork where="ph" />
+
+                <H2>Here in Dubai</H2>
+                <DigitalWork where="gulf" />
               </div>
             ),
           },
