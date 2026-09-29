@@ -754,11 +754,39 @@ export default function Ministry() {
             label: "Calling",
             content: (
               <Card>
-                <div className="mb-4">
+                <div className={prose}>
+                  <H2>My call to missions in the Middle East</H2>
+                  <p>
+                    The call was confirmed in Seoul, but it didn&rsquo;t begin there. It grew over
+                    years of ministry in the Philippines and beyond.
+                  </p>
+
+                  <H3>Where it began</H3>
+                  <p>
+                    I came to a clear call to full-time ministry at 21. A mission trip to Myanmar
+                    set that call on fire, and left me with a growing burden for people who have
+                    never heard the gospel.
+                  </p>
+
+                  <H3>From the Philippines to the nations</H3>
+                  <p>
+                    During the pandemic I served as a digital-ministry pastor in a local Christian
+                    and Missionary Alliance church. The denomination then brought me into the
+                    National Office of CMA-Philippines to start its digital ministry, including the
+                    filming of its church-planting ministry. That took me on mission to islands
+                    across the Philippines and to Phayao, Thailand, filming church planters at
+                    work. One fundraising film helped fund a church-planting building in Batanes.
+                  </p>
+                  <p>
+                    At Indigitous #HACK in Manila I was a champion in 2023 and a coach in 2024, and
+                    it was through #HACK that I was nominated for the 4th Lausanne Congress.
+                  </p>
+                </div>
+                <div className="my-4">
                   <Gallery photos={CALLING_PHOTOS} label="Photos from the 4th Lausanne Congress" />
                 </div>
                 <div className={prose}>
-                  <H2>My call to missions in the Middle East</H2>
+                  <H3>Confirmed at the 4th Lausanne Congress</H3>
                   <p>
                     My call to missions in the Middle East was clarified and confirmed at the{" "}
                     <Ext href="https://congress.lausanne.org/">4th Lausanne Congress</Ext>.
@@ -806,7 +834,8 @@ export default function Ministry() {
                     on December 18, 2024, and we began preparing for a new season together. After
                     the Congress I moved to Dubai, found work, and served there for about ten
                     months. In May 2025, Pastor Bill invited me to apply as an apprentice at
-                    Fellowship Dubai, and in September 2025 I was officially hired.
+                    Fellowship Dubai, and in September 2025 I was officially hired. I completed the
+                    apprenticeship in September 2026 and continue serving there as a volunteer.
                   </p>
                 </div>
                 <div className="my-4">
