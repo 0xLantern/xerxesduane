@@ -82,6 +82,11 @@ function money(amount: number, currency: string): string {
  * amount due; "log" is the client's record of the month's work.
  */
 export async function renderPdf(inv: Invoice, kind: "invoice" | "log", origin: string): Promise<Uint8Array> {
+  return kind === "invoice" ? renderInvoicePdf(inv, origin) : renderLogPdf(inv, "log", origin);
+}
+
+/** The month's work log, with every session's notes. (It began as the invoice layout too.) */
+async function renderLogPdf(inv: Invoice, kind: "invoice" | "log", origin: string): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const title = kind === "invoice" ? `Invoice ${inv.number}` : `Work log · ${inv.period}`;
   doc.setTitle(clean(title));
@@ -239,6 +244,154 @@ export async function renderPdf(inv: Invoice, kind: "invoice" | "log", origin: s
     y -= 22;
   }
   text("Times are in Dubai time (UTC+4). Amount is total hours × the hourly rate.", M, 8, font, FAINT);
+
+  return doc.save();
+}
+
+/** One word cut to fit, with an ellipsis, so a row never wraps. */
+function fit(text: string, font: PDFFont, size: number, width: number): string {
+  let t = clean(text).replace(/\s+/g, " ").trim();
+  if (font.widthOfTextAtSize(t, size) <= width) return t;
+  while (t.length > 1 && font.widthOfTextAtSize(`${t}…`, size) > width) t = t.slice(0, -1);
+  return `${t.trimEnd()}…`;
+}
+
+/**
+ * The invoice, on one page: who, when, one line per day, the amount, how to
+ * pay. Session notes belong to the work log (kind "log"), not here. A day's
+ * tasks share one line, so even a full half-month (16 days) fits.
+ */
+async function renderInvoicePdf(inv: Invoice, origin: string): Promise<Uint8Array> {
+  const doc = await PDFDocument.create();
+  doc.setTitle(clean(`Invoice ${inv.number}`));
+  doc.setAuthor(clean(inv.settings.name));
+  doc.setSubject(clean(`${BILL_TO.name} · ${inv.period}`));
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const [logo, ownLogo] = await Promise.all([
+    loadLogo(doc, origin, "/brand/clients/gcn.png"),
+    loadLogo(doc, origin, "/brand/mono/logo-black@2x.png"),
+  ]);
+  const s = inv.settings;
+  const draft = inv.status === "draft";
+  const page = doc.addPage([W, H]);
+  const L = 56;
+  const R = W - 56;
+  let y = H - 56;
+  const text = (t: string, x: number, size: number, f = font, color = INK) => page.drawText(clean(t), { x, y, size, font: f, color });
+  const right = (t: string, xr: number, size: number, f = font, color = INK) =>
+    page.drawText(clean(t), { x: xr - f.widthOfTextAtSize(clean(t), size), y, size, font: f, color });
+  const rule = (yy: number, x1 = L, x2 = R, t = 0.6, color = RULE) =>
+    page.drawLine({ start: { x: x1, y: yy }, end: { x: x2, y: yy }, thickness: t, color });
+
+  // Header: client's logo, and the document's name and number.
+  if (logo) {
+    const w = 130;
+    const h = (logo.height / logo.width) * w;
+    page.drawImage(logo, { x: L - 6, y: y - h + 10, width: w, height: h });
+  }
+  right(draft ? "DRAFT" : "Invoice", R, 24, bold, draft ? rgb(0.65, 0.25, 0.04) : INK);
+  y -= 20;
+  right(inv.number, R, 9.5, font, SOFT);
+  y -= 46;
+  rule(y + 10);
+
+  // Meta row: issued, period, amount due.
+  const cols = [L, L + 160, L + 330];
+  const meta: [string, string][] = [
+    [draft ? "Status" : "Issued", draft ? "Not issued yet" : inv.issued],
+    ["Period", inv.period],
+    ["Amount due", money(inv.total, s.currency)],
+  ];
+  meta.forEach(([k], i) => page.drawText(k.toUpperCase(), { x: cols[i], y: y - 8, size: 7, font: bold, color: FAINT }));
+  y -= 22;
+  meta.forEach(([, v], i) => page.drawText(clean(v), { x: cols[i], y, size: i === 2 ? 12 : 10, font: i === 2 ? bold : font, color: INK }));
+  y -= 30;
+
+  // Parties.
+  const colB = L + 260;
+  page.drawText("BILLED TO", { x: L, y, size: 7, font: bold, color: FAINT });
+  page.drawText("FROM", { x: colB, y, size: 7, font: bold, color: FAINT });
+  y -= 14;
+  const billed = [BILL_TO.name, ...BILL_TO.lines, BILL_TO.email];
+  const from = [s.name, ...FROM_ADDRESS, OWNER_EMAIL];
+  const top = y;
+  billed.forEach((t, i) => page.drawText(clean(t), { x: L, y: top - i * 12.5, size: 9, font: i === 0 ? bold : font, color: i === 0 ? INK : SOFT }));
+  from.forEach((t, i) => page.drawText(clean(t), { x: colB, y: top - i * 12.5, size: 9, font: i === 0 ? bold : font, color: i === 0 ? INK : SOFT }));
+  y = top - Math.max(billed.length, from.length) * 12.5 - 22;
+
+  // Work, one row per day.
+  const days: { date: string; tasks: string[]; hours: number }[] = [];
+  for (const l of inv.lines) {
+    const d = days[days.length - 1];
+    if (d && d.date === l.date) {
+      if (!d.tasks.includes(l.task)) d.tasks.push(l.task);
+      d.hours += l.hours;
+    } else days.push({ date: l.date, tasks: [l.task], hours: l.hours });
+  }
+  const cWork = L + 78;
+  const workW = R - 50 - cWork;
+  page.drawText("DATE", { x: L, y, size: 7, font: bold, color: FAINT });
+  page.drawText("WORK", { x: cWork, y, size: 7, font: bold, color: FAINT });
+  right("HOURS", R, 7, bold, FAINT);
+  y -= 7;
+  rule(y, L, R, 0.9, INK);
+  // Rows shrink a little if a long period would otherwise crowd the page.
+  const rowH = days.length > 12 ? 17 : 20;
+  y -= rowH - 6;
+  if (!days.length) {
+    text("No hours in this period.", cWork, 9.5, font, FAINT);
+    y -= rowH;
+  }
+  for (const d of days) {
+    text(d.date, L, 9.5);
+    text(fit(d.tasks.join(" · "), font, 9.5, workW), cWork, 9.5);
+    right(d.hours.toFixed(2), R, 9.5);
+    rule(y - 6);
+    y -= rowH;
+  }
+
+  // Totals.
+  y -= 6;
+  const lx = R - 190;
+  text("Hours", lx, 9.5, font, SOFT);
+  right(`${inv.hours.toFixed(2)} h`, R, 9.5);
+  y -= 15;
+  text("Rate", lx, 9.5, font, SOFT);
+  right(`${money(s.rate, s.currency)} / h`, R, 9.5);
+  y -= 9;
+  rule(y, lx, R, 0.9, INK);
+  y -= 17;
+  text("Amount due", lx, 12, bold);
+  right(money(inv.total, s.currency), R, 13, bold);
+  y -= 40;
+
+  // Payment, in a quiet panel.
+  const panelH = 92;
+  page.drawRectangle({ x: L, y: y - panelH + 14, width: R - L, height: panelH, color: rgb(0.975, 0.968, 0.952) });
+  const px = L + 16;
+  page.drawText("PAYMENT BY BANK TRANSFER", { x: px, y, size: 7, font: bold, color: FAINT });
+  y -= 15;
+  text(`${PAYMENT.holder}  ·  ${PAYMENT.bank}  ·  SWIFT ${PAYMENT.swift}`, px, 9);
+  y -= 18;
+  for (const a of PAYMENT.accounts) {
+    text(a.currency, px, 9, bold);
+    text(`IBAN ${a.iban}`, px + 34, 9, bold);
+    text(`Acc. ${a.number}`, px + 214, 9, font, SOFT);
+    text(a.currency === "USD" ? "Preferred" : "USD amount at the day's rate", px + 312, 8, font, FAINT);
+    y -= 14;
+  }
+  y -= 2;
+  text(`Reference: ${inv.number}`, px, 8.5, font, SOFT);
+
+  // Footer.
+  y = 56;
+  page.drawText(clean(`Times in Dubai time (UTC+4). Amount = hours × rate. Day-by-day notes: work log PDF.`), { x: L, y, size: 7.5, font, color: FAINT });
+  if (ownLogo) {
+    const w = 96;
+    const h = (ownLogo.height / ownLogo.width) * w;
+    page.drawImage(ownLogo, { x: R - w + 12, y: y - h / 2 + 3, width: w, height: h });
+  }
 
   return doc.save();
 }
