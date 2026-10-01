@@ -2,10 +2,10 @@ import { next, rewrite } from "@vercel/functions";
 // The .js extension is required: Vercel typechecks this file with node16
 // module resolution, where an extensionless relative import is an error.
 // tsconfig.middleware.json mirrors that, so the local build catches it too.
-import { APEX_HOST, MINISTRY_HOST, MINISTRY_ORIGIN, SITE_HOST } from "./src/lib/host.js";
+import { APEX_HOST, MINISTRY_HOST, MINISTRY_ORIGIN, SITE_HOST, WORK_HOST, WORK_ORIGIN } from "./src/lib/host.js";
 
 /**
- * Host routing for the two domains this one project serves.
+ * Host routing for the three domains this one project serves.
  *
  * ministry.xerxesduane.com is the ministry page and nothing else. The build
  * still writes that page to /ministry, because the prerenderer works in paths
@@ -23,7 +23,7 @@ import { APEX_HOST, MINISTRY_HOST, MINISTRY_ORIGIN, SITE_HOST } from "./src/lib/
  * every other route, on either host — is untouched and never reaches here.
  */
 export const config = {
-  matcher: ["/", "/ministry", "/robots.txt"],
+  matcher: ["/", "/ministry", "/robots.txt", "/work", "/r/:path*"],
   // The edge runtime is deprecated for middleware; the build warns on it.
   // Nothing here needs an edge-only API — it reads a header and returns.
   runtime: "nodejs",
@@ -44,6 +44,24 @@ export default function middleware(request: Request): Response {
 
     // Anyone who kept the old path and swapped only the host.
     if (url.pathname === "/ministry") return Response.redirect(new URL("/", url), 308);
+  }
+
+  // work.xerxesduane.com is the hours log: work.html at the root and at each
+  // client link, /r/<token>. Rewrites, so the address bar keeps the clean URL.
+  // Paths outside the matcher (assets, fonts, /api) pass straight through.
+  if (host === WORK_HOST) {
+    if (url.pathname === "/" || url.pathname.startsWith("/r/")) return rewrite(new URL("/work", url));
+    if (url.pathname === "/robots.txt") return rewrite(new URL("/robots-work.txt", url));
+    if (url.pathname === "/work") return Response.redirect(new URL("/", url), 308);
+    return next();
+  }
+
+  // The log has no business on the business site. On previews and localhost
+  // it stays reachable at /work and /r/<token>, so it can be tried before release.
+  if (host === SITE_HOST || host === APEX_HOST || host === MINISTRY_HOST) {
+    if (url.pathname === "/work") return Response.redirect(`${WORK_ORIGIN}/`, 308);
+  } else if (url.pathname.startsWith("/r/")) {
+    return rewrite(new URL("/work", url));
   }
 
   // The move itself. Scoped to the live hostnames on purpose: preview

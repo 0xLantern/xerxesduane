@@ -13,6 +13,9 @@ export default defineConfig(({ isSsrBuild }) => {
   if (!isSsrBuild) {
     config.build = {
       rollupOptions: {
+        // work.html is the hours log on work.xerxesduane.com: its own page,
+        // never prerendered, so it only exists in the client build.
+        input: { main: 'index.html', work: 'work.html' },
         output: {
           manualChunks(id) {
             if (id.includes('node_modules')) {

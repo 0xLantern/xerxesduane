@@ -1,0 +1,8 @@
+# work.xerxesduane.com
+#
+# Served for this host only, by middleware.ts. This host is a private hours
+# log: a sign-in page and read-only links shared one to one. There is nothing
+# here for any crawler, so all of them are turned away. Every response also
+# carries X-Robots-Tag: noindex (vercel.json) for any URL found some other way.
+User-agent: *
+Disallow: /
