@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { AR_CHROME } from "../data/servicePagesAr";
+import { siteHref } from "../lib/host";
 
 const STORAGE_KEY = "tw-consent"; // "granted" | "denied"
 
@@ -78,7 +79,7 @@ export default function ConsentBanner({ locale = "en" }: { locale?: "en" | "ar" 
           {ar
             ? AR_CHROME.consentBody
             : "I use anonymous analytics to improve the site. Nothing is shared or sold. See the"}{" "}
-          <a href="/privacy" className="inline-block py-1 font-semibold text-gold underline-offset-2 hover:underline">
+          <a href={siteHref("/privacy")} className="inline-block py-1 font-semibold text-gold underline-offset-2 hover:underline">
             {ar ? AR_CHROME.consentPolicy : "Privacy Policy"}
           </a>
           .

@@ -35,6 +35,11 @@ const DESCRIPTION_MAX = 160;
 /** Above roughly this, WhatsApp can show a link with no image at all. */
 const OG_IMAGE_MAX_BYTES = 300 * 1024;
 const SITE_ORIGIN = "https://www.xerxesduane.com";
+// The ministry page is served from its own host (see src/lib/host.ts), so its
+// share card is absolute against that one. Both hosts are one deployment, so
+// either origin resolves to the same file under dist/.
+const MINISTRY_ORIGIN = "https://ministry.xerxesduane.com";
+const ORIGINS = [SITE_ORIGIN, MINISTRY_ORIGIN];
 
 const fail = [];
 const check = (ok, message) => {
@@ -93,9 +98,12 @@ for (const file of pages) {
   check(Boolean(html.match(/<meta property="og:title" content="(.+?)"/s)), `${route}: no og:title`);
   check(Boolean(ogImage), `${route}: no og:image`);
   if (ogImage) {
-    check(ogImage.startsWith(`${SITE_ORIGIN}/`), `${route}: og:image is not an absolute ${SITE_ORIGIN} URL`);
-    const file = join(dist, decode(ogImage).replace(SITE_ORIGIN, "").split("?")[0]);
-    if (!ogImages.has(file)) ogImages.set(file, { route, ogType });
+    const origin = ORIGINS.find((o) => ogImage.startsWith(`${o}/`));
+    check(Boolean(origin), `${route}: og:image is not an absolute URL on ${ORIGINS.join(" or ")}`);
+    if (origin) {
+      const file = join(dist, decode(ogImage).replace(origin, "").split("?")[0]);
+      if (!ogImages.has(file)) ogImages.set(file, { route, ogType });
+    }
   }
   if (!titleMatch || !descMatch) continue;
 

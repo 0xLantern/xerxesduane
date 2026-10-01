@@ -4,7 +4,9 @@ import { CURRENCY, NONPROFIT, RATE_CARD, STARTER, UNIT_SCHEMA, aed, priceForSlug
 import { INSIGHTS, getInsight } from "../data/insights";
 import { SERVICE_PAGES_AR, getServicePageAr } from "../data/servicePagesAr";
 
-export const SITE_ORIGIN = "https://www.xerxesduane.com";
+import { MINISTRY_ORIGIN, SITE_ORIGIN } from "./host";
+
+export { SITE_ORIGIN };
 
 export interface PageMeta {
   title: string;
@@ -452,10 +454,11 @@ const MINISTRY_META: PageMeta = {
   ogTitle: "Ministry - Xerxes Duane",
   description:
     "Xerxes Duane's church and ministry background: digital discipleship, youth training, preaching, worship and missions in the Middle East.",
-  canonical: `${SITE_ORIGIN}/ministry`,
-  // Its own share card, for the WhatsApp links the page travels by. Kept in
-  // /ministry/, under the same noindex/noimageindex header as the page.
-  ogImage: `${SITE_ORIGIN}/ministry/share.jpg`,
+  // The page lives on its own host now; /ministry on the business site is a
+  // permanent redirect to it (middleware.ts). Both hosts are served from one
+  // filesystem, so the share card is still at the same path under it.
+  canonical: `${MINISTRY_ORIGIN}/`,
+  ogImage: `${MINISTRY_ORIGIN}/ministry/share.jpg`,
   noindex: true,
   unlisted: true,
 };

@@ -6,6 +6,7 @@ import ThemeToggle from "../ui/ThemeToggle";
 import { LogoMark } from "../ui/Wordmark";
 import { SHELL_IDENTITY, SHELL_NAV, isNavActive, navHref, navLabel } from "../../data/shell";
 import { fadeUp, stagger } from "../../lib/motion";
+import { siteHref } from "../../lib/host";
 import { useVisitCount } from "../../lib/useVisitCount";
 
 interface ProfileSidebarProps {
@@ -45,7 +46,7 @@ export default function ProfileSidebar({ path, lang, locale = "en" }: ProfileSid
             second lockup competing with the name below it. */}
         <m.a
           variants={fadeUp}
-          href="/"
+          href={siteHref("/")}
           aria-label={`${SHELL_IDENTITY.name}, home`}
           className="group flex flex-col items-center rounded-3xl px-2 pt-1 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4 focus-visible:ring-offset-canvas"
         >
@@ -106,7 +107,7 @@ export default function ProfileSidebar({ path, lang, locale = "en" }: ProfileSid
             return (
               <a
                 key={item.href}
-                href={navHref(item, locale)}
+                href={siteHref(navHref(item, locale))}
                 aria-current={active ? "page" : undefined}
                 className={`group relative flex items-center gap-3 rounded-2xl px-4 py-2.5 text-[0.95rem] font-semibold transition duration-300 ease-smooth board:py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-canvas ${
                   active
@@ -129,7 +130,7 @@ export default function ProfileSidebar({ path, lang, locale = "en" }: ProfileSid
             );
           })}
           <a
-            href={lang.href}
+            href={siteHref(lang.href)}
             lang={lang.label === "English" ? "en" : "ar"}
             className="group flex items-center gap-3 rounded-2xl border border-transparent px-4 py-2.5 text-[0.95rem] font-semibold text-fg-soft transition duration-300 ease-smooth board:py-1.5 hover:bg-panel hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
           >
@@ -150,17 +151,17 @@ export default function ProfileSidebar({ path, lang, locale = "en" }: ProfileSid
           <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0 text-xs text-fg-faint board:text-[0.7rem]">
             {!ar && (
               <>
-                <a href="/privacy" className="py-1 transition-colors hover:text-accent-deep">
+                <a href={siteHref("/privacy")} className="py-1 transition-colors hover:text-accent-deep">
                   Privacy
                 </a>
                 <span aria-hidden>·</span>
-                <a href="/terms" className="py-1 transition-colors hover:text-accent-deep">
+                <a href={siteHref("/terms")} className="py-1 transition-colors hover:text-accent-deep">
                   Terms
                 </a>
                 <span aria-hidden>·</span>
               </>
             )}
-            <a href="/whatsapp-optin.html" className="py-1 transition-colors hover:text-accent-deep">
+            <a href={siteHref("/whatsapp-optin.html")} className="py-1 transition-colors hover:text-accent-deep">
               {ar ? "تحديثات واتساب" : "WhatsApp updates"}
             </a>
           </p>

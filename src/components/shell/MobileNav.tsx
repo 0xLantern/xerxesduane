@@ -6,6 +6,7 @@ import ThemeToggle from "../ui/ThemeToggle";
 import VerifiedTick from "./VerifiedTick";
 import { SHELL_IDENTITY, SHELL_NAV, isNavActive, navHref, navLabel } from "../../data/shell";
 import { useVisitCount } from "../../lib/useVisitCount";
+import { siteHref } from "../../lib/host";
 
 /**
  * Compact navigation for narrow viewports: a sticky identity bar plus a
@@ -103,7 +104,7 @@ export default function MobileNav({
               return (
                 <a
                   key={item.href}
-                  href={navHref(item, locale)}
+                  href={siteHref(navHref(item, locale))}
                   aria-current={active ? "page" : undefined}
                   onClick={() => setOpen(false)}
                   className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-[0.95rem] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-canvas ${
@@ -118,7 +119,7 @@ export default function MobileNav({
               );
             })}
             <a
-              href={lang.href}
+              href={siteHref(lang.href)}
               lang={lang.label === "English" ? "en" : "ar"}
               onClick={() => setOpen(false)}
               className="flex items-center gap-3 rounded-2xl border border-transparent px-4 py-3 text-[0.95rem] font-medium text-fg-soft"
@@ -136,15 +137,15 @@ export default function MobileNav({
           <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-0 border-t border-line pt-2 text-xs text-fg-faint">
             {!ar && (
               <>
-                <a href="/privacy" className="py-1.5 transition-colors hover:text-accent-deep">
+                <a href={siteHref("/privacy")} className="py-1.5 transition-colors hover:text-accent-deep">
                   Privacy
                 </a>
-                <a href="/terms" className="py-1.5 transition-colors hover:text-accent-deep">
+                <a href={siteHref("/terms")} className="py-1.5 transition-colors hover:text-accent-deep">
                   Terms
                 </a>
               </>
             )}
-            <a href="/whatsapp-optin.html" className="py-1.5 transition-colors hover:text-accent-deep">
+            <a href={siteHref("/whatsapp-optin.html")} className="py-1.5 transition-colors hover:text-accent-deep">
               {ar ? "تحديثات واتساب" : "WhatsApp updates"}
             </a>
           </p>
