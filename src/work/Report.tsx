@@ -78,7 +78,17 @@ export default function Report({ token }: { token: string }) {
               emptyText="No hours logged yet."
             />
           </div>
-          <p className="mt-6 text-center text-sm text-fg-faint">
+          <p className="mt-6 text-center">
+            <a
+              href={`/api/work/invoice?p=last&t=${encodeURIComponent(token)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-[0.95rem] font-bold text-fg hover:bg-panel-alt"
+            >
+              Latest invoice (PDF)
+            </a>
+          </p>
+          <p className="mt-4 text-center text-sm text-fg-faint">
             Times are in {TZ_LABEL}. Amounts are hours × the hourly rate.
           </p>
         </>

@@ -151,5 +151,11 @@
         }
       ]
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/work/invoice-cron",
+      "schedule": "0 19 * * *"
+    }
   ]
 }
