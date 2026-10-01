@@ -17,6 +17,17 @@
       "source": "/ar/videography-photography-dubai",
       "destination": "/ar",
       "permanent": true
+    },
+    {
+      "source": "/:path((?!api/|assets/|fonts/|brand/|r/|robots|favicon).+)",
+      "has": [
+        {
+          "type": "host",
+          "value": "work.xerxesduane.com"
+        }
+      ],
+      "destination": "/",
+      "permanent": false
     }
   ],
   "headers": [
@@ -79,6 +90,64 @@
         {
           "key": "X-Robots-Tag",
           "value": "noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "work.xerxesduane.com"
+        }
+      ],
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        }
+      ]
+    },
+    {
+      "source": "/work",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        }
+      ]
+    },
+    {
+      "source": "/r/:path*",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        }
+      ]
+    },
+    {
+      "source": "/api/work/:path*",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
         }
       ]
     }

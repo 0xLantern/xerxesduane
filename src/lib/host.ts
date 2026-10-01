@@ -25,6 +25,13 @@ export const APEX_HOST = "xerxesduane.com";
 export const MINISTRY_HOST = "ministry.xerxesduane.com";
 export const MINISTRY_ORIGIN = `https://${MINISTRY_HOST}`;
 
+/**
+ * The hours log's own host (see work.html and api/work/). It shares this
+ * project and its database but none of the site's pages.
+ */
+export const WORK_HOST = "work.xerxesduane.com";
+export const WORK_ORIGIN = `https://${WORK_HOST}`;
+
 /** The route a (host, path) pair actually names. */
 export function routePath(hostname: string, pathname: string): string {
   if (hostname.toLowerCase() === MINISTRY_HOST && pathname === "/") return "/ministry";
