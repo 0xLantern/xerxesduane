@@ -50,5 +50,6 @@ export const api = {
     call<{ timer: Timer | null; entry?: Entry | null; note?: string }>("timer", "POST", { action, ...fields }),
   saveSettings: (s: Pick<Settings, "name" | "client" | "rate">) => call<{ settings: Settings }>("settings", "PATCH", s),
   rotateLink: () => call<{ shareToken: string }>("settings", "POST", { rotate: true }),
+  emailInvoice: (period: "last" | "current") => call<{ sent: string; to: string[] }>("invoice", "POST", { period }),
   report: (token: string) => call<ReportData>(`report?t=${encodeURIComponent(token)}`),
 };

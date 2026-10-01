@@ -5,8 +5,8 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { ApiError, api, type Entry, type OwnerData, type Settings } from "./api";
-import { Button, Card, ErrorNote, Field, MonthLog, Sheet, TextArea, TextInput, TotalTile } from "./ui";
-import { DAY, HOUR, TZ_LABEL, dateInput, fmtClock, monthKey, monthStart, rangeFromInputs, shiftMonth, timeInput, totalsFor, weekStart } from "./time";
+import { Button, Card, DownloadLink, ErrorNote, Field, MonthLog, Sheet, TextArea, TextInput, TotalTile } from "./ui";
+import { DAY, HOUR, TZ_LABEL, dateInput, fmtClock, fmtMonth, monthKey, monthStart, rangeFromInputs, shiftMonth, timeInput, totalsFor, weekStart } from "./time";
 
 type State =
   | { kind: "loading" }
@@ -205,7 +205,10 @@ function Log({
           emptyText="Nothing logged yet. Press Start when you begin, or add time by hand."
         />
       </div>
-      <p className="mt-6 text-center text-sm text-fg-faint">Times are in {TZ_LABEL}.</p>
+      <div className="mt-6 flex justify-center">
+        <DownloadLink href={`/api/work/pdf?kind=log&m=${month}`}>Download {fmtMonth(month)} (PDF)</DownloadLink>
+      </div>
+      <p className="mt-4 text-center text-sm text-fg-faint">Times are in {TZ_LABEL}.</p>
 
       {editing && (
         <EntryEditor
@@ -562,6 +565,22 @@ function SettingsSheet({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [mailed, setMailed] = useState("");
+
+  const sendInvoice = async (period: "last" | "current") => {
+    if (!window.confirm("Email this invoice to GCN (bb@gcn.live) now?")) return;
+    setBusy(true);
+    setError("");
+    setMailed("");
+    try {
+      const res = await guard(api.emailInvoice(period));
+      setMailed(`Sent ${res.sent} to ${res.to.join(", ")}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't send the invoice.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const copy = async () => {
     try {
@@ -622,6 +641,26 @@ function SettingsSheet({
               Make a new link
             </Button>
           </div>
+        </section>
+
+        <section className="border-t border-line pt-5">
+          <h3 className="font-bold text-fg">Invoices</h3>
+          <p className="mt-1 text-[0.95rem] text-fg-soft">
+            Emailed to bb@gcn.live automatically on the 15th and the 30th, at 23:00 Dubai time, for the hours since the last one.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <a href="/api/work/invoice?p=last" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-[0.95rem] font-bold text-fg hover:bg-panel-alt">
+              Last invoice
+            </a>
+            <a href="/api/work/invoice?p=current" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-[0.95rem] font-bold text-fg hover:bg-panel-alt">
+              Current period so far
+            </a>
+            <DownloadLink href="/api/work/pdf?kind=invoice&p=last">Last invoice (PDF)</DownloadLink>
+            <Button kind="ghost" onClick={() => void sendInvoice("last")} disabled={busy}>
+              Email last invoice now
+            </Button>
+          </div>
+          {mailed && <p className="mt-2 text-[0.95rem] font-semibold text-accent-deep">{mailed}</p>}
         </section>
 
         <form onSubmit={save} className="space-y-3 border-t border-line pt-5">

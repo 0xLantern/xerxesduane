@@ -122,6 +122,19 @@ export function Sheet({ title, onClose, locked = false, children }: { title: str
 const sum = (list: Entry[]) => list.reduce((n, e) => n + (e.end - e.start), 0);
 
 /** Hours and amount for a stretch of time, side by side. */
+/** A pill-shaped link to a file the server sends as a download. */
+export function DownloadLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <a
+      href={href}
+      download
+      className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-[0.95rem] font-bold text-fg hover:bg-panel-alt"
+    >
+      {children}
+    </a>
+  );
+}
+
 export function TotalTile({ label, ms, settings }: { label: string; ms: number; settings: Settings }) {
   return (
     <div className="min-w-0 rounded-2xl border border-line bg-panel px-4 py-3">
