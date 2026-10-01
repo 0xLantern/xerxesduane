@@ -43,7 +43,7 @@ export const api = {
   login: (email: string, password: string) => call<{ authed: true }>("session", "POST", { email, password }),
   logout: () => call<{ authed: false }>("session", "DELETE", {}),
   data: () => call<OwnerData>("data"),
-  addEntry: (e: Omit<Entry, "id">) => call<{ entry: Entry }>("entries", "POST", e),
+  addEntry: (e: Omit<Entry, "id"> & { key?: string }) => call<{ entry: Entry }>("entries", "POST", e),
   updateEntry: (e: Entry) => call<{ entry: Entry }>("entries", "PATCH", e),
   deleteEntry: (id: string) => call<{ deleted: string }>("entries", "DELETE", { id }),
   timer: (action: "start" | "update" | "stop" | "discard", fields: Partial<Timer> = {}) =>

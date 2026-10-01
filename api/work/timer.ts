@@ -11,6 +11,7 @@ import {
   requireOwner,
   saveEntry,
   setTimer,
+  takeTimer,
 } from "./_lib";
 
 export const config = { runtime: "edge" };
@@ -75,9 +76,16 @@ export default handle(async (req) => {
       link: body.link ?? timer.link,
     });
     if (typeof clean === "string") return errorResponse(clean);
-    const entry = await saveEntry({ id: newId(clean.start), ...clean });
-    await setTimer(null);
-    return json({ timer: null, entry });
+    // Claim the timer first: if another stop already took it, this one saves nothing.
+    const claimed = await takeTimer();
+    if (!claimed || claimed.start !== timer.start) return errorResponse("The timer was already stopped. Refresh the page.", 409);
+    try {
+      const entry = await saveEntry({ id: newId(clean.start, `t${timer.start}`), ...clean });
+      return json({ timer: null, entry });
+    } catch (err) {
+      await setTimer(claimed).catch(() => undefined);
+      throw err;
+    }
   }
 
   return errorResponse("Unknown timer action.");

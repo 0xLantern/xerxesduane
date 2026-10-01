@@ -22,7 +22,7 @@ export default handle(async (req) => {
   if (req.method === "POST") {
     const clean = cleanEntry(body);
     if (typeof clean === "string") return errorResponse(clean);
-    return json({ entry: await saveEntry({ id: newId(clean.start), ...clean }) }, 201);
+    return json({ entry: await saveEntry({ id: newId(clean.start, body.key), ...clean }) }, 201);
   }
 
   const id = String(body.id ?? "");

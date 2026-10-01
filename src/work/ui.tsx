@@ -70,12 +70,25 @@ export function ErrorNote({ children }: { children: ReactNode }) {
 }
 
 /** A panel that rises from the bottom on a phone and sits centred on a desktop. */
-export function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+export function Sheet({ title, onClose, locked = false, children }: { title: string; onClose: () => void; locked?: boolean; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
+  // Kept in a ref so a parent re-render never re-runs the focus effect below,
+  // and a save in flight can't be closed out from under its error message.
+  const close = useRef(onClose);
+  const lock = useRef(locked);
+  useEffect(() => {
+    close.current = onClose;
+    lock.current = locked;
+  });
+  const tryClose = () => {
+    if (!lock.current) close.current();
+  };
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
     ref.current?.querySelector<HTMLElement>("input, textarea, button")?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !lock.current) close.current();
+    };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
     return () => {
@@ -83,9 +96,9 @@ export function Sheet({ title, onClose, children }: { title: string; onClose: ()
       document.body.style.overflow = "";
       prev?.focus();
     };
-  }, [onClose]);
+  }, []);
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={tryClose}>
       <div
         ref={ref}
         role="dialog"
@@ -96,7 +109,7 @@ export function Sheet({ title, onClose, children }: { title: string; onClose: ()
       >
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="font-display text-xl font-bold text-fg">{title}</h2>
-          <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center rounded-full text-2xl text-fg-soft hover:bg-panel-alt" aria-label="Close">
+          <button type="button" onClick={tryClose} disabled={locked} className="grid h-11 w-11 place-items-center rounded-full text-2xl text-fg-soft hover:bg-panel-alt" aria-label="Close">
             ×
           </button>
         </div>

@@ -328,8 +328,19 @@ export async function deleteEntry(id: string): Promise<boolean> {
 
 export { findEntry };
 
-export function newId(start: number): string {
-  return `${monthOf(start)}.${randomToken(8)}`;
+/**
+ * A new entry's id. The page sends a key made when the editor opened, so a
+ * Save retried after a lost response overwrites itself instead of doubling.
+ */
+export function newId(start: number, key?: unknown): string {
+  const k = typeof key === "string" && /^[A-Za-z0-9_-]{8,32}$/.test(key) ? key : randomToken(8);
+  return `${monthOf(start)}.${k}`;
+}
+
+/** Take the running timer and clear it in one step, so two stops can't both win. */
+export async function takeTimer(): Promise<Timer | null> {
+  const [raw] = await redis([["GETDEL", `${K}timer`]]);
+  return parse<Timer>(raw);
 }
 
 /**
@@ -337,8 +348,11 @@ export function newId(start: number): string {
  * message that says what to fix.
  */
 export function cleanEntry(body: Record<string, unknown>): Omit<Entry, "id"> | string {
-  const start = Number(body.start);
-  const end = Number(body.end);
+  // Whole minutes: what the editor can show is exactly what is billed, so an
+  // edit that leaves the times alone never changes the duration.
+  const MIN = 60 * 1000;
+  const start = Math.round(Number(body.start) / MIN) * MIN;
+  const end = Math.round(Number(body.end) / MIN) * MIN;
   if (!Number.isFinite(start) || !Number.isFinite(end)) return "Give a start and an end time.";
   if (start < EARLIEST) return "That date is too far back.";
   if (end > Date.now() + 5 * 60 * 1000) return "The end time is in the future.";

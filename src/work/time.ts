@@ -123,7 +123,10 @@ export function fmtClock(ms: number): string {
 
 /** The amount for a total duration, rounded to the cent once, at the end. */
 export function fmtMoney(ms: number, rate: number, currency = "USD"): string {
-  const amount = Math.round((ms / HOUR) * rate * 100) / 100;
+  // Billed on the hours as shown (two decimals), so hours × rate always
+  // matches the amount on screen.
+  const hours = Math.round((ms / HOUR) * 100) / 100;
+  const amount = Math.round(hours * rate * 100) / 100;
   try {
     return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(amount);
   } catch {

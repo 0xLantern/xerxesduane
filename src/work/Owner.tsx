@@ -3,7 +3,7 @@
  * the client's link. Built for a phone held in one hand: the timer and its
  * button sit at the top, the month's log below.
  */
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { ApiError, api, type Entry, type OwnerData, type Settings } from "./api";
 import { Button, Card, ErrorNote, Field, MonthLog, Sheet, TextArea, TextInput, TotalTile } from "./ui";
 import { DAY, HOUR, TZ_LABEL, dateInput, fmtClock, monthKey, monthStart, rangeFromInputs, shiftMonth, timeInput, totalsFor, weekStart } from "./time";
@@ -163,6 +163,8 @@ function Log({
       </header>
 
       <TimerCard
+        key={data.timer?.start ?? "idle"}
+        reload={reload}
         data={data}
         now={now}
         guard={guard}
@@ -248,13 +250,27 @@ function Log({
   );
 }
 
+const DRAFT = "xd-work-timer-draft";
+
+function readDraft(start: number | undefined): { task: string; notes: string; link: string } | null {
+  if (!start) return null;
+  try {
+    const d = JSON.parse(localStorage.getItem(DRAFT) ?? "null");
+    return d && d.start === start ? d : null;
+  } catch {
+    return null;
+  }
+}
+
 function TimerCard({
+  reload,
   data,
   now,
   guard,
   onChange,
   onSaved,
 }: {
+  reload: () => Promise<void>;
   data: OwnerData;
   now: () => number;
   guard: <T>(p: Promise<T>) => Promise<T>;
@@ -262,9 +278,22 @@ function TimerCard({
   onSaved: (entry: Entry | null, note?: string) => void;
 }) {
   const timer = data.timer;
-  const [task, setTask] = useState(timer?.task ?? "");
-  const [notes, setNotes] = useState(timer?.notes ?? "");
-  const [link, setLink] = useState(timer?.link ?? "");
+  // A draft kept on this device wins over the server copy: it holds whatever
+  // was typed after the last successful save.
+  const [draft] = useState(() => readDraft(timer?.start));
+  const [task, setTask] = useState(draft?.task ?? timer?.task ?? "");
+  const [notes, setNotes] = useState(draft?.notes ?? timer?.notes ?? "");
+  const [link, setLink] = useState(draft?.link ?? timer?.link ?? "");
+  const stopping = useRef(false);
+
+  useEffect(() => {
+    if (!timer) return;
+    try {
+      localStorage.setItem(DRAFT, JSON.stringify({ start: timer.start, task, notes, link }));
+    } catch {
+      /* private mode: the server copy still saves on blur */
+    }
+  }, [timer, task, notes, link]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [, tick] = useState(0);
@@ -289,18 +318,30 @@ function TimerCard({
 
   const start = () =>
     run(async () => {
-      const res = await guard(api.timer("start", { task, notes, link }));
-      onChange(res.timer);
-      onSaved(null, "");
+      try {
+        const res = await guard(api.timer("start", { task, notes, link }));
+        onChange(res.timer);
+        onSaved(null, "");
+      } catch (err) {
+        // Already running on another device: show that timer instead.
+        if (err instanceof ApiError && err.status === 409) return void (await reload());
+        throw err;
+      }
     });
 
   // Saved as you leave each field, so a closed tab never loses the notes.
   const persist = () => {
     if (!timer) return;
     if (task === timer.task && notes === timer.notes && link === timer.link) return;
+    const started = timer.start;
     void guard(api.timer("update", { task, notes, link }))
-      .then((res) => onChange(res.timer))
-      .catch(() => undefined);
+      .then((res) => {
+        // A stop that finished first wins; don't bring the timer back.
+        if (!stopping.current && res.timer?.start === started) onChange(res.timer);
+      })
+      .catch((err) => {
+        if (!stopping.current) setError(`Notes not saved to the server yet (${err instanceof Error ? err.message : "error"}). They're kept on this phone.`);
+      });
   };
 
   const stop = () =>
@@ -309,7 +350,19 @@ function TimerCard({
         setError("Say what you worked on before you stop.");
         return;
       }
-      const res = await guard(api.timer("stop", { task, notes, link }));
+      stopping.current = true;
+      let res;
+      try {
+        res = await guard(api.timer("stop", { task, notes, link }));
+      } catch (err) {
+        stopping.current = false;
+        throw err;
+      }
+      try {
+        localStorage.removeItem(DRAFT);
+      } catch {
+        /* nothing kept */
+      }
       onChange(null);
       setTask("");
       setNotes("");
@@ -320,7 +373,13 @@ function TimerCard({
   const discard = () =>
     run(async () => {
       if (!window.confirm("Throw away this running time? Nothing will be saved.")) return;
+      stopping.current = true;
       await guard(api.timer("discard"));
+      try {
+        localStorage.removeItem(DRAFT);
+      } catch {
+        /* nothing kept */
+      }
       onChange(null);
       setTask("");
       setNotes("");
@@ -392,9 +451,10 @@ function EntryEditor({
   entry: Entry | null;
   now: () => number;
   onClose: () => void;
-  onSave: (fields: Omit<Entry, "id">) => Promise<void>;
+  onSave: (fields: Omit<Entry, "id"> & { key?: string }) => Promise<void>;
   onDelete?: () => Promise<void>;
 }) {
+  const [key] = useState(() => Math.random().toString(36).slice(2, 14).padEnd(12, "0"));
   const [date, setDate] = useState(dateInput(entry?.start ?? now()));
   const [start, setStart] = useState(entry ? timeInput(entry.start) : "");
   const [end, setEnd] = useState(entry ? timeInput(entry.end) : "");
@@ -409,13 +469,17 @@ function EntryEditor({
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    const r = rangeFromInputs(date, start, end);
+    let r = rangeFromInputs(date, start, end);
     if (typeof r === "string") return setError(r);
+    // Times untouched: keep the stored instants exactly.
+    if (entry && date === dateInput(entry.start) && start === timeInput(entry.start) && end === timeInput(entry.end)) {
+      r = { start: entry.start, end: entry.end };
+    }
     if (!task.trim()) return setError("Say what you worked on.");
     setBusy(true);
     setError("");
     try {
-      await onSave({ ...r, task: task.trim(), notes: notes.trim(), link: link.trim() });
+      await onSave({ ...r, task: task.trim(), notes: notes.trim(), link: link.trim(), key });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't save that.");
       setBusy(false);
@@ -434,7 +498,7 @@ function EntryEditor({
   };
 
   return (
-    <Sheet title={entry ? "Edit time" : "Add time"} onClose={onClose}>
+    <Sheet title={entry ? "Edit time" : "Add time"} onClose={onClose} locked={busy}>
       <form onSubmit={submit} className="space-y-3">
         <Field label="Date">
           <TextInput type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
