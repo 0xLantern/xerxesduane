@@ -5,7 +5,7 @@
 // The client is fixed, so the bill-to block is too. Totals follow the log's
 // own rule (src/work/time.ts fmtMoney): hours rounded to two decimals, times
 // the rate, rounded to the cent once at the end.
-import { OWNER_EMAIL, type Entry, type Settings } from "./_lib";
+import { OWNER_EMAIL, allEntries, getSettings, redis, type Entry, type Settings } from "./_lib";
 import { renderPdf, toBase64 } from "./_pdf";
 
 export const BILL_TO = {
@@ -100,16 +100,6 @@ export function periodFor(id: unknown): Period | null {
   return { id: match[0], from, to, label: `${fmtDate(from)} – ${fmtDate(to - DAY)}` };
 }
 
-/** The period whose last day is today in Dubai, or null on any other day. */
-export function periodEndingOn(ms: number): Period | null {
-  const d = new Date(ms + OFFSET);
-  const [y, m, day] = [d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()];
-  const key = `${y}-${pad(m + 1)}`;
-  if (day === 15) return periodFor(`${key}-A`);
-  if (day === cutDay(y, m)) return periodFor(`${key}-B`);
-  return null;
-}
-
 /** The period an instant falls in. */
 export function periodContaining(ms: number): Period {
   const d = new Date(ms + OFFSET);
@@ -138,7 +128,7 @@ export function previousPeriod(p: Period): Period {
   return periodContaining(p.from - 1);
 }
 
-function fmtDate(ms: number): string {
+export function fmtDate(ms: number): string {
   const d = new Date(ms + OFFSET);
   return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()].slice(0, 3)} ${d.getUTCFullYear()}`;
 }
@@ -161,6 +151,16 @@ function esc(s: string): string {
 }
 
 export type Invoice = {
+  /** The half-month it covers, e.g. 2026-10-A. */
+  periodId: string;
+  /**
+   * "issued" once it has been sent: from then on it is the saved copy, and
+   * later edits to the log never change it. Until then it is a "draft",
+   * rebuilt from the log each time it is opened.
+   */
+  status: "issued" | "draft";
+  /** When it was sent, epoch ms. */
+  sentAt?: number;
   number: string;
   period: string;
   issued: string;
@@ -175,6 +175,9 @@ export function buildInvoice(entries: Entry[], settings: Settings, period: Perio
   const ms = inMonth.reduce((n, e) => n + (e.end - e.start), 0);
   const hours = Math.round((ms / HOUR) * 100) / 100;
   return {
+    periodId: period.id,
+    // Sent by hand before saved copies existed, so treated as issued.
+    status: period.id < FIRST_SAVED ? "issued" : "draft",
     number: `XD-GCN-${period.id}`,
     period: period.label,
     issued: fmtDate(now),
@@ -189,6 +192,86 @@ export function buildInvoice(entries: Entry[], settings: Settings, period: Perio
     total: Math.round(hours * settings.rate * 100) / 100,
     settings,
   };
+}
+
+/** Invoices before this period were sent before saved copies existed. */
+export const FIRST_SAVED = "2026-10-A";
+
+const SNAP = (id: string) => `work:v1:inv:${id}`;
+
+/** The saved copy of an invoice that has been sent, if there is one. */
+export async function savedInvoice(id: string): Promise<Invoice | null> {
+  const [raw] = await redis([["GET", SNAP(id)]]);
+  if (typeof raw !== "string") return null;
+  try {
+    return JSON.parse(raw) as Invoice;
+  } catch {
+    return null;
+  }
+}
+
+/** The invoice for a period as anyone should see it: the saved copy once sent, else a live draft. */
+export async function invoiceFor(period: Period): Promise<Invoice> {
+  const saved = await savedInvoice(period.id);
+  if (saved) return saved;
+  const [entries, settings] = await Promise.all([allEntries(), getSettings()]);
+  return buildInvoice(entries, settings, period);
+}
+
+export class AlreadySent extends Error {
+  constructor(public sentAt: number) {
+    super("already sent");
+  }
+}
+export class EmptyInvoice extends Error {}
+
+/**
+ * Issue and email an invoice. The first send saves the copy (SET NX, so two
+ * sends can't both issue it) before the email goes, and removes it again if
+ * the email fails, so a failed send leaves nothing issued. A later send of
+ * the same period only happens with `resend`, and mails the saved copy.
+ */
+export async function sendInvoice(period: Period, token: string, opts: { resend?: boolean } = {}): Promise<Invoice> {
+  const saved = await savedInvoice(period.id);
+  if (saved) {
+    if (!opts.resend) throw new AlreadySent(saved.sentAt ?? 0);
+    await emailInvoice(saved, invoiceUrl(token, period.id));
+    return saved;
+  }
+  const [entries, settings] = await Promise.all([allEntries(), getSettings()]);
+  const draft = buildInvoice(entries, settings, period);
+  if (draft.lines.length === 0) throw new EmptyInvoice("no hours");
+  const now = Date.now();
+  const inv: Invoice = { ...draft, status: "issued", sentAt: now, issued: fmtDate(now) };
+  const [claimed] = await redis([["SET", SNAP(period.id), JSON.stringify(inv), "NX"]]);
+  if (claimed !== "OK") {
+    const other = await savedInvoice(period.id);
+    throw new AlreadySent(other?.sentAt ?? now);
+  }
+  try {
+    await emailInvoice(inv, invoiceUrl(token, period.id));
+  } catch (err) {
+    await redis([["DEL", SNAP(period.id)]]).catch(() => undefined);
+    throw err;
+  }
+  return inv;
+}
+
+/** A short note to the owner: a failed send, a forgotten timer. Best effort. */
+export async function notifyOwner(subject: string, body: string): Promise<void> {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return;
+  const from = process.env.WORK_INVOICE_FROM || "Work log <invoices@xerxesduane.com>";
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      from,
+      to: [OWNER_EMAIL],
+      subject,
+      html: `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#2b2420;">${body}<p style="color:#8a7f75;font-size:13px;">work.xerxesduane.com</p></div>`,
+    }),
+  }).catch(() => undefined);
 }
 
 /**
@@ -244,9 +327,9 @@ ${
     <tr>
       <td style="vertical-align:top;"><img src="${logo}" alt="GCN Great Commission Network" width="200" style="display:block;width:200px;max-width:100%;height:auto;"></td>
       <td style="vertical-align:top;text-align:right;">
-        <div style="font-size:28px;font-weight:800;letter-spacing:.02em;color:#2b1a14;">INVOICE</div>
+        <div style="font-size:28px;font-weight:800;letter-spacing:.02em;color:${inv.status === "draft" ? "#a6410a" : "#2b1a14"};">${inv.status === "draft" ? "DRAFT" : "INVOICE"}</div>
         <div style="font-size:14px;color:#6b5f55;margin-top:4px;">No. <strong style="color:#2b2420;">${esc(inv.number)}</strong></div>
-        <div style="font-size:14px;color:#6b5f55;">Issued ${esc(inv.issued)}</div>
+        <div style="font-size:14px;color:#6b5f55;">${inv.status === "draft" ? "Not issued yet: totals update as hours are logged" : `Issued ${esc(inv.issued)}`}</div>
         <div style="font-size:14px;color:#6b5f55;">Period: ${esc(inv.period)}</div>
       </td>
     </tr>

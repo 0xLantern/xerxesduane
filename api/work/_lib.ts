@@ -204,13 +204,12 @@ export async function requireOwner(req: Request, write: boolean): Promise<Respon
 }
 
 /**
- * Read access to the log: the signed-in owner, or anyone holding the
- * client's link token as ?t=. The token is the credential, as in report.ts.
+ * Who is reading. "owner" is the signed-in owner; "private" holds the
+ * client's long link token; "public" opened the easy address (/gcn), which
+ * anyone can guess, so it sees the work log but never an invoice, the bank
+ * details on it, or the live timer.
  */
-export async function canRead(req: Request): Promise<boolean> {
-  if (await isOwner(req)) return true;
-  return tokenOk(new URL(req.url).searchParams.get("t") ?? "");
-}
+export type Scope = "owner" | "private" | "public";
 
 /**
  * The open address, work.xerxesduane.com/gcn: a read-only view anyone can
@@ -219,10 +218,17 @@ export async function canRead(req: Request): Promise<boolean> {
  */
 export const PUBLIC_SLUG = (process.env.WORK_PUBLIC_SLUG ?? "gcn").trim().toLowerCase();
 
-/** True for the client's private token, or the open address's name while it is on. */
-export async function tokenOk(token: string): Promise<boolean> {
-  if (PUBLIC_SLUG && PUBLIC_SLUG !== "off" && token.toLowerCase() === PUBLIC_SLUG) return true;
-  return token.length >= 16 && safeEqual(token, await getShareToken());
+/** The scope a client token grants, or null for a wrong one. */
+export async function tokenScope(token: string): Promise<Scope | null> {
+  if (PUBLIC_SLUG && PUBLIC_SLUG !== "off" && token.toLowerCase() === PUBLIC_SLUG) return "public";
+  if (token.length >= 16 && (await safeEqual(token, await getShareToken()))) return "private";
+  return null;
+}
+
+/** The scope of a read request: the owner's cookie, or the client's ?t= token. */
+export async function readScope(req: Request): Promise<Scope | null> {
+  if (await isOwner(req)) return "owner";
+  return tokenScope(new URL(req.url).searchParams.get("t") ?? "");
 }
 
 // ---------------------------------------------------------------------------

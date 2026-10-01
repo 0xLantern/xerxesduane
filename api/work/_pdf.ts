@@ -109,12 +109,13 @@ export async function renderPdf(inv: Invoice, kind: "invoice" | "log", origin: s
     page.drawImage(logo, { x: M - 6, y: y - h + 6, width: w, height: h });
   }
   y -= 18;
-  right(kind === "invoice" ? "INVOICE" : "WORK LOG", W - M, 22, bold);
+  const draft = kind === "invoice" && inv.status === "draft";
+  right(kind === "invoice" ? (draft ? "DRAFT" : "INVOICE") : "WORK LOG", W - M, 22, bold, draft ? rgb(0.65, 0.25, 0.04) : INK);
   y -= 18;
   if (kind === "invoice") {
     right(`No. ${inv.number}`, W - M, 10, bold);
     y -= 14;
-    right(`Issued ${inv.issued}`, W - M, 10, font, SOFT);
+    right(draft ? "Not issued yet: totals update as hours are logged" : `Issued ${inv.issued}`, W - M, 10, font, SOFT);
     y -= 14;
   }
   right(`Period: ${inv.period}`, W - M, 10, font, SOFT);

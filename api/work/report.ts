@@ -11,7 +11,7 @@ import {
   getTimer,
   handle,
   json,
-  tokenOk,
+  tokenScope,
   underLimit,
 } from "./_lib";
 
@@ -23,7 +23,8 @@ export default handle(async (req) => {
     return errorResponse("Too many requests. Wait a minute and refresh.", 429);
   }
   const token = new URL(req.url).searchParams.get("t") ?? "";
-  if (!(await tokenOk(token))) {
+  const scope = await tokenScope(token);
+  if (!scope) {
     return errorResponse("This link isn't valid any more. Ask for a new one.", 404);
   }
   const [entries, settings, timer] = await Promise.all([allEntries(), getSettings(), getTimer()]);
@@ -32,7 +33,10 @@ export default handle(async (req) => {
     settings,
     email: OWNER_EMAIL,
     // Only the fact and the start, so the client can see work in progress.
-    working: timer ? { start: timer.start } : null,
+    // Not on the open address, and not for a timer left running past ten
+    // hours, which is a forgotten one rather than work.
+    working: timer && scope === "private" && Date.now() - timer.start < 10 * 60 * 60 * 1000 ? { start: timer.start } : null,
+    scope,
     now: Date.now(),
   });
 });

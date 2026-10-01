@@ -163,7 +163,7 @@ export default function Report({ token }: { token: string }) {
             </section>
 
             {/* Downloads */}
-            <section className="mt-10 grid gap-2 sm:grid-cols-2">
+            <section className={`mt-10 grid gap-2 ${data.scope === "private" ? "sm:grid-cols-2" : ""}`}>
               <a
                 href={`/api/work/pdf?kind=log&m=${month}&t=${t}`}
                 download
@@ -172,6 +172,7 @@ export default function Report({ token }: { token: string }) {
               >
                 <DownloadIcon /> {fmtMonth(month)} report (PDF)
               </a>
+              {data.scope === "private" && (
               <a
                 href={`/api/work/pdf?kind=invoice&p=last&t=${t}`}
                 download
@@ -180,6 +181,7 @@ export default function Report({ token }: { token: string }) {
               >
                 <DownloadIcon /> Latest invoice (PDF)
               </a>
+              )}
             </section>
 
             <footer className="mt-10 text-center text-sm leading-relaxed text-[#8a7f75]">
@@ -191,7 +193,10 @@ export default function Report({ token }: { token: string }) {
                   {data.email}
                 </a>
               </p>
-              <p className="mt-2 text-xs">Times are in {TZ_LABEL}.</p>
+              <p className="mt-2 text-xs">
+                Times are in {TZ_LABEL}.
+                {data.scope === "public" && " This page is open to anyone with its address; invoices are sent by email."}
+              </p>
             </footer>
           </>
         )}

@@ -347,7 +347,7 @@ function TimerCard({
       });
   };
 
-  const stop = () =>
+  const stop = (end?: number) =>
     run(async () => {
       if (!task.trim()) {
         setError("Say what you worked on before you stop.");
@@ -356,7 +356,7 @@ function TimerCard({
       stopping.current = true;
       let res;
       try {
-        res = await guard(api.timer("stop", { task, notes, link }));
+        res = await guard(api.timer("stop", { task, notes, link, ...(end === undefined ? {} : { end }) }));
       } catch (err) {
         stopping.current = false;
         throw err;
@@ -391,6 +391,8 @@ function TimerCard({
     });
 
   const elapsed = timer ? now() - timer.start : 0;
+  // "I stopped earlier": the end time typed in, or null while closed.
+  const [earlier, setEarlier] = useState<string | null>(null);
 
   return (
     <Card className="mt-5">
@@ -400,9 +402,9 @@ function TimerCard({
           <p className="mt-1 font-display text-5xl font-bold tabular-nums text-fg" aria-live="off">
             {fmtClock(elapsed)}
           </p>
-          {elapsed > 10 * HOUR && (
+          {elapsed > 6 * HOUR && !earlier && (
             <p className="mt-2 text-[0.95rem] text-fg-soft">
-              Running a long time. If you forgot to stop, discard it and add the real time by hand.
+              Running a long time. If you forgot to stop it, use <strong>I stopped earlier</strong> below.
             </p>
           )}
         </div>
@@ -434,7 +436,40 @@ function TimerCard({
               Discard
             </Button>
           </div>
-        ) : (
+        ) : null}
+        {timer && (
+          <div className="text-center">
+            {earlier === null ? (
+              <button type="button" onClick={() => setEarlier("")} className="text-[0.95rem] font-semibold text-accent-deep underline-offset-2 hover:underline">
+                I stopped earlier
+              </button>
+            ) : (
+              <div className="rounded-2xl border border-line bg-canvas p-3 text-left">
+                <Field label={`What time did you stop? (started ${timeInput(timer.start)})`}>
+                  <TextInput type="time" value={earlier} onChange={(e) => setEarlier(e.target.value)} />
+                </Field>
+                <div className="mt-2 flex gap-2">
+                  <Button
+                    kind="primary"
+                    disabled={busy || !earlier}
+                    onClick={() => {
+                      const r = rangeFromInputs(dateInput(timer.start), timeInput(timer.start), earlier);
+                      if (typeof r === "string") return setError(r);
+                      if (r.end > now()) return setError("That time is still to come. Pick when you actually stopped.");
+                      void stop(r.end);
+                    }}
+                  >
+                    Save with this end time
+                  </Button>
+                  <Button onClick={() => setEarlier(null)} disabled={busy}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        {!timer && (
           <Button kind="primary" onClick={() => void start()} disabled={busy} className="w-full text-lg">
             Start
           </Button>
@@ -573,7 +608,15 @@ function SettingsSheet({
     setError("");
     setMailed("");
     try {
-      const res = await guard(api.emailInvoice(period));
+      let res;
+      try {
+        res = await guard(api.emailInvoice(period));
+      } catch (err) {
+        // Already sent: say when, and only send the same copy again if asked.
+        if (!(err instanceof ApiError && err.status === 409)) throw err;
+        if (!window.confirm(`${err.message} Send the same invoice again?`)) return;
+        res = await guard(api.emailInvoice(period, true));
+      }
       setMailed(`Sent ${res.sent} to ${res.to.join(", ")}.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't send the invoice.");
@@ -653,7 +696,7 @@ function SettingsSheet({
         <section className="border-t border-line pt-5">
           <h3 className="font-bold text-fg">Invoices</h3>
           <p className="mt-1 text-[0.95rem] text-fg-soft">
-            Emailed to bb@gcn.live automatically on the 15th and the last day of each month, at 23:00 Dubai time, for the hours since the last one.
+            Emailed to bb@gcn.live automatically just after midnight (Dubai time) once each half-month ends: on the 16th for the 1st–15th, and on the 1st for the rest of the month. A sent invoice is saved as sent and never changes; one not sent yet shows as a draft.
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             <a href="/api/work/invoice?p=last" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-[0.95rem] font-bold text-fg hover:bg-panel-alt">
