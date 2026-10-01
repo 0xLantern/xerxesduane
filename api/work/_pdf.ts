@@ -58,10 +58,10 @@ function wrap(text: string, font: PDFFont, size: number, width: number): string[
   return lines;
 }
 
-/** The logo, fetched from the site. Missing is fine: the PDF just goes without. */
-async function loadLogo(doc: PDFDocument, origin: string): Promise<PDFImage | null> {
+/** A logo, fetched from the site. Missing is fine: the PDF just goes without. */
+async function loadLogo(doc: PDFDocument, origin: string, path: string): Promise<PDFImage | null> {
   try {
-    const res = await fetch(`${origin}/brand/clients/gcn.png`);
+    const res = await fetch(`${origin}${path}`);
     if (!res.ok) return null;
     return await doc.embedPng(new Uint8Array(await res.arrayBuffer()));
   } catch {
@@ -89,7 +89,10 @@ export async function renderPdf(inv: Invoice, kind: "invoice" | "log", origin: s
   doc.setSubject(clean(`${BILL_TO.name} · ${inv.period}`));
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-  const logo = await loadLogo(doc, origin);
+  const [logo, ownLogo] = await Promise.all([
+    loadLogo(doc, origin, "/brand/clients/gcn.png"),
+    loadLogo(doc, origin, "/brand/mono/logo-black@2x.png"),
+  ]);
   const s = inv.settings;
 
   let page: PDFPage = doc.addPage([W, H]);
@@ -119,6 +122,14 @@ export async function renderPdf(inv: Invoice, kind: "invoice" | "log", origin: s
 
   // Parties.
   const colR = W - M;
+  // The sender's own logo heads the From column.
+  if (ownLogo) {
+    const w = 120;
+    const h = (ownLogo.height / ownLogo.width) * w;
+    // The artwork has its own margin; nudge it so the mark lines up with the text edge.
+    page.drawImage(ownLogo, { x: colR - w + 14, y: y - 4, width: w, height: h });
+    y -= h - 4;
+  }
   text(kind === "invoice" ? "BILL TO" : "CLIENT", M, 8, bold, FAINT);
   right("FROM", colR, 8, bold, FAINT);
   y -= 15;
