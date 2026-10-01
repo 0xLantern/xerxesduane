@@ -16,6 +16,22 @@ export const BILL_TO = {
   web: "www.gcn.live",
 } as const;
 
+/**
+ * Where GCN pays. The invoice is in USD, so the USD account comes first:
+ * paying it needs no conversion on this side. The CHF account is there for
+ * a transfer from GCN's Swiss franc account, which their bank can send in
+ * CHF as the USD amount converted at the day's rate.
+ */
+export const PAYMENT = {
+  holder: "XERXES DUANE IBANEZ MAGDALUYO",
+  bank: "Mashreq Bank, Dubai, UAE",
+  swift: "BOMLAEAD",
+  accounts: [
+    { currency: "USD", number: "019010742613", iban: "AE450330000019010742613", note: "Preferred: the invoice is in USD." },
+    { currency: "CHF", number: "019010742614", iban: "AE180330000019010742614", note: "If paying in CHF: the USD amount at the day's rate." },
+  ],
+} as const;
+
 /** Where the monthly email goes. WORK_INVOICE_TO overrides it (comma-separated). */
 export function invoiceRecipients(): string[] {
   const raw = process.env.WORK_INVOICE_TO || BILL_TO.email;
@@ -258,6 +274,19 @@ ${rows}
     <tr><td style="padding:4px 16px 4px 0;color:#6b5f55;">Rate</td><td style="padding:4px 0;text-align:right;">${money(s.rate, cur)} / h</td></tr>
     <tr><td style="padding:10px 16px 4px 0;border-top:2px solid #2b1a14;font-weight:800;font-size:16px;">Amount due</td><td style="padding:10px 0 4px;border-top:2px solid #2b1a14;text-align:right;font-weight:800;font-size:16px;color:#2b1a14;">${money(inv.total, cur)}</td></tr>
   </table>
+</td></tr>
+<tr><td style="padding:0 32px 20px;">
+  <div style="font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:#8a7f75;margin-bottom:6px;">Payment by bank transfer</div>
+  <div style="font-size:13px;line-height:1.5;color:#2b2420;">Account holder: <strong>${PAYMENT.holder}</strong><br>Bank: ${PAYMENT.bank} · SWIFT/BIC: <strong>${PAYMENT.swift}</strong></div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:8px;font-size:13px;line-height:1.5;">
+    <tr>${PAYMENT.accounts
+      .map(
+        (a) => `<td style="vertical-align:top;width:50%;padding:10px 12px;border:1px solid #e6e2d8;border-radius:8px;">
+      <strong>${a.currency} account</strong><br>Account no. ${a.number}<br>IBAN <strong>${a.iban}</strong><br><span style="color:#8a7f75;font-size:12px;">${a.note}</span></td>`,
+      )
+      .join('<td style="width:12px;"></td>')}</tr>
+  </table>
+  <div style="font-size:12px;color:#8a7f75;margin-top:6px;">Please use ${esc(inv.number)} as the payment reference.</div>
 </td></tr>
 <tr><td style="padding:0 32px 32px;font-size:12px;color:#8a7f75;line-height:1.5;">
   Times are in Dubai time (UTC+4). Amount is total hours × the hourly rate.${

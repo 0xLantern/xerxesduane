@@ -7,7 +7,7 @@
 // than failing the whole file.
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import { OWNER_EMAIL } from "./_lib";
-import { BILL_TO, type Invoice } from "./_invoice";
+import { BILL_TO, PAYMENT, type Invoice } from "./_invoice";
 
 const INK = rgb(0.17, 0.14, 0.13);
 const SOFT = rgb(0.42, 0.37, 0.33);
@@ -196,6 +196,36 @@ export async function renderPdf(inv: Invoice, kind: "invoice" | "log", origin: s
   text(kind === "invoice" ? "Amount due" : "Amount", lx, 12, bold);
   right(money(inv.total, s.currency), W - M, 12, bold);
   y -= 34;
+
+  if (kind === "invoice") {
+    if (y < M + 130) {
+      page = doc.addPage([W, H]);
+      y = H - M;
+    }
+    text("PAYMENT BY BANK TRANSFER", M, 8, bold, FAINT);
+    y -= 14;
+    text(`Account holder: ${PAYMENT.holder}`, M, 9.5);
+    y -= 12.5;
+    text(`Bank: ${PAYMENT.bank}  ·  SWIFT/BIC: ${PAYMENT.swift}`, M, 9.5);
+    y -= 20;
+    const colW = (W - 2 * M - 12) / 2;
+    const top = y;
+    PAYMENT.accounts.forEach((a, i) => {
+      const x = M + i * (colW + 12);
+      page.drawRectangle({ x, y: top - 62, width: colW, height: 74, borderColor: RULE, borderWidth: 0.8 });
+      y = top;
+      text(`${a.currency} account`, x + 10, 10, bold);
+      y -= 13;
+      text(`Account no. ${a.number}`, x + 10, 9.5);
+      y -= 12.5;
+      text(`IBAN ${a.iban}`, x + 10, 9.5, bold);
+      y -= 12.5;
+      text(a.note, x + 10, 8, font, FAINT);
+    });
+    y = top - 80;
+    text(`Please use ${inv.number} as the payment reference.`, M, 8.5, font, SOFT);
+    y -= 22;
+  }
   text("Times are in Dubai time (UTC+4). Amount is total hours × the hourly rate.", M, 8, font, FAINT);
 
   return doc.save();
