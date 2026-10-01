@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { X, ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react";
 import type { WorkItem } from "../data/workItems";
 
@@ -85,81 +86,85 @@ export default function WorkGallery({ items }: { items: WorkItem[] }) {
         ))}
       </div>
 
-      {active !== null && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Image viewer"
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-ink-deep/90 p-4 backdrop-blur-sm"
-          onClick={close}
-        >
-          <button
-            type="button"
-            onClick={close}
-            aria-label="Close"
-            className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-cream/15 text-cream transition-colors hover:border-gold/50 hover:text-gold"
-          >
-            <X size={20} />
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              step(-1);
-            }}
-            aria-label="Previous"
-            className="absolute left-3 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-cream/15 text-cream transition-colors hover:border-gold/50 hover:text-gold sm:left-6"
-          >
-            <ChevronLeft size={22} />
-          </button>
-
+      {/* Portaled so no page layer (the cursor field's dots sit above the
+          content) can paint over the viewer. */}
+      {active !== null &&
+        createPortal(
           <div
-            className="flex max-h-[90vh] max-w-full flex-col items-center gap-3"
-            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Image viewer"
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-ink-deep/90 p-4 backdrop-blur-sm"
+            onClick={close}
           >
-            <div
-              className={
-                isTall(items[active])
-                  ? "max-h-[80vh] w-[min(88vw,900px)] overflow-y-auto overscroll-contain rounded-lg shadow-2xl"
-                  : "contents"
-              }
+            <button
+              type="button"
+              onClick={close}
+              aria-label="Close"
+              className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-cream/15 text-cream transition-colors hover:border-gold/50 hover:text-gold"
             >
-              <img
-                src={items[active].src}
-                alt={items[active].title}
+              <X size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                step(-1);
+              }}
+              aria-label="Previous"
+              className="absolute left-3 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-cream/15 text-cream transition-colors hover:border-gold/50 hover:text-gold sm:left-6"
+            >
+              <ChevronLeft size={22} />
+            </button>
+  
+            <div
+              className="flex max-h-[90vh] max-w-full flex-col items-center gap-3"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div
                 className={
                   isTall(items[active])
-                    ? "block w-full rounded-lg"
-                    : "max-h-[80vh] max-w-full rounded-lg object-contain shadow-2xl"
+                    ? "max-h-[80vh] w-[min(88vw,900px)] overflow-y-auto overscroll-contain rounded-lg shadow-2xl"
+                    : "contents"
                 }
-              />
-            </div>
-            {items[active].href && (
-              <a
-                href={items[active].href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink-deep transition-colors hover:bg-gold-soft"
               >
-                Visit {items[active].title.split(", ")[0]} live
-                <ArrowUpRight size={15} strokeWidth={2.5} />
-              </a>
-            )}
-          </div>
-
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              step(1);
-            }}
-            aria-label="Next"
-            className="absolute right-3 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-cream/15 text-cream transition-colors hover:border-gold/50 hover:text-gold sm:right-6"
-          >
-            <ChevronRight size={22} />
-          </button>
-        </div>
-      )}
+                <img
+                  src={items[active].src}
+                  alt={items[active].title}
+                  className={
+                    isTall(items[active])
+                      ? "block w-full rounded-lg"
+                      : "max-h-[80vh] max-w-full rounded-lg object-contain shadow-2xl"
+                  }
+                />
+              </div>
+              {items[active].href && (
+                <a
+                  href={items[active].href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink-deep transition-colors hover:bg-gold-soft"
+                >
+                  Visit {items[active].title.split(", ")[0]} live
+                  <ArrowUpRight size={15} strokeWidth={2.5} />
+                </a>
+              )}
+            </div>
+  
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                step(1);
+              }}
+              aria-label="Next"
+              className="absolute right-3 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-cream/15 text-cream transition-colors hover:border-gold/50 hover:text-gold sm:right-6"
+            >
+              <ChevronRight size={22} />
+            </button>
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

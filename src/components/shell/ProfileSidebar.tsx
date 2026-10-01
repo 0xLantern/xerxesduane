@@ -22,10 +22,10 @@ interface ProfileSidebarProps {
  * SHELL_NAV so they can't drift.
  *
  * Sizing is deliberately budgeted so the whole rail — including the last nav
- * item — fits inside a 900px-tall viewport without a nested scrollbar. The
- * `overflow-y-auto` below is only a safety valve for genuinely short windows
- * (a laptop at 720px with browser chrome); at ordinary desktop heights nothing
- * scrolls but the page itself.
+ * item — fits inside a 720px-tall viewport without a nested scrollbar. It used
+ * to be 724px on a board, which put a floor under every page: six routes were
+ * over a 1280x720 screen by 4px for reasons that had nothing to do with their
+ * own content. It is ~644 now, so the page is what decides.
  */
 export default function ProfileSidebar({ path, lang, locale = "en" }: ProfileSidebarProps) {
   const ar = locale === "ar";
@@ -39,7 +39,7 @@ export default function ProfileSidebar({ path, lang, locale = "en" }: ProfileSid
       aria-label="Profile and site navigation"
       className="hidden shrink-0 lg:block lg:w-[15rem] xl:w-[16.5rem] board:w-[18rem]"
     >
-      <div className="sticky top-0 flex flex-col gap-4 py-8 pe-1 board:gap-2.5 board:py-4">
+      <div className="sticky top-0 flex flex-col gap-4 py-8 pe-1 board:gap-2 board:py-3">
         {/* Portrait + identity, as one link home. The logo mark rides the
             portrait's corner so the brand asset stays present without a
             second lockup competing with the name below it. */}
@@ -58,7 +58,7 @@ export default function ProfileSidebar({ path, lang, locale = "en" }: ProfileSid
               loading="eager"
               decoding="async"
               fetchPriority="high"
-              className="h-[7.5rem] w-[7.5rem] board:h-[5.75rem] board:w-[5.75rem] rounded-full border border-line bg-panel object-cover object-top shadow-card transition duration-500 ease-smooth group-hover:-translate-y-0.5 board:h-[10rem] board:w-[10rem]"
+              className="h-[7.5rem] w-[7.5rem] rounded-full border border-line bg-panel object-cover object-top shadow-card transition duration-500 ease-smooth board:h-[5.75rem] board:w-[5.75rem] group-hover:-translate-y-0.5"
             />
             <span
               aria-hidden
@@ -68,10 +68,15 @@ export default function ProfileSidebar({ path, lang, locale = "en" }: ProfileSid
             </span>
           </span>
 
-          <h2 className="mt-4 board:mt-2.5 flex items-center justify-center gap-1.5 font-display text-[1.6rem] board:text-[1.3rem] font-extrabold leading-none tracking-tight text-fg">
+          {/* Branding, not a section heading. As an <h2> this sat in the rail
+              on all 47 routes, which put "Xerxes Duane" above every page's own
+              <h1> in the document outline — so each page announced the site
+              name before it announced what the page was about. Same type, same
+              weight, no longer a heading. */}
+          <p className="mt-4 board:mt-2.5 flex items-center justify-center gap-1.5 font-display text-[1.6rem] board:text-[1.3rem] font-extrabold leading-none tracking-tight text-fg">
             {SHELL_IDENTITY.name}
             {SHELL_IDENTITY.verified && <VerifiedTick size={19} />}
-          </h2>
+          </p>
           {/* Handle only. The location and the positioning line came off:
               on a one-screen home every line has to earn its space, and the
               board says what the work is better than a job title does.
@@ -103,7 +108,7 @@ export default function ProfileSidebar({ path, lang, locale = "en" }: ProfileSid
                 key={item.href}
                 href={navHref(item, locale)}
                 aria-current={active ? "page" : undefined}
-                className={`group relative flex items-center gap-3 rounded-2xl px-4 py-2.5 text-[0.95rem] font-semibold transition duration-300 ease-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-canvas ${
+                className={`group relative flex items-center gap-3 rounded-2xl px-4 py-2.5 text-[0.95rem] font-semibold transition duration-300 ease-smooth board:py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-canvas ${
                   active
                     ? "border border-line bg-panel text-fg shadow-pill"
                     : "border border-transparent text-fg-soft hover:bg-panel hover:text-fg"
@@ -126,7 +131,7 @@ export default function ProfileSidebar({ path, lang, locale = "en" }: ProfileSid
           <a
             href={lang.href}
             lang={lang.label === "English" ? "en" : "ar"}
-            className="group flex items-center gap-3 rounded-2xl border border-transparent px-4 py-2.5 text-[0.95rem] font-semibold text-fg-soft transition duration-300 ease-smooth hover:bg-panel hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+            className="group flex items-center gap-3 rounded-2xl border border-transparent px-4 py-2.5 text-[0.95rem] font-semibold text-fg-soft transition duration-300 ease-smooth board:py-1.5 hover:bg-panel hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
           >
             <Languages size={19} strokeWidth={2} aria-hidden className="text-fg-faint" />
             <span className="transition-transform duration-300 ease-smooth group-hover:translate-x-0.5">

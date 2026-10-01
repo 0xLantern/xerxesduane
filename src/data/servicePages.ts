@@ -19,6 +19,21 @@ export interface ServiceBullet {
   body: string;
 }
 
+export interface ServiceFlow {
+  /** Small label above the block heading. */
+  label: string;
+  /** The block heading. */
+  title: string;
+  /** One sentence of context under it. */
+  note: string;
+  /**
+   * The four stages this particular service moves through. These are
+   * descriptions of the work, not measurements — the block used to render
+   * progress bars at made-up percentages, which meant nothing on any page.
+   */
+  stages: { name: string; detail: string }[];
+}
+
 export interface ServicePageData {
   slug: string;
   navLabel: string;
@@ -35,11 +50,45 @@ export interface ServicePageData {
   h1Lead: string;
   h1Accent: string;
   lede: string;
+  /** Page-specific flow rendered under the header. */
+  flow: ServiceFlow;
   bulletsHeading: string;
   bullets: ServiceBullet[];
   forWhoHeading: string;
   forWho: string[];
-  /** Matches a CASE_STUDIES client name to show as proof, if any. */
+  /**
+   * Sibling services worth a link from this one. It used to be the first six
+   * entries of SERVICE_PAGES on every page, so /video-editing-dubai pointed at
+   * Odoo and GEO and never at branding, and all thirteen pages shipped the same
+   * six links.
+   */
+  related: string[];
+  /**
+   * Only the three search-visibility pages carry this. They compete for
+   * overlapping queries, so each one states plainly what all three are for and
+   * which to start with, rather than each quietly claiming the same ground.
+   */
+  compare?: {
+    heading: string;
+    intro: string;
+    options: { slug: string; label: string; when: string }[];
+    footnote: string;
+  };
+  /**
+   * The client whose case study renders as proof on this page. Must match a
+   * `CASE_STUDIES` entry exactly.
+   *
+   * It is a plain `string` because the type-level alternatives cost more than
+   * they are worth: a `: CaseStudy[]` annotation widens `client` to `string`,
+   * `satisfies` alone does not stop that widening, and `as const` turns the
+   * array into a tuple whose members no longer share the optional `scope` and
+   * `stats` fields that `ServicePage` reads. So the join is asserted in
+   * `npm run check:pricing` instead, which is where the other silent data joins
+   * are checked. It needed to be: `/ecommerce-development-dubai` named "Gilani
+   * Mobility", a portfolio client with no case study, so `CASE_STUDIES.find`
+   * returned undefined and the page rendered no proof while the source looked
+   * as though it had some.
+   */
   caseStudyClient?: string;
   /** Service-specific FAQs (rendered on the page + FAQPage JSON-LD). */
   faqs: { q: string; a: string }[];
@@ -48,6 +97,7 @@ export interface ServicePageData {
 export const SERVICE_PAGES: ServicePageData[] = [
   {
     slug: "odoo-erp-dubai",
+    related: ["crm-development-dubai", "custom-software-development-dubai", "ai-automation-dubai"],
     navLabel: "Odoo / ERP",
     icon: Boxes,
     metaTitle: "Odoo ERP Implementation in Dubai - Xerxes Duane",
@@ -59,6 +109,17 @@ export const SERVICE_PAGES: ServicePageData[] = [
     h1Lead: "Run your whole business on one system,",
     h1Accent: "not five that don't talk.",
     lede: "Odoo ERP implementation in Dubai, set up and run properly. I wire inventory, sales, purchasing, invoicing, and CRM into a single source of truth, then stay on to support it. No bloated rollout you can't use, no consultant who disappears after go-live.",
+    flow: {
+      label: "One record, four stages",
+      title: "What a single Odoo record passes through.",
+      note: "The same order object carries through every stage, so nobody re-types a number that already exists.",
+      stages: [
+        { name: "Enquiry", detail: "A lead or order is raised once, against a customer record the whole system shares." },
+        { name: "Quotation", detail: "Pricing, revisions and approvals stay attached to that record instead of scattering across email." },
+        { name: "Inventory", detail: "Stock is committed when the order confirms, so the system and the shelf agree." },
+        { name: "Delivery", detail: "The delivery note and invoice are generated from the order, not rebuilt by hand." },
+      ],
+    },
     bulletsHeading: "What an Odoo build with me looks like",
     bullets: [
       {
@@ -107,17 +168,29 @@ export const SERVICE_PAGES: ServicePageData[] = [
   },
   {
     slug: "web-development-dubai",
+    related: ["landing-page-design-dubai", "ecommerce-development-dubai", "seo-dubai"],
     navLabel: "Web Development",
     icon: Code2,
     metaTitle: "Web Development in Dubai - Xerxes Duane",
     metaDescription:
-      "Custom websites, web apps, and high-converting landing pages for Dubai small businesses. Fast, mobile-first, SEO-ready, with fixed quotes and no lock-in. Book a free systems audit.",
+      "Websites, web apps and landing pages for Dubai small businesses. Fast, mobile-first and search-ready, with fixed quotes and no lock-in. Book a free systems audit.",
     ogTitle: "Web Development in Dubai",
     jsonLdName: "Web Development & Web Applications",
     eyebrow: "Web Development · Dubai",
     h1Lead: "A website that brings in customers,",
     h1Accent: "not one that just sits there.",
     lede: "Web development in Dubai for small businesses that need their site to do real work. Fast, mobile-first websites, custom web apps, and landing pages that load quickly, rank well, and turn visitors into booked enquiries, built honestly, by one trusted partner.",
+    flow: {
+      label: "What the site has to carry",
+      title: "From first tap to a booked enquiry.",
+      note: "Each stage is a place a visitor can quietly leave, so each one gets built and tested on its own.",
+      stages: [
+        { name: "Load", detail: "Built mobile-first and kept light, so the page is usable before the visitor decides to wait." },
+        { name: "Understand", detail: "The offer, the proof and the price sit where someone scanning can find them." },
+        { name: "Trust", detail: "Real work, real names and clear terms, rather than stock claims." },
+        { name: "Enquire", detail: "One obvious next step, wired to a form, a calendar or WhatsApp that actually reaches me." },
+      ],
+    },
     bulletsHeading: "What I build",
     bullets: [
       {
@@ -165,6 +238,7 @@ export const SERVICE_PAGES: ServicePageData[] = [
   },
   {
     slug: "ai-automation-dubai",
+    related: ["crm-development-dubai", "odoo-erp-dubai", "custom-software-development-dubai"],
     navLabel: "AI Automation",
     icon: Bot,
     metaTitle: "AI Automation in Dubai - Xerxes Duane",
@@ -176,6 +250,17 @@ export const SERVICE_PAGES: ServicePageData[] = [
     h1Lead: "Let AI do the repetitive work,",
     h1Accent: "so you can do the real work.",
     lede: "AI automation in Dubai, built around your business instead of bolted on for show. I design AI workflows, chatbots, and custom assistants that quietly run in the background, answering questions, qualifying leads, and giving you back the hours you've been losing.",
+    flow: {
+      label: "Where the automation sits",
+      title: "What happens between the trigger and you.",
+      note: "Automation earns its place only where a step is repetitive and the rules are clear enough to write down.",
+      stages: [
+        { name: "Trigger", detail: "A form, an inbox, a WhatsApp message or a scheduled run starts the workflow." },
+        { name: "Read", detail: "The model extracts what matters from the message, document or record." },
+        { name: "Decide", detail: "Rules you set decide what happens next, with the edge cases routed to a person." },
+        { name: "Hand off", detail: "The result lands in your CRM, sheet or inbox with a trail you can check." },
+      ],
+    },
     bulletsHeading: "Where AI actually pays off",
     bullets: [
       {
@@ -223,6 +308,31 @@ export const SERVICE_PAGES: ServicePageData[] = [
   },
   {
     slug: "seo-dubai",
+    related: ["answer-engine-optimization-dubai", "generative-engine-optimization-dubai", "web-development-dubai"],
+    compare: {
+      heading: "SEO, AEO or GEO: which one do you actually need?",
+      intro:
+        "The three overlap more than the acronyms suggest, and almost nobody needs all three at once. Here is the split, in the order I would do them.",
+      options: [
+        {
+          slug: "seo-dubai",
+          label: "SEO",
+          when: "You want to show up in the blue links and on Google Maps for the searches people type when they are ready to buy. If you are only doing one of the three, it is this one.",
+        },
+        {
+          slug: "answer-engine-optimization-dubai",
+          label: "AEO",
+          when: "You already show up, and you want to be a candidate for the answer box above the links, where a question gets answered before anyone scrolls.",
+        },
+        {
+          slug: "generative-engine-optimization-dubai",
+          label: "GEO",
+          when: "Your buyers research in ChatGPT, Gemini or Perplexity, and what those tools say about you matters as much as where you sit on a results page.",
+        },
+      ],
+      footnote:
+        "Most of the underlying work is shared — the technical foundations, the content and the entity signals feed all three — so starting with one is not wasted if you add another later.",
+    },
     navLabel: "SEO",
     icon: Search,
     metaTitle: "SEO Services in Dubai - Xerxes Duane",
@@ -234,6 +344,17 @@ export const SERVICE_PAGES: ServicePageData[] = [
     h1Lead: "Get found by people ready to buy,",
     h1Accent: "not just ready to browse.",
     lede: "SEO in Dubai focused on the keywords that actually bring in customers. I fix the technical foundations, sharpen your local search presence, and build content that ranks, then show you, in plain numbers, what it's doing for the business.",
+    flow: {
+      label: "The order the work runs in",
+      title: "Foundations first, then the pages that earn the click.",
+      note: "Ranking is decided by search engines, so the work targets the things on your side of the line.",
+      stages: [
+        { name: "Fix", detail: "Crawlability, speed, duplicate pages, broken metadata and anything blocking indexing." },
+        { name: "Local", detail: "Your Google Business Profile, service pages and location signals made consistent." },
+        { name: "Content", detail: "Pages written for the searches that come from people ready to buy, not vanity terms." },
+        { name: "Report", detail: "What moved, what did not, and what I would change next, in plain numbers." },
+      ],
+    },
     bulletsHeading: "How I approach SEO",
     bullets: [
       {
@@ -282,6 +403,31 @@ export const SERVICE_PAGES: ServicePageData[] = [
   },
   {
     slug: "answer-engine-optimization-dubai",
+    related: ["seo-dubai", "generative-engine-optimization-dubai", "web-development-dubai"],
+    compare: {
+      heading: "SEO, AEO or GEO: which one do you actually need?",
+      intro:
+        "The three overlap more than the acronyms suggest, and almost nobody needs all three at once. Here is the split, in the order I would do them.",
+      options: [
+        {
+          slug: "seo-dubai",
+          label: "SEO",
+          when: "You want to show up in the blue links and on Google Maps for the searches people type when they are ready to buy. If you are only doing one of the three, it is this one.",
+        },
+        {
+          slug: "answer-engine-optimization-dubai",
+          label: "AEO",
+          when: "You already show up, and you want to be a candidate for the answer box above the links, where a question gets answered before anyone scrolls.",
+        },
+        {
+          slug: "generative-engine-optimization-dubai",
+          label: "GEO",
+          when: "Your buyers research in ChatGPT, Gemini or Perplexity, and what those tools say about you matters as much as where you sit on a results page.",
+        },
+      ],
+      footnote:
+        "Most of the underlying work is shared — the technical foundations, the content and the entity signals feed all three — so starting with one is not wasted if you add another later.",
+    },
     navLabel: "AEO",
     icon: ScanSearch,
     metaTitle: "Answer Engine Optimization (AEO) in Dubai - Xerxes Duane",
@@ -292,24 +438,35 @@ export const SERVICE_PAGES: ServicePageData[] = [
     eyebrow: "AEO · Dubai",
     h1Lead: "Be the answer customers hear,",
     h1Accent: "not the link they scroll past.",
-    lede: "Answer Engine Optimization (AEO) in Dubai: I structure your content so Google's AI Overviews, voice assistants, and featured snippets quote you directly, the moment someone asks a question your business can answer.",
-    bulletsHeading: "How I win the answer box",
+    lede: "Answer Engine Optimization (AEO) in Dubai. When someone asks a question your business can answer, the box above the links is what they read. I structure your pages to be a candidate for it: question-led headings, the answer in the first sentence, and markup an engine can parse. Whether it quotes you on a given day is the engine's decision, not a promise I can make.",
+    flow: {
+      label: "How a page becomes a candidate",
+      title: "Structured so the answer is easy to lift.",
+      note: "Whether an engine quotes you on a given day is its decision. This is the part that is in your control.",
+      stages: [
+        { name: "Question", detail: "The page is built around a question a buyer actually types, phrased the way they type it." },
+        { name: "Answer", detail: "The answer sits in the first sentence under the heading, complete on its own." },
+        { name: "Markup", detail: "Schema describes what is visibly on the page, so the markup and the content agree." },
+        { name: "Check", detail: "The questions get re-run over time to see what the engines are showing instead." },
+      ],
+    },
+    bulletsHeading: "What the work involves",
     bullets: [
       {
         title: "Answer-first content",
         body: "I reshape your key pages to answer real questions clearly and concisely, the exact format answer engines lift word-for-word.",
       },
       {
-        title: "Structured data & FAQ schema",
-        body: "I mark up your pages so search engines can understand, trust, and surface your answers, not just crawl them.",
+        title: "Structured data that matches the page",
+        body: "I mark up what the page actually shows, so an engine can parse your answers rather than guess at them. Note that FAQ rich results have been limited to well-known government and health sites since Google's August 2023 change, so FAQ markup here is for machine readability, not a snippet tactic.",
       },
       {
         title: "Topic & entity authority",
         body: "I build the depth and internal links that make your site the obvious source on the questions that matter to your buyers.",
       },
       {
-        title: "Win 'position zero'",
-        body: "I target the featured snippets and 'People Also Ask' boxes your competitors leave on the table.",
+        title: "Aimed at the questions, not the keyword",
+        body: "I work from the questions your buyers actually type, including the 'People Also Ask' cluster around them, so the page answers the thing being asked rather than ranking for a phrase near it.",
       },
     ],
     forWhoHeading: "Who this is for",
@@ -340,22 +497,58 @@ export const SERVICE_PAGES: ServicePageData[] = [
   },
   {
     slug: "generative-engine-optimization-dubai",
+    related: ["seo-dubai", "answer-engine-optimization-dubai", "web-development-dubai"],
+    compare: {
+      heading: "SEO, AEO or GEO: which one do you actually need?",
+      intro:
+        "The three overlap more than the acronyms suggest, and almost nobody needs all three at once. Here is the split, in the order I would do them.",
+      options: [
+        {
+          slug: "seo-dubai",
+          label: "SEO",
+          when: "You want to show up in the blue links and on Google Maps for the searches people type when they are ready to buy. If you are only doing one of the three, it is this one.",
+        },
+        {
+          slug: "answer-engine-optimization-dubai",
+          label: "AEO",
+          when: "You already show up, and you want to be a candidate for the answer box above the links, where a question gets answered before anyone scrolls.",
+        },
+        {
+          slug: "generative-engine-optimization-dubai",
+          label: "GEO",
+          when: "Your buyers research in ChatGPT, Gemini or Perplexity, and what those tools say about you matters as much as where you sit on a results page.",
+        },
+      ],
+      footnote:
+        "Most of the underlying work is shared — the technical foundations, the content and the entity signals feed all three — so starting with one is not wasted if you add another later.",
+    },
     navLabel: "GEO",
     icon: Sparkles,
     metaTitle: "Generative Engine Optimization (GEO) in Dubai - Xerxes Duane",
     metaDescription:
-      "GEO in Dubai: become the business ChatGPT, Gemini, and Perplexity recommend. I shape content, entities, and citations so AI engines surface and cite you. Book a free systems audit.",
+      "GEO in Dubai. I shape your content, entities and citations so ChatGPT, Gemini and Perplexity have accurate material to draw on. Book a free systems audit.",
     ogTitle: "Generative Engine Optimization (GEO) in Dubai",
     jsonLdName: "Generative Engine Optimization (GEO)",
     eyebrow: "GEO · Dubai",
-    h1Lead: "Get recommended by the AI tools",
-    h1Accent: "your customers now ask first.",
-    lede: "Generative Engine Optimization (GEO) in Dubai: more buyers now start with ChatGPT, Gemini, and Perplexity than a search box. I shape your content, entities, and citations so those engines surface, trust, and recommend your business by name.",
-    bulletsHeading: "How I get you cited by AI",
+    h1Lead: "Be accurate where the AI tools",
+    h1Accent: "your customers ask are reading.",
+    lede: "Generative Engine Optimization (GEO) in Dubai. Some buyers now research with ChatGPT, Gemini or Perplexity before they open a search box at all. I shape your content, entities and citations so those engines have something accurate to draw on when your category comes up. No one controls what a model outputs, so this is measured by how often and how accurately you are surfaced, and reported either way.",
+    flow: {
+      label: "What a model can draw on",
+      title: "Accurate source material, checked over time.",
+      note: "No one controls what a model outputs. What can be controlled is whether the material it reads is right.",
+      stages: [
+        { name: "Source", detail: "Pages that state facts plainly, so a summary of them is still accurate." },
+        { name: "Entity", detail: "Name, services, location and links made consistent everywhere they appear." },
+        { name: "Presence", detail: "Profiles, directories and third-party pages corrected where they already exist." },
+        { name: "Monitor", detail: "Real prompts re-run on a schedule, and reported whether the answer flatters you or not." },
+      ],
+    },
+    bulletsHeading: "What the work involves",
     bullets: [
       {
-        title: "Citation-worthy content",
-        body: "I create the clear, factual, well-sourced content generative engines prefer to quote, with the specifics they need to recommend you.",
+        title: "Content worth citing",
+        body: "Clear, factual, sourced content with the specifics a model needs — real figures, real scope, real limits. Vague copy gives an engine nothing to quote.",
       },
       {
         title: "Entity & authority signals",
@@ -366,8 +559,8 @@ export const SERVICE_PAGES: ServicePageData[] = [
         body: "I get your business represented in the directories, profiles, and sources these engines actually draw their answers from.",
       },
       {
-        title: "Prompt testing & monitoring",
-        body: "I test the prompts your buyers really use and track when and how the major AI engines mention you.",
+        title: "Prompt testing and monitoring",
+        body: "I run the prompts your buyers actually use across the major engines and record what comes back, including the runs where you are not mentioned. Answers shift between runs, so this is a trend line, not a scoreboard.",
       },
     ],
     forWhoHeading: "Who this is for",
@@ -398,17 +591,29 @@ export const SERVICE_PAGES: ServicePageData[] = [
   },
   {
     slug: "custom-software-development-dubai",
+    related: ["odoo-erp-dubai", "crm-development-dubai", "mobile-app-development-dubai"],
     navLabel: "Custom Software",
     icon: Code2,
     metaTitle: "Custom Software Development in Dubai - Xerxes Duane",
     metaDescription:
-      "Custom software development in Dubai for growing businesses: internal tools, client portals, workflow systems, and integrations built around how your team actually works.",
+      "Custom software development in Dubai: internal tools, client portals, workflow systems and integrations built around how your team actually works.",
     ogTitle: "Custom Software Development in Dubai",
     jsonLdName: "Custom Software Development",
     eyebrow: "Custom Software · Dubai",
     h1Lead: "Software shaped around your business,",
     h1Accent: "not the other way around.",
     lede: "Custom software development in Dubai for businesses that have outgrown generic tools. I build practical internal systems, client portals, workflow platforms, and integrations around how your team already operates, then keep them maintainable as you grow.",
+    flow: {
+      label: "Where a custom build fits",
+      title: "Built around the work, not around a template.",
+      note: "Most of this is deciding what not to build. The smallest system that removes the bottleneck wins.",
+      stages: [
+        { name: "Map", detail: "I sit with the actual process, including the spreadsheet everyone pretends is temporary." },
+        { name: "Prototype", detail: "A rough version you can click, so the disagreements happen before the code does." },
+        { name: "Build", detail: "The working system, with the integrations to whatever you already run." },
+        { name: "Hand over", detail: "Documented and explained, so another developer could pick it up if you ever needed one." },
+      ],
+    },
     bulletsHeading: "What custom software can solve",
     bullets: [
       {
@@ -456,6 +661,7 @@ export const SERVICE_PAGES: ServicePageData[] = [
   },
   {
     slug: "crm-development-dubai",
+    related: ["odoo-erp-dubai", "ai-automation-dubai", "custom-software-development-dubai"],
     navLabel: "CRM & Dashboards",
     icon: LayoutDashboard,
     metaTitle: "CRM Development & Setup in Dubai - Xerxes Duane",
@@ -467,6 +673,17 @@ export const SERVICE_PAGES: ServicePageData[] = [
     h1Lead: "Know every lead, customer, and next step,",
     h1Accent: "without chasing spreadsheets.",
     lede: "CRM development and setup in Dubai for growing businesses that need a clear view of sales and customers. I organise your pipeline, connect your enquiry sources, automate follow-ups, and build dashboards your team will actually use.",
+    flow: {
+      label: "The path a lead takes",
+      title: "One record, one pipeline, one place to look.",
+      note: "A CRM is only worth having if the next action on every deal is visible without asking anyone.",
+      stages: [
+        { name: "Capture", detail: "Website forms, WhatsApp, calls and referrals all land as one record, not four." },
+        { name: "Qualify", detail: "The questions that decide whether a lead is worth time are asked in the same order every time." },
+        { name: "Assign", detail: "Ownership is explicit, so no enquiry sits waiting for someone else to pick it up." },
+        { name: "Follow up", detail: "Reminders and sequences fire on the record, and the dashboard shows what has stalled." },
+      ],
+    },
     bulletsHeading: "What a useful CRM should give you",
     bullets: [
       {
@@ -493,6 +710,10 @@ export const SERVICE_PAGES: ServicePageData[] = [
       "Businesses with a CRM nobody consistently uses",
       "Growing sales teams that need repeatable follow-up",
     ],
+    // "CRM, Web & Brand ... a clearer lead-to-demo journey, organised around the
+    // way the sales team actually works" is this page's promise, written down
+    // by a client. It was reachable only from /case-studies.
+    caseStudyClient: "Saladmaster UAE",
     faqs: [
       {
         q: "Which CRM should my business use?",
@@ -514,6 +735,7 @@ export const SERVICE_PAGES: ServicePageData[] = [
   },
   {
     slug: "mobile-app-development-dubai",
+    related: ["custom-software-development-dubai", "web-development-dubai", "ecommerce-development-dubai"],
     navLabel: "Mobile & Web Apps",
     icon: Smartphone,
     metaTitle: "Mobile App Development in Dubai - Xerxes Duane",
@@ -525,6 +747,17 @@ export const SERVICE_PAGES: ServicePageData[] = [
     h1Lead: "An app people have a reason to use,",
     h1Accent: "built for the work it needs to do.",
     lede: "Mobile and web app development in Dubai for businesses that need more than a website. I build booking platforms, customer portals, membership experiences, and internal apps with a focused first release and a clear path to grow.",
+    flow: {
+      label: "What ships in release one",
+      title: "A first release small enough to finish.",
+      note: "The first version exists to be used by real people, not to contain everything on the wishlist.",
+      stages: [
+        { name: "Core journey", detail: "The one thing the app must do well, built properly before anything else is added." },
+        { name: "Accounts & data", detail: "Sign-in, records and the backend behind the screens people see." },
+        { name: "Release", detail: "Store submission, review notes, and the unglamorous parts of actually shipping." },
+        { name: "Iterate", detail: "What people do with it decides the next build, rather than what we assumed." },
+      ],
+    },
     bulletsHeading: "What I build into the right app",
     bullets: [
       {
@@ -572,6 +805,7 @@ export const SERVICE_PAGES: ServicePageData[] = [
   },
   {
     slug: "ecommerce-development-dubai",
+    related: ["web-development-dubai", "odoo-erp-dubai", "landing-page-design-dubai"],
     navLabel: "E-Commerce",
     icon: ShoppingBag,
     metaTitle: "E-Commerce Development in Dubai - Xerxes Duane",
@@ -583,6 +817,17 @@ export const SERVICE_PAGES: ServicePageData[] = [
     h1Lead: "An online store that makes buying easy,",
     h1Accent: "and running it manageable.",
     lede: "E-commerce development in Dubai for businesses that need the storefront and the operations behind it to work together. I build fast customer journeys, connect payments and inventory, and reduce the manual work between order and delivery.",
+    flow: {
+      label: "Order to doorstep",
+      title: "The storefront and the operations behind it.",
+      note: "Most store problems sit after the checkout button, where the customer cannot see them but feels them.",
+      stages: [
+        { name: "Browse", detail: "Search, filters and product pages that answer the question before it is asked." },
+        { name: "Checkout", detail: "UAE payment methods and a checkout with as few steps as the order really needs." },
+        { name: "Fulfil", detail: "Stock, order status and delivery connected, so the team is not copying orders by hand." },
+        { name: "Measure", detail: "Tracking that shows where orders are lost, set up to respect analytics consent." },
+      ],
+    },
     bulletsHeading: "What a strong online store needs",
     bullets: [
       {
@@ -609,7 +854,6 @@ export const SERVICE_PAGES: ServicePageData[] = [
       "Teams manually processing online orders",
       "Brands that need better checkout conversion and reporting",
     ],
-    caseStudyClient: "Gilani Mobility",
     faqs: [
       {
         q: "Which e-commerce platform should I use?",
@@ -631,6 +875,7 @@ export const SERVICE_PAGES: ServicePageData[] = [
   },
   {
     slug: "landing-page-design-dubai",
+    related: ["web-development-dubai", "seo-dubai", "branding-graphic-design-dubai"],
     navLabel: "Landing Pages",
     icon: Target,
     metaTitle: "Landing Page Design in Dubai - Xerxes Duane",
@@ -642,6 +887,17 @@ export const SERVICE_PAGES: ServicePageData[] = [
     h1Lead: "Turn campaign clicks into enquiries,",
     h1Accent: "not expensive exits.",
     lede: "Landing page design in Dubai for campaigns that need a clear job and measurable result. I shape the offer, remove distractions, connect lead capture and analytics, and make the follow-up happen quickly.",
+    flow: {
+      label: "One page, one job",
+      title: "Everything on the page serves one action.",
+      note: "A landing page fails at whichever step is weakest, so all four get built together rather than in turn.",
+      stages: [
+        { name: "Offer", detail: "What is being offered, to whom, and why now, decided before any design starts." },
+        { name: "Page", detail: "A fast, single-purpose page with the distractions and extra links removed." },
+        { name: "Capture", detail: "The form or booking step wired to wherever your leads are actually worked." },
+        { name: "Follow up", detail: "The reply that goes out immediately, so interest is not left to cool." },
+      ],
+    },
     bulletsHeading: "What makes the page convert",
     bullets: [
       {
@@ -689,6 +945,7 @@ export const SERVICE_PAGES: ServicePageData[] = [
   },
   {
     slug: "branding-graphic-design-dubai",
+    related: ["video-editing-dubai", "landing-page-design-dubai", "web-development-dubai"],
     navLabel: "Branding & Design",
     icon: Palette,
     metaTitle: "Branding & Graphic Design in Dubai - Xerxes Duane",
@@ -700,6 +957,17 @@ export const SERVICE_PAGES: ServicePageData[] = [
     h1Lead: "Look as credible as the work",
     h1Accent: "you already deliver.",
     lede: "Branding and graphic design in Dubai for businesses that need clarity and consistency, not decoration for its own sake. I build useful visual identities and everyday marketing assets that help people recognise, understand, and trust you.",
+    flow: {
+      label: "From idea to everyday use",
+      title: "A system your team can keep using without me.",
+      note: "An identity is only finished when someone who was not in the room can apply it correctly.",
+      stages: [
+        { name: "Foundations", detail: "Logo, type, colour and the rules for using them, kept short enough to be read." },
+        { name: "Core assets", detail: "The pieces you use constantly: profile, proposal, deck, social frames." },
+        { name: "Templates", detail: "Editable files so routine work does not come back to a designer every time." },
+        { name: "Handover", detail: "Source files, fonts and a guide that lives with you, not with me." },
+      ],
+    },
     bulletsHeading: "Design that earns its place",
     bullets: [
       {
@@ -747,17 +1015,29 @@ export const SERVICE_PAGES: ServicePageData[] = [
   },
   {
     slug: "video-editing-dubai",
+    related: ["branding-graphic-design-dubai", "landing-page-design-dubai", "web-development-dubai"],
     navLabel: "Photo & Video Editing",
     icon: Film,
     metaTitle: "Photo & Video Editing in Dubai - Xerxes Duane",
     metaDescription:
-      "Photo and video editing in Dubai for social reels, ads, interviews, events and brand films, plus product and campaign photo retouching. Clean pacing, captions, colour, and channel-ready exports.",
+      "Photo and video editing in Dubai for reels, ads, interviews, events and brand films, plus photo retouching. Clean pacing, captions, colour, ready-to-post exports.",
     ogTitle: "Photo & Video Editing in Dubai",
     jsonLdName: "Photo & Video Editing",
     eyebrow: "Photo & Video Editing · Dubai",
     h1Lead: "Turn what you shot into something",
     h1Accent: "worth publishing.",
     lede: "Photo and video editing in Dubai for brands and teams who already have the material but need it finished. I edit for attention, understanding, and the platform the piece will actually live on, whether that is a thirty-second reel or a product shot that has to look right in a grid.",
+    flow: {
+      label: "From rushes to ready to post",
+      title: "Cut for the platform it will actually live on.",
+      note: "The same footage becomes a different edit depending on where it is going and who is watching it.",
+      stages: [
+        { name: "Select", detail: "I work through the rushes to find the takes that actually carry the point." },
+        { name: "Cut", detail: "Structure and pacing set for the length and platform the piece is for." },
+        { name: "Finish", detail: "Colour, sound, captions and motion, plus photo retouching matched to the same look." },
+        { name: "Export", detail: "Correct sizes and formats for each destination, delivered ready to upload." },
+      ],
+    },
     bulletsHeading: "What happens in the edit",
     bullets: [
       {

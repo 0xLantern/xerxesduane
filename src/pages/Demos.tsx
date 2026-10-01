@@ -588,6 +588,7 @@ export default function Demos() {
       {onHub && (
         <PanelBoard
           rail
+          railLabel="AI Lab tools"
           cols="board:grid-cols-4"
           /* Tighter than the shared default at the board breakpoint only:
              this board carries seven cards where the others carry five, and
@@ -633,14 +634,21 @@ export default function Demos() {
                     sample, so the only way to shorten these cards is to make
                     each pill smaller: at the board breakpoint the list is the
                     whole height of the card, and the card sets the height of
-                    the row. Tap targets keep their 24px line box below sm. */}
-                <ul className="-mt-1 flex flex-wrap gap-1 board:gap-[0.2rem]">
+                    the row.
+
+                    `min-h-6` is the floor, at every width. The board variants
+                    had squeezed the pills to 20px tall, which fails WCAG 2.2
+                    Target Size (Minimum) for 36 links with no inline-in-a-
+                    sentence exception to lean on. Measured cost of the floor:
+                    +19px at 1280, where the page is already over, and nothing
+                    at 1440, where it still fits. */}
+                <ul className="-mt-1 flex flex-wrap gap-1 board:gap-x-[0.2rem] board:gap-y-[0.12rem]">
                   {tools.map((d) => (
                     <li key={d.id}>
                       <a
                         href={`/ai-lab#${d.id}`}
                         onClick={openDemo(d)}
-                        className="inline-block rounded-full border border-cream/12 bg-cream/5 px-2.5 py-1 text-xs leading-snug text-cream-dim transition hover:border-gold/40 hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent board:px-2 board:py-[0.1rem] board:text-[0.68rem]"
+                        className="inline-flex min-h-6 items-center rounded-full border border-cream/12 bg-cream/5 px-2.5 py-1 text-xs leading-snug text-cream-dim transition hover:border-gold/40 hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent board:px-1 board:py-[0.1rem] board:text-[0.68rem]"
                       >
                         {d.eyebrow}
                       </a>

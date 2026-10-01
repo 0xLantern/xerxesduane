@@ -1,8 +1,8 @@
 import { m } from "framer-motion";
-import { ArrowUpRight, ArrowLeft, Check } from "lucide-react";
+import { ArrowUpRight, ArrowLeft, Check, MessageCircle } from "lucide-react";
 import { SERVICE_PAGES, type ServicePageData } from "../data/servicePages";
 import { getServicePageAr } from "../data/servicePagesAr";
-import { CASE_STUDIES, PRICING } from "../data/content";
+import { CASE_STUDIES, CONTACT, PRICING } from "../data/content";
 import { priceForSlug, priceLabel } from "../data/pricing";
 import { INSIGHTS } from "../data/insights";
 import { fadeUp, stagger, VIEWPORT } from "../lib/motion";
@@ -13,6 +13,7 @@ import FaqList from "../components/FaqList";
 import PageHeader from "../components/page/PageHeader";
 import { GhostAction, PrimaryAction } from "../components/page/PageActions";
 import ServiceVisual from "../components/ServiceVisual";
+import ServiceCompare from "../components/ServiceCompare";
 import ServicePackages from "../components/ServicePackages";
 
 export default function ServicePage({ page }: { page: ServicePageData }) {
@@ -34,7 +35,7 @@ export default function ServicePage({ page }: { page: ServicePageData }) {
         icon={Icon}
         title={
           <>
-            {page.h1Lead} <span className="italic text-accent">{page.h1Accent}</span>
+            {page.h1Lead} <span className="italic text-accent-deep">{page.h1Accent}</span>
           </>
         }
         lede={page.lede}
@@ -60,6 +61,20 @@ export default function ServicePage({ page }: { page: ServicePageData }) {
         actions={
           <>
             <PrimaryAction href="/contact">Book a free audit</PrimaryAction>
+            {/*
+              WhatsApp is the stated second conversion path, and on a phone it
+              was two navigations from here: Contact, then scroll, then tap. The
+              service pages are where intent is highest, so it belongs in the
+              header rather than only on /contact.
+            */}
+            <GhostAction
+              href={`https://wa.me/${CONTACT.whatsapp}`}
+              external
+              cta="service-header"
+              icon={<MessageCircle size={15} strokeWidth={2.2} aria-hidden />}
+            >
+              WhatsApp
+            </GhostAction>
             {hasArabicPage && (
               <GhostAction href={`/ar/${page.slug}`}>
                 <span lang="ar">العربية</span>
@@ -73,6 +88,8 @@ export default function ServicePage({ page }: { page: ServicePageData }) {
       />
 
       <ServiceVisual page={page} />
+
+      <ServiceCompare page={page} />
 
       {page.slug === "ai-automation-dubai" && (
         <section className="pb-10 sm:pb-14">
@@ -149,7 +166,7 @@ export default function ServicePage({ page }: { page: ServicePageData }) {
           {proof && (
             <Reveal delay={0.15} className="mx-auto mt-6 max-w-2xl">
               <div className="glass border-glow rounded-2xl p-7">
-                <span className="font-mono text-xs uppercase tracking-wider text-gold/80">
+                <span className="font-mono text-xs uppercase tracking-wider text-gold">
                   {proof.location} · {proof.category}
                 </span>
                 <p className="mt-3 text-base text-cream-dim">{proof.challenge}</p>
@@ -178,7 +195,7 @@ export default function ServicePage({ page }: { page: ServicePageData }) {
                 </p>
                 <a
                   href={`/case-studies/${proof.slug}`}
-                  className="mt-5 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-gold transition-colors hover:text-gold-soft"
+                  className="mt-5 inline-flex items-center gap-2 rounded py-1 font-mono text-[11px] uppercase tracking-wider text-gold transition-colors hover:text-gold-soft"
                 >
                   Read the full case study
                   <ArrowUpRight size={13} />
@@ -191,10 +208,10 @@ export default function ServicePage({ page }: { page: ServicePageData }) {
 
       <section className="py-12 sm:py-16">
         <div className="container-bl">
-          <Reveal className="mx-auto max-w-4xl rounded-3xl border border-gold/25 bg-gold p-7 text-ink shadow-solid sm:flex sm:items-center sm:justify-between sm:gap-8 sm:p-9">
+          <Reveal className="band-accent mx-auto max-w-4xl rounded-3xl border border-gold/25 p-7 shadow-solid sm:flex sm:items-center sm:justify-between sm:gap-8 sm:p-9">
             <div>
-              <span className="font-mono text-[10px] uppercase tracking-wider text-ink/55">Before you spend</span>
-              <h2 className="mt-3 max-w-2xl text-2xl !text-ink sm:text-3xl">Let’s find the smallest build that creates the biggest useful change.</h2>
+              <span className="font-mono text-[10px] uppercase tracking-wider text-accent-ink">Before you spend</span>
+              <h2 className="mt-3 max-w-2xl text-2xl !text-accent-ink sm:text-3xl">Let’s find the smallest build that creates the biggest useful change.</h2>
             </div>
             <a href="/contact" className="mt-6 inline-flex shrink-0 items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-cream sm:mt-0">
               Scope it honestly <ArrowUpRight size={15} />
@@ -219,26 +236,29 @@ export default function ServicePage({ page }: { page: ServicePageData }) {
             </h2>
           </Reveal>
           <div className="mx-auto mt-8 grid max-w-3xl gap-4 sm:grid-cols-3">
-            {SERVICE_PAGES.filter((p) => p.slug !== page.slug).slice(0, 6).map((p) => {
-              const PIcon = p.icon;
-              return (
-                <a
-                  key={p.slug}
-                  href={`/${p.slug}`}
-                  className="glass glass-hover group flex items-center gap-3 rounded-2xl p-5"
-                >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold/10 text-gold ring-1 ring-gold/20">
-                    <PIcon size={18} strokeWidth={1.8} />
-                  </span>
-                  <span className="text-sm font-medium text-cream transition-colors group-hover:text-gold">
-                    {p.navLabel}
-                    <span className="mt-0.5 block font-mono text-[11px] uppercase tracking-wider text-muted">
-                      in Dubai
+            {page.related
+              .map((slug) => SERVICE_PAGES.find((p) => p.slug === slug))
+              .filter((p): p is ServicePageData => Boolean(p))
+              .map((p) => {
+                const PIcon = p.icon;
+                return (
+                  <a
+                    key={p.slug}
+                    href={`/${p.slug}`}
+                    className="glass glass-hover group flex items-center gap-3 rounded-2xl p-5"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold/10 text-gold ring-1 ring-gold/20">
+                      <PIcon size={18} strokeWidth={1.8} />
                     </span>
-                  </span>
-                </a>
-              );
-            })}
+                    <span className="text-sm font-medium text-cream transition-colors group-hover:text-gold">
+                      {p.navLabel}
+                      <span className="mt-0.5 block font-mono text-[11px] uppercase tracking-wider text-muted">
+                        in Dubai
+                      </span>
+                    </span>
+                  </a>
+                );
+              })}
           </div>
         </div>
       </section>
@@ -255,7 +275,7 @@ export default function ServicePage({ page }: { page: ServicePageData }) {
                   <li key={p.slug}>
                     <a
                       href={`/insights/${p.slug}`}
-                      className="text-cream-dim transition-colors hover:text-gold"
+                      className="inline-block rounded py-0.5 text-cream-dim transition-colors hover:text-gold"
                     >
                       {p.title}
                     </a>

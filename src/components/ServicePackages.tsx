@@ -32,7 +32,7 @@ export default function ServicePackages({ page }: { page: ServicePageData }) {
         </Reveal>
         <div className="mx-auto mt-10 grid max-w-5xl gap-4 md:grid-cols-3">
           {packages.map((item) => (
-            <article key={item.name} className={`flex flex-col rounded-2xl border p-6 ${item.featured ? "border-gold/30 bg-cream text-ink" : "glass border-cream/10"}`}>
+            <article key={item.name} className={`flex flex-col rounded-2xl border p-6 ${item.featured ? "panel-invert border-gold/30 bg-cream text-ink" : "glass border-cream/10"}`}>
               <span className={`font-mono text-[10px] uppercase tracking-wider ${item.featured ? "text-gold-deep" : "text-gold"}`}>{item.note}</span>
               <h3 className={`mt-4 text-2xl ${item.featured ? "!text-ink" : "text-cream"}`}>{item.name}</h3>
               <ul className="mt-6 space-y-3">
@@ -43,7 +43,7 @@ export default function ServicePackages({ page }: { page: ServicePageData }) {
                   </li>
                 ))}
               </ul>
-              <a href="/contact" className={`mt-7 inline-flex items-center gap-2 text-sm font-semibold ${item.featured ? "text-ink" : "text-gold"}`}>
+              <a href="/contact" className={`mt-7 inline-flex items-center gap-2 rounded py-1 text-sm font-semibold ${item.featured ? "text-ink" : "text-gold"}`}>
                 Discuss this scope <ArrowUpRight size={14} />
               </a>
             </article>

@@ -5,19 +5,22 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run check:pricing && tsc -b && vite build && vite build --ssr src/entry-server.tsx --outDir .ssr-dist && node scripts/prerender.mjs",
+    "build": "npm run check:pricing && tsc -b && vite build && vite build --ssr src/entry-server.tsx --outDir .ssr-dist && node scripts/prerender.mjs && npm run check:seo",
     "build:client": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "images": "node scripts/optimize-images.mjs",
     "logos": "node scripts/build-tool-logos.mjs",
-    "check:pricing": "node scripts/check-pricing.mjs"
+    "check:pricing": "node scripts/check-pricing.mjs",
+    "check:seo": "node scripts/check-seo.mjs",
+    "og": "node scripts/generate-og.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.83",
     "@ai-sdk/google": "^3.0.81",
     "@ai-sdk/groq": "^3.0.40",
     "@formspree/react": "^3.0.0",
+    "@paper-design/shaders-react": "^0.0.81",
     "@vercel/speed-insights": "^2.0.0",
     "ai": "^6.0.202",
     "framer-motion": "^12.40.0",
@@ -41,6 +44,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "ffmpeg-static": "^5.3.0",
     "globals": "^17.6.0",
+    "playwright-core": "^1.56.1",
     "png-to-ico": "^3.0.1",
     "postcss": "^8.5.15",
     "sharp": "^0.34.5",

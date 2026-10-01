@@ -45,7 +45,7 @@ export default function AboutFigure() {
         className="w-full"
       >
         {missing ? (
-          <DeskIllustration className="w-full" />
+          <DeskIllustration className="mx-auto w-full board:max-h-[23rem] board:w-auto" />
         ) : (
           <img
             src={FIGURE_SRC}
@@ -60,16 +60,13 @@ export default function AboutFigure() {
             // the reference does. Not oversized: the figure runs to 92% of the
             // frame, so any bleed off the card's right edge takes his sleeve
             // with the chair. The artwork carries its own margins.
-            // Capped from the board breakpoint up. At w-full in a half-card
-            // column the 1200x851 artwork renders 512px tall and sets the
-            // height of the whole intro, which is most of why this page did
-            // not fit a laptop. The cap is the tallest the figure can be
-            // without driving that height: with its column's top padding it
-            // comes to 312px against the text column's 319, so the words set
-            // the card and the figure is as large as it can be for free.
-            // Below that breakpoint it still fills its column, where the card
-            // is stacked and the height is free.
-            className="mx-auto block w-full select-none board:h-[17.5rem] board:w-auto board:object-contain"
+            //
+            // Capped, because `w-full` on an intrinsic aspect meant a wider
+            // window bought a taller figure: the card set the page height and
+            // /about grew from 853px at 1280 to 933 at 1880. The cap is above
+            // the copy column's own height at every width the cap applies to,
+            // so the figure still fills the card rather than floating in it.
+            className="mx-auto block w-full select-none board:max-h-[23rem] board:w-auto"
             draggable={false}
           />
         )}

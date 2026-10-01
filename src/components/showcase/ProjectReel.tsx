@@ -273,6 +273,7 @@ export default function ProjectReel({ items, flatByDefault = false, active = tru
         role="group"
         aria-label="Project reel. Drag sideways, or use the arrow keys, to turn it."
         tabIndex={0}
+        data-cursor="drag"
         onKeyDown={onKeyDown}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}

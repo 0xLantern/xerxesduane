@@ -165,7 +165,13 @@ export const HERO = {
   // carries the whole "what and for whom". Literal on purpose: it is also what
   // a search engine or an AI assistant will quote when describing the site.
   subhead: "Websites, CRM, Odoo and AI automation for small businesses in Dubai.",
-  ctaLabel: "Get in touch",
+  // Names the offer instead of the channel. "Get in touch" asks the visitor to
+  // start an unbounded conversation; the audit is a defined, free, 60-minute
+  // thing with a stated outcome, and it is what every other page already
+  // offers. The deeper pages were selling it and the home page was not.
+  ctaLabel: "Book your free systems audit",
+  // Says what happens after the click, so the button is not a leap of faith.
+  ctaNote: "60 minutes, free. You leave with a systems map and three quick wins.",
   // /contact, not /#contact: the home page no longer carries a contact
   // section, so the anchor it used to target isn't there to scroll to.
   ctaHref: "/contact",

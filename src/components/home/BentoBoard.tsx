@@ -48,7 +48,7 @@ export default function BentoBoard() {
   const google = TRUST.google;
 
   return (
-    <PanelBoard rail cols="board:grid-cols-4" className="home-board">
+    <PanelBoard rail railLabel="Explore the site" cols="board:grid-cols-4" className="home-board">
       {/* ---- Projects: a clipped reel of real client-site screenshots ---- */}
       <Panel
         iconNode={<FolderGlyph size={20} />}

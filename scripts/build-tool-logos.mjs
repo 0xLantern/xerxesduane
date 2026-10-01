@@ -32,7 +32,12 @@ const TOOLS = [
   { label: "Codex", monogram: "Cx" },
   { label: "Gemini", si: "googlegemini" },
   { label: "Groq", monogram: "Gq" },
-  { label: "Odoo", si: "odoo" },
+  // `wordmark`: the licensed mark already spells the brand legibly at the
+  // strip's size, so it is set on its own rather than printing the name twice.
+  // Zoho is deliberately NOT one: its mark is four shapes with "ZOHO" set
+  // beneath them at about a fifth of the mark's height, which is a 3px smudge
+  // in this row. It keeps its label.
+  { label: "Odoo", si: "odoo", wordmark: true },
   { label: "Zoho", si: "zoho" },
   { label: "Vercel", si: "vercel" },
   { label: "Supabase", si: "supabase" },
@@ -147,7 +152,12 @@ const entries = TOOLS.map((tool) => {
   if (tool.monogram) return { label: tool.label, monogram: tool.monogram };
   const icon = tool.si ? fromSimpleIcons(tool.si) : fromDevicon(tool.dev);
   const dark = darkVariant(icon.hex);
-  return { label: tool.label, ...icon, ...(dark ? { darkHex: dark } : {}) };
+  return {
+    label: tool.label,
+    ...icon,
+    ...(tool.wordmark ? { wordmark: true } : {}),
+    ...(dark ? { darkHex: dark } : {}),
+  };
 });
 
 const body = entries
@@ -157,6 +167,7 @@ const body = entries
     else {
       lines.push(`    viewBox: ${JSON.stringify(e.viewBox)},`);
       lines.push(`    aspect: ${e.aspect},`);
+      if (e.wordmark) lines.push(`    wordmark: true,`);
       lines.push(`    paths: [\n${e.paths.map((p) => `      ${JSON.stringify(p)},`).join("\n")}\n    ],`);
       lines.push(`    hex: ${JSON.stringify(e.hex)},`);
       if (e.darkHex) lines.push(`    darkHex: ${JSON.stringify(e.darkHex)},`);
@@ -179,6 +190,9 @@ writeFileSync(
 //
 // \`darkHex\` appears only where the brand colour is too dark to survive on the
 // dark canvas, lightened in proportion to how dark it is.
+//
+// \`wordmark\` marks the brands whose licensed mark is the name set as type.
+// The strip prints no label beside those — the mark already says it.
 
 export interface ToolLogo {
   label: string;
@@ -187,6 +201,8 @@ export interface ToolLogo {
   viewBox?: string;
   /** Width divided by height, for marks that are not square. */
   aspect?: number;
+  /** The mark spells the brand name, so no label is set beside it. */
+  wordmark?: boolean;
   paths?: string[];
   hex?: string;
   darkHex?: string;

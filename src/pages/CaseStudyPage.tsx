@@ -112,7 +112,7 @@ export default function CaseStudyPage({ study }: { study: CaseStudy }) {
           <div className="mt-2 flex flex-wrap items-center gap-4">
             <a
               href="/contact"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent transition hover:text-accent-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
+              className="inline-flex items-center gap-1.5 rounded py-1 text-sm font-semibold text-accent-deep transition hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
             >
               Want a result like this? Book your free audit
               <ArrowUpRight size={15} strokeWidth={2.3} aria-hidden />

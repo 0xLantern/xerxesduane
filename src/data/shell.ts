@@ -84,12 +84,17 @@ export const SHELL_NAV: ShellNavItem[] = [
 ];
 
 /**
- * The five destinations in the phone's bottom bar, in bar order. Contact sits
- * in the middle because it is the raised primary action; AI Lab is not here —
- * it stays one tap away through the Explore rail on the homepage and the rail
- * nav on every other viewport, so the bar keeps thumb-sized targets.
+ * The links in the phone's bottom bar, in bar order. The bar's fifth slot is
+ * not a link but "Ask", which opens the chat assistant (see MobileTabBar).
+ * Contact sits in the middle because it is the raised primary action; About,
+ * Pricing and AI Lab stay one tap away in the menu at the top of every page,
+ * which keeps every target in the bar thumb-sized.
+ *
+ * Every href here must match a SHELL_NAV entry exactly: a stale one (the bar
+ * once asked for /case-studies after Projects moved to /projects) is silently
+ * dropped, which pulled Contact off-centre and left an empty slot.
  */
-export const MOBILE_BAR_NAV: ShellNavItem[] = ["/", "/case-studies", "/contact", "/services", "/about"]
+export const MOBILE_BAR_NAV: ShellNavItem[] = ["/", "/projects", "/contact", "/services"]
   .map((href) => SHELL_NAV.find((item) => item.href === href))
   .filter((item): item is ShellNavItem => Boolean(item));
 

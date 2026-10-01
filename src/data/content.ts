@@ -22,17 +22,13 @@ import {
 } from "lucide-react";
 import { AI_LAB_TOOL_COUNT } from "./aiLab";
 import { NONPROFIT, PRICING, STARTER, aed, priceFor, priceLabel } from "./pricing";
+import { CONTACT } from "./contact";
 
 export { PRICING };
 
-export const CONTACT = {
-  whatsapp: "971543281995",
-  whatsappDisplay: "+971 54 328 1995",
-  email: "hi@xerxesduane.com",
-  location: "Dubai, UAE",
-  calendar: "https://zcal.co/xerxesduane/audit",
-  formspreeId: "xrednbek",
-};
+// CONTACT lives in its own dependency-free module so the edge endpoints can
+// import it without pulling this file's icon imports into their bundles.
+export { CONTACT };
 
 // The free-audit journey + what you actually receive — shared by the Contact
 // section and the Packages "Audit" card so the promise never drifts between them.
@@ -130,14 +126,14 @@ const SERVICE_DEFS: Service[] = [
     title: "AEO (Answer Engine Optimization)",
     tagline: "Be the answer, not a blue link.",
     description:
-      "Optimize your content so voice assistants and Google's AI Overviews quote you directly, with structured data, concise answers, and FAQ schema that win featured snippets and 'position zero'.",
+      "Structure your pages so an answer engine can parse them: question-led headings, the answer stated first, and markup that matches what the page shows. Aimed at being a candidate for the answer box, which is the engine's call to make.",
   },
   {
     icon: Sparkles,
     title: "GEO (Generative Engine Optimization)",
     tagline: "Get cited by ChatGPT & Perplexity.",
     description:
-      "Make your business the source AI engines recommend. I shape your content, entities, and citations so ChatGPT, Gemini, and Perplexity surface and recommend you when buyers ask.",
+      "Give ChatGPT, Gemini and Perplexity something accurate to draw on when your category comes up: sourced content, consistent entity signals, and presence in the places those engines actually read. Measured by how often and how accurately you are surfaced.",
   },
   {
     icon: Film,
@@ -337,6 +333,12 @@ export interface CaseStudy {
   category: string;
   challenge: string;
   summary: string;
+  /**
+   * SERP description, written to fit inside 160 characters. Without it the
+   * description is assembled from `category`, `client`, `location` and
+   * `summary`, which runs past the limit on every study and gets cut.
+   */
+  metaDescription?: string;
   approach: string[];
   relatedServices: string[];
   image?: string;
@@ -352,6 +354,8 @@ export interface CaseStudy {
 export const CASE_STUDIES: CaseStudy[] = [
   {
     slug: "blocktec-odoo-erp",
+    metaDescription:
+      "Odoo ERP for Blocktec Philippines, a construction materials business: enquiry, quotation, purchasing, inventory and project delivery in one system.",
     client: "Blocktec Philippines",
     location: "Philippines · Construction Materials",
     category: "Odoo ERP",
@@ -382,6 +386,8 @@ export const CASE_STUDIES: CaseStudy[] = [
   },
   {
     slug: "saladmaster-crm-web",
+    metaDescription:
+      "CRM, web and brand work for Saladmaster UAE, a premium cookware business: a clearer lead-to-demo journey built around how the sales team actually works.",
     client: "Saladmaster UAE",
     location: "UAE · Premium Cookware",
     category: "CRM, Web & Brand",
@@ -435,6 +441,8 @@ export const CASE_STUDIES: CaseStudy[] = [
   */
   {
     slug: "aya-home-spa-meta-ads",
+    metaDescription:
+      "Meta Ads for AYA Home Spa, a Dubai wellness business: a focused paid-social campaign built around strong creative, measured on reach and enquiries.",
     client: "AYA Home Spa",
     location: "Dubai · Wellness",
     category: "Meta Ads",
@@ -461,6 +469,8 @@ export const CASE_STUDIES: CaseStudy[] = [
   },
   {
     slug: "wellington-cash-for-cars-google-ads",
+    metaDescription:
+      "Google Ads for Wellington Cash for Cars, an automotive business: a search campaign built around high-intent queries, disciplined spend and conversions.",
     client: "Wellington Cash for Cars",
     location: "New Zealand · Automotive",
     category: "Google Ads",
@@ -688,7 +698,12 @@ export const PACKAGES = [
   {
     name: "The Systems Audit",
     price: "Free",
-    note: "for a limited time",
+    // Was "for a limited time". There is no deadline — the free audit is the
+    // standing primary CTA on every page of the site — so the scarcity was
+    // manufactured, and it sat oddly next to a page that elsewhere says "I'll
+    // tell you when you don't need me". The sibling notes are factual
+    // ("fixed price, not a deposit"); this one is now too.
+    note: "no obligation",
     pitch: "Start here",
     body: "A 60-minute diagnostic of your whole stack: website, leads, CRM, WhatsApp, spreadsheets, automation. You leave with a plain-English map of what's disconnected and a prioritised roadmap of what to fix first. No pressure, no lock-in.",
     cta: "Book your free systems audit",

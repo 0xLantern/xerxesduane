@@ -8,6 +8,13 @@ import { useReducedMotionPref } from "../../lib/usePrefs";
 const MARK = 18;
 
 /**
+ * A wordmark stands alone, with no label beside it, so it is set against the
+ * row's type rather than against the symbols: 20px puts "odoo"'s x-height at
+ * roughly the cap height of the 15.2px labels beside it.
+ */
+const WORDMARK = 20;
+
+/**
  * One brand mark, set to a common height rather than a common box.
  *
  * Sizing by height is what keeps the row level: the marks are cropped to their
@@ -21,15 +28,18 @@ const MARK = 18;
  * would otherwise vanish on the dark canvas — the generator works out the
  * replacement from real contrast against that canvas.
  *
- * `aria-hidden`, because the tool's name sits right beside it in text.
+ * `aria-hidden` throughout: for a symbol the tool's name sits right beside it
+ * in text, and for a wordmark the caller carries the name in an `sr-only`
+ * span, so in both cases the mark itself is decoration.
  */
 function ToolMark({ tool }: { tool: Tool }) {
+  const height = tool.wordmark ? WORDMARK : MARK;
   if (!tool.paths) {
     return (
       <span
         aria-hidden
-        style={{ height: MARK, width: MARK }}
-        className="grid shrink-0 place-items-center rounded-[0.3rem] bg-accent text-[0.55rem] font-extrabold leading-none text-accent-ink"
+        style={{ height, width: height }}
+        className="grid shrink-0 place-items-center rounded-[0.3rem] bg-[#a6410a] text-[0.55rem] font-extrabold leading-none text-white"
       >
         {tool.monogram}
       </span>
@@ -38,8 +48,8 @@ function ToolMark({ tool }: { tool: Tool }) {
   return (
     <svg
       viewBox={tool.viewBox}
-      width={Math.round(MARK * (tool.aspect ?? 1))}
-      height={MARK}
+      width={Math.round(height * (tool.aspect ?? 1))}
+      height={height}
       aria-hidden
       className="shrink-0 text-[color:var(--mark)] dark:text-[color:var(--mark-dark)]"
       style={
@@ -65,9 +75,12 @@ function ToolMark({ tool }: { tool: Tool }) {
  * loop seamless and marks the repeats `aria-hidden` + `inert` so each tool is
  * announced and tabbed once.
  *
- * It stops on hover, on keyboard focus inside it, under
- * `prefers-reduced-motion`, and on demand via the visible control — a
- * continuously moving element needs an off switch (WCAG 2.2.2).
+ * It stops on hover and under `prefers-reduced-motion`. The pause control that
+ * used to sit in a bordered cell on the right is gone at the owner's request,
+ * but not deleted: a continuously moving element needs an off switch that a
+ * keyboard can reach (WCAG 2.2.2), and hover is not one. It is hidden the way
+ * the skip link is — off-screen until it takes focus, then a real button over
+ * the strip's right edge. Tabbing to the strip is the only way to see it.
  */
 export default function ToolsStrip() {
   const reduced = useReducedMotionPref();
@@ -79,7 +92,7 @@ export default function ToolsStrip() {
       aria-label="Tools and platforms I work with"
       onFocusCapture={() => setInteracting(true)}
       onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setInteracting(false); }}
-      className="mb-4 board:mb-1.5 rounded-[2.1rem] bg-gradient-to-r from-canvas-sunk/30 via-wash/45 to-wash-strong/60 p-1.5"
+      className="mb-4 board:mb-1 rounded-[2.1rem] bg-gradient-to-r from-canvas-sunk/30 via-wash/45 to-wash-strong/60 p-1.5 board:p-1"
     >
       <div className="flex items-stretch overflow-hidden rounded-[1.7rem] border border-line bg-panel shadow-card">
         {/* Fixed label */}
@@ -103,10 +116,13 @@ export default function ToolsStrip() {
             {TOOLS.map((tool) => (
               <span
                 key={tool.label}
-                className="flex shrink-0 items-center gap-2.5 whitespace-nowrap border-e border-line-soft px-4 text-[0.9rem] sm:px-6 sm:text-[0.95rem] font-semibold text-fg"
+                className="flex shrink-0 items-center gap-2.5 whitespace-nowrap border-e border-line-soft px-4 text-[0.9rem] font-semibold text-fg sm:px-6 sm:text-[0.95rem]"
               >
                 <ToolMark tool={tool} />
-                {tool.label}
+                {/* Where the mark is the name, printing the label too said it
+                    twice. The name stays for a screen reader, which cannot
+                    read the artwork. */}
+                {tool.wordmark ? <span className="sr-only">{tool.label}</span> : tool.label}
               </span>
             ))}
           </Marquee>
@@ -123,20 +139,20 @@ export default function ToolsStrip() {
             className="pointer-events-none absolute inset-y-0 right-0 w-10"
             style={{ background: "linear-gradient(to left, rgb(var(--c-panel)), transparent)" }}
           />
-        </div>
 
-        {/* Pause control — hidden when the OS already asked for stillness. */}
-        {!reduced && (
-          <button
-            type="button"
-            onClick={() => setPaused((v) => !v)}
-            aria-pressed={paused}
-            aria-label={paused ? "Resume scrolling tools" : "Pause scrolling tools"}
-            className="grid shrink-0 place-items-center border-s border-line px-4 text-fg-faint transition hover:bg-panel-alt hover:text-accent-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
-          >
-            {paused ? <Play size={16} strokeWidth={2.2} /> : <Pause size={16} strokeWidth={2.2} />}
-          </button>
-        )}
+          {/* Off-screen until focused — see the note above. */}
+          {!reduced && (
+            <button
+              type="button"
+              onClick={() => setPaused((v) => !v)}
+              aria-pressed={paused}
+              aria-label={paused ? "Resume scrolling tools" : "Pause scrolling tools"}
+              className="sr-only focus-visible:not-sr-only focus-visible:absolute focus-visible:inset-y-1 focus-visible:right-1 focus-visible:z-10 focus-visible:grid focus-visible:w-10 focus-visible:place-items-center focus-visible:rounded-xl focus-visible:bg-panel-alt focus-visible:text-accent-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              {paused ? <Play size={16} strokeWidth={2.2} /> : <Pause size={16} strokeWidth={2.2} />}
+            </button>
+          )}
+        </div>
       </div>
     </section>
   );

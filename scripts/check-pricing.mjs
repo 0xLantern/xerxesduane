@@ -1,4 +1,6 @@
-// Asserts the rate card still joins to everything that reads it.
+// Asserts the data joins that fail silently: the rate card against everything
+// that reads it, and each service page's case-study reference against the
+// case studies themselves.
 //
 // Run: npm run check:pricing  (also runs as part of npm run build)
 //
@@ -128,11 +130,43 @@ for (const [where, text] of prose) {
   }
 }
 
+/* ---------------------------------------------------------------------------
+ * The same class of bug, one file over: a join between two data files that
+ * fails silently.
+ *
+ * `ServicePageData.caseStudyClient` has to match a `CASE_STUDIES` client name
+ * exactly, and `ServicePage` resolves it with `.find()`. A name that matches
+ * nothing yields `undefined`, and the page simply renders no proof block —
+ * looking, in the source, exactly like a page that has proof.
+ * `/ecommerce-development-dubai` named "Gilani Mobility", a portfolio client
+ * with no case study, and shipped that way.
+ *
+ * Checked here rather than in the type system because every type-level version
+ * costs more than it is worth: a `: CaseStudy[]` annotation widens `client` to
+ * `string`, `satisfies` alone does not stop that widening, and `as const` turns
+ * the array into a tuple whose members no longer share the optional `scope` and
+ * `stats` fields `ServicePage` reads.
+ * ------------------------------------------------------------------------- */
+{
+  const content = read("src/data/content.ts");
+  const services = read("src/data/servicePages.ts");
+  const clients = new Set([...content.matchAll(/^    client: "([^"]+)"/gm)].map((m) => m[1]));
+  const referenced = [...services.matchAll(/caseStudyClient: "([^"]+)"/g)].map((m) => m[1]);
+  check(clients.size > 0, "no CASE_STUDIES clients found — has content.ts moved?");
+  for (const name of referenced) {
+    check(
+      clients.has(name),
+      `a service page names caseStudyClient "${name}", which is not a CASE_STUDIES client — that page will render no proof`,
+    );
+  }
+  var caseStudyJoins = referenced.length;
+}
+
 if (fail.length) {
-  console.error(`Pricing check failed (${fail.length}):`);
+  console.error(`Data check failed (${fail.length}):`);
   for (const f of fail) console.error(`  - ${f}`);
   process.exit(1);
 }
 console.log(
-  `  pricing ok: ${card.length} services + ${packageMatches.length} packages, all joined, charity rate ${rate * 100}%`,
+  `  pricing ok: ${card.length} services + ${packageMatches.length} packages, all joined, charity rate ${rate * 100}%; ${caseStudyJoins} case-study reference(s) resolve`,
 );

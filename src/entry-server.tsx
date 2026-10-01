@@ -4,7 +4,7 @@ import { Writable } from "node:stream";
 import App from "./App";
 import { buildHeadTags } from "./lib/seo";
 
-export { allRoutes, routeLastmod } from "./lib/seo";
+export { allRoutes, routeLastmod, isIndexable } from "./lib/seo";
 
 /**
  * Called by scripts/prerender.mjs for each route at build time.

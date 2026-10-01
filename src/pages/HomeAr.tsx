@@ -64,7 +64,7 @@ export default function HomeAr() {
         }
       />
 
-      <PanelBoard rail cols="board:grid-cols-4">
+      <PanelBoard rail railLabel="تصفح الموقع" cols="board:grid-cols-4">
         <Panel
           icon={FlaskConical}
           label="مختبر الذكاء الاصطناعي"

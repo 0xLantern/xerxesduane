@@ -149,13 +149,46 @@ panel says so, WhatsApp and the audit link still working.
 Rename it in one place: `NAME_EN` / `NAME_AR` in `src/data/assistant.ts`, which
 holds every string the widget shows in both languages.
 
+### The ministry assistant
+
+The unlisted `/ministry` page gets its own assistant instead: the same widget
+(`variant="ministry"`, set in `App.tsx`), talking to `api/ministry-assistant.ts`,
+which is grounded in that one page and nothing else (`api/_ministryContext.ts`).
+The business assistant never reads `/ministry`, and this one never reads a
+business page. It speaks about the story, the ways to serve and how to pray or
+partner; it never promises anything on Xerxes's behalf, gives no giving details
+beyond the support inbox, and points business questions to the main site. Its
+strings are `MINISTRY_ASSISTANT` in `src/data/assistant.ts`. Same model key and
+rate limiter, so it needs no extra setup.
+
+## Share cards
+
+The image WhatsApp, Messenger, LinkedIn, X and Slack show for a shared link is
+a 1200×630 card per page in `public/brand/og/`, in the site's own type, palette
+and portrait, with an Arabic card for every Arabic page. The unlisted
+/ministry has its own card at `public/ministry/share.jpg`, under the same
+noindex header as the page. `npm run og` renders
+them all in Chromium (`npm run og -- home pricing` for just some); the copy for
+each card lives at the top of `scripts/generate-og.mjs`. After changing one,
+bump `OG_IMAGE_VERSION` in `src/lib/seo.ts`, because the platforms cache these
+by URL for weeks. `npm run build` fails if a page's card is missing, isn't
+1200×630, is labelled with the wrong type, or is over 300 KB (WhatsApp can drop
+larger previews).
+
 ## Notes
 
 - The contact form posts to Formspree; the same details also compose a
   pre-filled WhatsApp message. The floating button in the corner is the
-  assistant now — WhatsApp moved inside it. Booking goes to zcal.
+  assistant now — WhatsApp moved inside it. On phones and tablets that button
+  is hidden and the bottom bar's "Ask" slot opens the same chat. Booking goes
+  to zcal.
 - Analytics (GA4 + Clarity) stay denied until the visitor accepts the cookie
   notice.
 - Motion respects `prefers-reduced-motion` everywhere: the tools strip stops,
-  the project reel opens as a list, and the beams in the services diagram hold
-  still.
+  the project reel opens as a list, the beams in the services diagram hold
+  still, and the custom cursor and cursor-reactive dot field switch off.
+- On a mouse or trackpad, an animated cursor (`fx/Cursor.tsx`) trails the
+  pointer, and a dot field behind the page (`shell/CursorField.tsx`) bends and
+  warms around it and ripples on click. `data-cursor="view|play|open|drag"` on
+  an element swaps the ring for a labelled disc; `data-cursor="hidden"` gives
+  it the native cursor. Touch devices get neither.

@@ -1,21 +1,19 @@
 /* Self-hosted fonts (latin subset) — removes the Google Fonts round-trip */
+/*
+ * Only the families the site actually sets are declared here. Inter, Fraunces
+ * and Space Mono are still named in the stacks below them as fallbacks, but
+ * their @font-face rules are gone on purpose: a fallback declared as a webfont
+ * is not a fallback, it is a second download. Chrome was fetching
+ * inter-600.woff2 (47KB) on every route and four Inter weights plus Space Mono
+ * on /ar (262KB of fonts on one page) to stand in for glyphs it then never
+ * rendered in them - measured with CSS.getPlatformFontsForNode: zero elements
+ * were painting in Inter. Named without an @font-face they resolve to a local
+ * copy when the visitor has one and cost nothing when they do not, which is
+ * what a metric-compatible fallback is for.
+ *
+ * The woff2 files are still in public/fonts/ rather than deleted.
+ */
 @font-face { font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 200 800; font-display: swap; src: url('/fonts/plus-jakarta-sans-var.woff2') format('woff2'); }
-@font-face { font-family: 'Fraunces'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/fraunces-400.woff2') format('woff2'); }
-@font-face { font-family: 'Fraunces'; font-style: normal; font-weight: 500; font-display: swap; src: url('/fonts/fraunces-500.woff2') format('woff2'); }
-@font-face { font-family: 'Fraunces'; font-style: normal; font-weight: 600; font-display: swap; src: url('/fonts/fraunces-600.woff2') format('woff2'); }
-@font-face { font-family: 'Fraunces'; font-style: italic; font-weight: 400; font-display: swap; src: url('/fonts/fraunces-italic-400.woff2') format('woff2'); }
-@font-face { font-family: 'Space Mono'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/space-mono-400.woff2') format('woff2'); }
-@font-face { font-family: 'Space Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url('/fonts/space-mono-700.woff2') format('woff2'); }
-@font-face { font-family: 'Space Mono'; font-style: normal; font-weight: 600; font-display: swap; src: url('/fonts/space-mono-700.woff2') format('woff2'); }
-@font-face { font-family: 'Space Mono'; font-style: normal; font-weight: 700; font-display: swap; src: url('/fonts/space-mono-700.woff2') format('woff2'); }
-@font-face { font-family: 'Space Mono'; font-style: italic; font-weight: 400; font-display: swap; src: url('/fonts/space-mono-italic-400.woff2') format('woff2'); }
-@font-face { font-family: 'Space Mono'; font-style: italic; font-weight: 500; font-display: swap; src: url('/fonts/space-mono-italic-700.woff2') format('woff2'); }
-@font-face { font-family: 'Space Mono'; font-style: italic; font-weight: 600; font-display: swap; src: url('/fonts/space-mono-italic-700.woff2') format('woff2'); }
-@font-face { font-family: 'Space Mono'; font-style: italic; font-weight: 700; font-display: swap; src: url('/fonts/space-mono-italic-700.woff2') format('woff2'); }
-@font-face { font-family: 'Inter'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/inter-400.woff2') format('woff2'); }
-@font-face { font-family: 'Inter'; font-style: normal; font-weight: 500; font-display: swap; src: url('/fonts/inter-500.woff2') format('woff2'); }
-@font-face { font-family: 'Inter'; font-style: normal; font-weight: 600; font-display: swap; src: url('/fonts/inter-600.woff2') format('woff2'); }
-@font-face { font-family: 'Inter'; font-style: normal; font-weight: 700; font-display: swap; src: url('/fonts/inter-700.woff2') format('woff2'); }
 @font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/jetbrains-mono-400.woff2') format('woff2'); }
 @font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url('/fonts/jetbrains-mono-500.woff2') format('woff2'); }
 @font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 600; font-display: swap; src: url('/fonts/jetbrains-mono-600.woff2') format('woff2'); }
@@ -86,7 +84,7 @@ html[data-theme-vt="active"]::view-transition-new(root) {
     /* ---- ink: deep navy headings, muted blue-grey body ---- */
     --c-fg: 17 34 68;
     --c-fg-soft: 74 90 116;
-    --c-fg-faint: 94 109 135;
+    --c-fg-faint: 80 95 121;
     --c-fg-on-solid: 255 255 255;
 
     /* ---- hairlines ---- */
@@ -552,6 +550,82 @@ html[data-theme-vt="active"]::view-transition-new(root) {
     overflow: hidden;
   }
 
+  /*
+   * A paper band whose colour does not follow the theme.
+   *
+   * The Process section is a deliberate cream interlude: `bg-[#E8E1D2]` is
+   * hard-coded, so the surface is the same in both themes. Its text was not.
+   * `ink`, `cream` and `gold` are legacy aliases pointing at theme tokens that
+   * invert, and `text-ink` resolves to `--c-canvas-sunk` — a *surface* colour,
+   * which in the light theme is cream. So on the cream band, in the site's
+   * default theme, the heading, the subtitle and all five process steps
+   * rendered cream-on-cream at 1.08:1. Measured on every text node in the band:
+   * only the eyebrow and the accent word cleared AA, and in dark mode exactly
+   * those two failed instead.
+   *
+   * Pinning the tokens inside the band fixes every utility in it at once and
+   * leaves the markup alone. The values are the light theme's, because the
+   * paper is always light.
+   */
+  .band-paper {
+    --c-canvas: 245 243 236;
+    --c-canvas-sunk: 17 34 68;
+    --c-fg: 17 34 68;
+    --c-fg-soft: 74 90 116;
+    --c-fg-faint: 80 95 121;
+    --c-fg-on-solid: 255 255 255;
+    --c-line: 216 221 228;
+    --c-line-soft: 232 235 239;
+    --c-accent: 249 112 22;
+    --c-accent-soft: 253 236 225;
+    --c-accent-deep: 166 65 10;
+    --c-accent-hover: 154 71 8;
+    background-color: #e8e1d2;
+  }
+
+  /*
+   * An inverted panel: a card whose surface is the page's *foreground* colour,
+   * so it reads as a dark slab on the light theme and a light one on the dark
+   * theme. `bg-cream` + `text-ink` already pair correctly for that, because
+   * both legacy aliases flip together.
+   *
+   * The accent does not. `--c-accent-deep` is tuned to sit on the page, so on
+   * an inverted surface it lands the wrong way round: rust on navy at 2.53:1 in
+   * light, peach on cream at 1.64:1 in dark. Swapping the accent per theme
+   * inside the panel puts it back on the right side of the surface — 10.4:1 and
+   * 6.1:1 — without touching a single utility class in the markup.
+   */
+  .panel-invert {
+    --c-accent-deep: 255 171 128;
+    --c-accent: 255 171 128;
+  }
+  :root[data-theme="dark"] .panel-invert {
+    --c-accent-deep: 166 65 10;
+    --c-accent: 166 65 10;
+  }
+
+  /*
+   * A solid accent slab that does not follow the theme.
+   *
+   * The service-page CTA band used `bg-gold`, which is `--c-accent-deep` — a
+   * colour tuned to be read *as text on the page*, not used as a fill. In the
+   * dark theme it is a pale peach, so the band became a light slab while its
+   * foreground (`--c-accent-ink`, white in both themes) stayed white: 1.64:1.
+   * In the light theme it was a rust slab carrying dimmed page-ink at 2.60:1.
+   * Neither theme worked.
+   *
+   * Pinning it makes the band a stable brand moment, the way the navy buttons
+   * already are, and white on this rust is 5.11:1 at every size.
+   */
+  .band-accent {
+    --c-accent-deep: 166 65 10;
+    --c-accent: 249 112 22;
+    --c-accent-ink: 255 255 255;
+    --c-canvas-sunk: 17 34 68;
+    --c-fg: 255 255 255;
+    background-color: rgb(166 65 10);
+  }
+
   .eyebrow {
     @apply inline-flex items-center gap-2 uppercase text-accent-deep;
     font-family: theme("fontFamily.display");
@@ -777,6 +851,36 @@ html[data-theme-vt="active"]::view-transition-new(root) {
   }
 }
 
+/* Canvas lines (CanvasLines.tsx). The drift is a transform on the <svg>, so
+   it stays on the compositor; it starts and ends at rest, so the reduced-motion
+   rule (which runs every animation once, instantly) leaves it untouched. The
+   sparks are dashes on paths normalised to pathLength="1". */
+@keyframes canvas-lines-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50% { transform: translate3d(-1.4%, 1%, 0) rotate(0.8deg); }
+}
+/* A 0.08 dash in a 2.0 cycle: it crosses the line in the first half of the
+   cycle and waits off the end of the path for the second. */
+@keyframes canvas-lines-spark {
+  from { stroke-dashoffset: 0.08; }
+  to { stroke-dashoffset: -1.92; }
+}
+@keyframes canvas-lines-orbit {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -1; }
+}
+.canvas-lines {
+  animation: canvas-lines-drift 48s ease-in-out infinite;
+}
+.canvas-lines-spark {
+  stroke-dasharray: 0.08 1.92;
+  animation: canvas-lines-spark 13s linear infinite;
+}
+.canvas-lines-orbit {
+  stroke-dasharray: 0.07 0.93;
+  animation: canvas-lines-orbit 26s linear infinite;
+}
+
 /* Partner-section cursor thumbnails: fade out + scale down over 1s */
 @keyframes studio-thumb-out {
   0% { opacity: 1; }
@@ -853,4 +957,23 @@ html[data-theme-vt="active"]::view-transition-new(root) {
 }
 @media (prefers-reduced-motion: reduce) {
   .showcase-overlay .overlay-panel { animation: backdrop-enter 180ms ease-out; }
+}
+
+/*
+ * Frosted content cards: let the mesh gradient (MeshBackground) glow through.
+ * Translucency only, no backdrop-filter. The gradient behind is already a
+ * blur, so it reads as frosted glass, and a real backdrop blur over an
+ * animated canvas would re-blur every card on every frame.
+ * Floating surfaces (overlays, dialogs) stay opaque.
+ * Contrast: white at 0.74 over the darkest light-mode gradient colour is
+ * ~#f4f9fd, and dark panel over the brightest dark colour stays near
+ * #15243f, so card text keeps its AA margins.
+ */
+.bg-panel.shadow-card,
+.bg-panel.rounded-card {
+  --tw-bg-opacity: 0.74;
+}
+.overlay-panel .bg-panel,
+[role="dialog"] .bg-panel {
+  --tw-bg-opacity: 1;
 }

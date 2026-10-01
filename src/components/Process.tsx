@@ -8,7 +8,7 @@ export default function Process() {
   return (
     <section
       id="process"
-      className="relative scroll-mt-24 overflow-hidden border-y border-ink/10 bg-[#E8E1D2] py-20 sm:py-28"
+      className="band-paper relative scroll-mt-24 overflow-hidden border-y border-ink/10 py-20 sm:py-28"
     >
       {/* dotted-orbit motif, ink-toned for the light band */}
       <DottedOrbit
@@ -51,7 +51,7 @@ export default function Process() {
               variants={fadeUp}
               className="relative rounded-2xl border border-ink/10 bg-white/50 p-5 backdrop-blur-sm transition-transform duration-300 ease-smooth hover:-translate-y-1"
             >
-              <span className="relative z-10 flex h-9 w-9 items-center justify-center rounded-full bg-ink font-mono text-sm font-semibold text-gold ring-4 ring-[#E8E1D2]">
+              <span className="relative z-10 flex h-9 w-9 items-center justify-center rounded-full bg-ink font-mono text-sm font-semibold text-accent ring-4 ring-[#E8E1D2]">
                 {step.no}
               </span>
               <h3 className="mt-4 text-lg !text-ink">{step.title}</h3>

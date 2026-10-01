@@ -9,7 +9,15 @@
  * Deliberately absent: any availability or status claim. The header says what
  * the assistant *is* and where its answers come from, not that anyone is
  * "online" — that would be a promise the site can't keep.
+ *
+ * Two assistants share the widget. The site assistant answers from the
+ * business pages; the ministry assistant exists only on /ministry and answers
+ * from that page alone (see api/ministry-assistant.ts). `assistantConfig`
+ * picks between them.
  */
+import { CONTACT } from "./contact";
+
+export type AssistantVariant = "site" | "ministry";
 
 export interface AssistantCopy {
   /** Header title. */
@@ -26,6 +34,7 @@ export interface AssistantCopy {
   sendLabel: string;
   /** Persistent handoff row above the composer. */
   whatsapp: string;
+  /** The second handoff: the audit booking, or email on /ministry. */
   book: string;
   /** Shown under the composer. */
   disclaimer: string;
@@ -104,4 +113,68 @@ export function whatsappText(locale: "en" | "ar", question?: string): string {
   return q
     ? `Hi Xerxes, I was on your site and asked: "${q}"`
     : "Hi Xerxes, I'd like to learn more.";
+}
+
+/**
+ * The ministry assistant, on /ministry only. English, because the page is.
+ *
+ * No persona name: it is plainly "the assistant on this page", so nobody
+ * mistakes it for Xerxes or for a pastor they are confiding in.
+ */
+export const MINISTRY_ASSISTANT: AssistantCopy = {
+  name: "Ministry assistant",
+  role: "AI assistant · answers from this page",
+  greeting:
+    "Hi! I can tell you about Xerxes's ministry: his story, how he serves churches and leaders, and how to pray or partner with him. " +
+    "For anything I can't answer, WhatsApp is right below.",
+  prompts: ["How can Xerxes serve our church?", "How did he come to Dubai?", "How can I pray or partner?"],
+  openLabel: "Ask about Xerxes's ministry",
+  closeLabel: "Close the assistant",
+  placeholder: "Ask about the ministry…",
+  sendLabel: "Send",
+  whatsapp: "WhatsApp Xerxes",
+  book: "Email Xerxes",
+  disclaimer: "Answers come from this page and can be wrong. Chats aren't stored.",
+  error: "That didn't go through. Try again, or message Xerxes on WhatsApp.",
+  thinking: "Reading the page…",
+  replied: "Assistant replied",
+  restart: "Start over",
+};
+
+function ministryWhatsappText(question?: string): string {
+  const q = question?.trim().slice(0, 180);
+  return q
+    ? `Hi Xerxes, I was on your ministry page and asked: "${q}"`
+    : "Hi Xerxes, I saw your ministry page and would love to connect.";
+}
+
+export interface AssistantConfig {
+  copy: AssistantCopy;
+  /** The endpoint the chat streams from. */
+  endpoint: string;
+  /** Text the WhatsApp handoff opens with, carrying the last question. */
+  whatsappText: (question?: string) => string;
+  /** The second handoff button. */
+  secondary: { href: string; icon: "calendar" | "mail"; external: boolean };
+}
+
+export function assistantConfig(variant: AssistantVariant, locale: "en" | "ar"): AssistantConfig {
+  if (variant === "ministry") {
+    return {
+      copy: MINISTRY_ASSISTANT,
+      endpoint: "/api/ministry-assistant",
+      whatsappText: ministryWhatsappText,
+      secondary: {
+        href: `mailto:${CONTACT.email}?subject=${encodeURIComponent("Serving together")}`,
+        icon: "mail",
+        external: false,
+      },
+    };
+  }
+  return {
+    copy: assistantCopy(locale),
+    endpoint: "/api/assistant",
+    whatsappText: (question) => whatsappText(locale, question),
+    secondary: { href: CONTACT.calendar, icon: "calendar", external: true },
+  };
 }

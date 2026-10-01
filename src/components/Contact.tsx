@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { m } from "framer-motion";
 import { useForm, ValidationError } from "@formspree/react";
 import { ArrowUpRight, CalendarCheck, Check, Mail, MapPin, MessageCircle } from "lucide-react";
@@ -30,6 +30,70 @@ export default function Contact({ compact = false }: { compact?: boolean } = {})
     }
   }, [state.succeeded, source.page]);
 
+  // The funnel only had its last step. Without a start and a failure event
+  // there is no way to tell "nobody opens the form" apart from "people open it
+  // and give up", which are opposite problems with opposite fixes.
+  //
+  // Every event below carries field *names* and error *codes* only. No value a
+  // visitor typed, and no message text, is ever passed to analytics.
+  const started = useRef(false);
+  const onFirstFocus = useCallback(() => {
+    if (started.current) return;
+    started.current = true;
+    track("form_start", { form_id: "audit", page: source.page });
+  }, [source.page]);
+
+  // `invalid` does not bubble, so this has to run on the capture phase to see
+  // a child field fail the browser's own required/type checks.
+  const onFieldInvalid = useCallback(
+    (e: React.FormEvent<HTMLFormElement>) => {
+      // The handler sits on the form, so `target` is the field that failed.
+      const el = e.target as HTMLInputElement | HTMLTextAreaElement;
+      const field = el.name;
+      const validity = el.validity;
+      track("form_error", {
+        form_id: "audit",
+        page: source.page,
+        source: "browser",
+        field,
+        reason: validity.valueMissing ? "missing" : validity.typeMismatch ? "format" : "other",
+      });
+    },
+    [source.page],
+  );
+
+  // Formspree rejections, which land after the browser has already passed the
+  // submission. Codes are Formspree's own enum values, not message text.
+  useEffect(() => {
+    if (!state.errors) return;
+    const fields = state.errors.getAllFieldErrors().map(([field]) => String(field));
+    const codes = [
+      ...state.errors.getFormErrors().map((err) => err.code),
+      ...state.errors.getAllFieldErrors().flatMap(([, errs]) => errs.map((err) => err.code)),
+    ];
+    track("form_error", {
+      form_id: "audit",
+      page: source.page,
+      source: "server",
+      fields: fields.join(","),
+      codes: codes.join(","),
+    });
+  }, [state.errors, source.page]);
+
+  // Formspree's <ValidationError> renders a bare <div> — no role, no aria-live,
+  // and no association to the input it describes (verified by reading
+  // @formspree/react's bundled source). So a screen-reader user got no
+  // announcement when a submission was rejected, and no way to tell which
+  // field the message belonged to. It does spread extra props onto that div,
+  // which is enough to fix both from here.
+  const fieldHasError = (name: string) =>
+    Boolean(state.errors && state.errors.getFieldErrors(name).length > 0);
+
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    track("form_submit", { form_id: "audit", page: source.page });
+    void handleSubmit(e);
+  };
+
   const whatsappMessage = [
     `Hi Xerxes, I'd like to book a free systems audit.`,
     ``,
@@ -54,26 +118,26 @@ export default function Contact({ compact = false }: { compact?: boolean } = {})
   return (
     <section id="contact" className={compact ? "scroll-mt-24" : "scroll-mt-24 py-20 sm:py-28"}>
       <div className="container-bl">
-        <div className={`glass border-glow grid overflow-hidden rounded-3xl lg:grid-cols-2 ${compact ? "gap-4 p-4 lg:gap-6" : "gap-10 p-7 sm:p-10 lg:gap-14"}`}>
+        <div className={`glass border-glow grid overflow-hidden rounded-3xl lg:grid-cols-2 ${compact ? "gap-4 p-4 board:grid-cols-[1.1fr_0.9fr] lg:gap-6" : "gap-10 p-7 sm:p-10 lg:gap-14"}`}>
           {/* Left: pitch + contacts */}
           <Reveal>
             <span className="eyebrow">
               <span className="h-px w-6 bg-gold/60" aria-hidden />
               Free Business Systems Audit
             </span>
-            <h2 className={compact ? "mt-2 board:mt-1.5 text-2xl" : "mt-4 text-3xl sm:text-4xl"}>
+            <h2 className={compact ? "mt-2 board:mt-1.5 text-2xl board:text-xl" : "mt-4 text-3xl sm:text-4xl"}>
               Just curious what{" "}
               <span className="text-gradient-gold">I'd say?</span>
             </h2>
-            <p className={compact ? "mt-2 board:mt-1.5 max-w-md text-sm text-muted" : "mt-4 max-w-md text-muted"}>
+            <p className={compact ? "mt-2 board:mt-1.5 max-w-md text-sm text-muted board:text-[0.83rem] board:leading-[1.45]" : "mt-4 max-w-md text-muted"}>
               60 minutes, zero pressure. You walk away with a clear map of your
               systems and three quick wins you can use right away.
             </p>
 
             <p className={`font-display text-xs font-extrabold uppercase tracking-[0.16em] text-accent-deep board:text-[0.68rem] ${compact ? "mt-4 board:mt-2.5" : "mt-8"}`}>What happens next</p>
-            <ol className={compact ? "mt-2 board:mt-1.5 grid gap-1 board:gap-0.5 sm:grid-cols-2" : "mt-3 space-y-4"}>
+            <ol className={compact ? "mt-2 board:mt-1.5 grid gap-1 board:gap-0.5 sm:grid-cols-2 board:grid-cols-1" : "mt-3 space-y-4"}>
               {AUDIT_STEPS.map((s, i) => (
-                <li key={s} className="flex gap-3 text-sm text-cream-dim">
+                <li key={s} className="flex gap-3 text-sm text-cream-dim board:text-[0.8rem] board:leading-[1.35]">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-ink">
                     {i + 1}
                   </span>
@@ -84,9 +148,9 @@ export default function Contact({ compact = false }: { compact?: boolean } = {})
 
             <div className={`rounded-2xl border border-cream/10 bg-ink-deep/40 ${compact ? "mt-3 board:mt-2 p-3 board:p-2.5" : "mt-6 p-4"}`}>
               <p className="font-display text-xs board:text-[0.68rem] font-extrabold uppercase tracking-[0.16em] text-accent-deep">You walk away with</p>
-              <ul className={compact ? "mt-2 board:mt-1.5 grid gap-1 board:gap-0.5 sm:grid-cols-2" : "mt-2.5 space-y-1.5"}>
+              <ul className={compact ? "mt-2 board:mt-1.5 grid gap-1 board:gap-0.5 sm:grid-cols-2 board:grid-cols-1" : "mt-2.5 space-y-1.5"}>
                 {AUDIT_DELIVERABLES.map((d) => (
-                  <li key={d} className="flex items-start gap-2 text-sm text-cream-dim">
+                  <li key={d} className="flex items-start gap-2 text-sm text-cream-dim board:text-[0.8rem] board:leading-[1.35]">
                     <Check size={14} className="mt-0.5 shrink-0 text-gold" />
                     {d}
                   </li>
@@ -98,7 +162,7 @@ export default function Contact({ compact = false }: { compact?: boolean } = {})
               href={CONTACT.calendar}
               target="_blank"
               rel="noopener noreferrer"
-              className={`inline-flex items-center gap-2.5 rounded-full border border-gold/30 bg-gold/10 px-5 py-3 text-sm font-semibold text-gold transition-colors hover:bg-gold/15 ${compact ? "mt-4 board:mt-2.5" : "mt-8"}`}
+              className={`inline-flex items-center gap-2.5 rounded-full border border-gold/30 bg-gold/10 px-5 py-3 text-sm font-semibold text-gold transition-colors hover:bg-gold/15 board:py-2 board:text-[0.8rem] ${compact ? "mt-4 board:mt-2.5" : "mt-8"}`}
             >
               <CalendarCheck size={17} />
               Prefer to pick a time? Book instantly
@@ -132,7 +196,7 @@ export default function Contact({ compact = false }: { compact?: boolean } = {})
 
           {/* Right: form, or success state */}
           {state.succeeded ? (
-            <div className="flex flex-col justify-center rounded-2xl bg-ink-deep/40 p-8 text-center">
+            <div role="status" aria-live="polite" className="flex flex-col justify-center rounded-2xl bg-ink-deep/40 p-8 text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft text-accent-deep">
                 <CalendarCheck size={24} />
               </div>
@@ -157,7 +221,9 @@ export default function Contact({ compact = false }: { compact?: boolean } = {})
             <m.form
               action={`https://formspree.io/f/${CONTACT.formspreeId}`}
               method="POST"
-              onSubmit={handleSubmit}
+              onSubmit={onSubmit}
+              onFocusCapture={onFirstFocus}
+              onInvalidCapture={onFieldInvalid}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
@@ -221,11 +287,14 @@ export default function Contact({ compact = false }: { compact?: boolean } = {})
                   onChange={update("email")}
                   className={field}
                   placeholder="you@yourbusiness.ae"
+                  aria-invalid={fieldHasError("email") || undefined}
+                  aria-describedby="email-error"
                 />
                 <ValidationError
                   field="email"
-                  prefix="Email"
                   errors={state.errors}
+                  id="email-error"
+                  role="alert"
                   className="mt-1 text-xs text-gold"
                 />
               </div>
@@ -242,8 +311,16 @@ export default function Contact({ compact = false }: { compact?: boolean } = {})
                   onChange={update("phone")}
                   className={field}
                   placeholder="+971 5X XXX XXXX"
+                  aria-invalid={fieldHasError("phone") || undefined}
+                  aria-describedby="phone-error"
                 />
-                <ValidationError field="phone" prefix="Phone" errors={state.errors} className="mt-1 text-xs text-gold" />
+                <ValidationError
+                  field="phone"
+                  errors={state.errors}
+                  id="phone-error"
+                  role="alert"
+                  className="mt-1 text-xs text-gold"
+                />
               </div>
               <div>
                 <label htmlFor="message" className="mb-1 block text-xs text-muted board:mb-0.5">
@@ -259,7 +336,7 @@ export default function Contact({ compact = false }: { compact?: boolean } = {})
                   placeholder="Our site doesn't bring in leads and our invoicing is a mess…"
                 />
               </div>
-              <ValidationError errors={state.errors} className="text-xs text-gold" />
+              <ValidationError errors={state.errors} role="alert" className="text-xs text-gold" />
               <button
                 type="submit"
                 disabled={state.submitting}

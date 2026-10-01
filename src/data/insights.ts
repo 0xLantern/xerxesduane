@@ -13,11 +13,27 @@ export interface InsightPost {
   description: string;
   /** ISO date, YYYY-MM-DD. */
   date: string;
+  /**
+   * ISO date of a meaningful revision — new facts, corrected figures, a
+   * rewritten section. Absent unless that happened: `dateModified` equal to
+   * `datePublished` on every post tells a reader and a crawler nothing, and
+   * bumping it for a typo is the kind of freshness signal that earns distrust.
+   */
+  updated?: string;
   author: string;
   readingMinutes: number;
   body: Block[];
   /** Service-page slugs to cross-link from this post (internal linking). */
   relatedServices?: string[];
+  /**
+   * Primary sources for the checkable third-party facts in the post — the
+   * vendor's own documentation or pricing page, never a blog summarising it.
+   *
+   * Only posts that assert something a reader could verify carry these. A post
+   * whose content is my own judgement says so in the prose instead; inventing a
+   * citation for an opinion is worse than having none.
+   */
+  sources?: { label: string; url: string; note?: string }[];
 }
 
 export const INSIGHTS: InsightPost[] = [
@@ -263,6 +279,33 @@ export const INSIGHTS: InsightPost[] = [
   },
   {
     slug: "whatsapp-automation-not-spam-dubai",
+    sources: [
+      {
+        label: "WhatsApp Business Messaging Policy",
+        url: "https://business.whatsapp.com/policy",
+        note: "The opt-in requirement and what counts as unsolicited.",
+      },
+      {
+        label: "WhatsApp Cloud API documentation",
+        url: "https://developers.facebook.com/docs/whatsapp/cloud-api",
+        note: "The official platform, as opposed to the grey-market tools.",
+      },
+      {
+        label: "Conversation types",
+        url: "https://developers.facebook.com/docs/whatsapp/conversation-types",
+        note: "The 24-hour customer service window.",
+      },
+      {
+        label: "Message templates",
+        url: "https://developers.facebook.com/docs/whatsapp/business-management-api/message-templates",
+        note: "What has to be pre-approved before you can start a conversation.",
+      },
+      {
+        label: "Messaging limits",
+        url: "https://developers.facebook.com/docs/whatsapp/messaging-limits",
+        note: "How quality rating raises or throttles your sending limits.",
+      },
+    ],
     title: "WhatsApp lead automation that doesn't feel like spam",
     description:
       "The difference between WhatsApp spam and helpful automation: opt-in, Cloud API setup, smart follow-up, and where AI should hand off to humans.",
@@ -370,6 +413,13 @@ export const INSIGHTS: InsightPost[] = [
   },
   {
     slug: "website-cost-dubai",
+    sources: [
+      {
+        label: "My own published prices",
+        url: "/pricing",
+        note: "The starting figures I quote, rather than a market average nobody can check.",
+      },
+    ],
     title: "How much does a website really cost in Dubai? (2026)",
     description:
       "An honest 2026 website cost guide for Dubai: AED ranges by type, what drives price, forgotten costs, and how to avoid overpaying.",
@@ -379,7 +429,7 @@ export const INSIGHTS: InsightPost[] = [
     body: [
       {
         type: "p",
-        text: "Short answer: a professional website in Dubai usually costs anywhere from around AED 1,500 for a simple landing page to AED 50,000+ for a complex custom build, with most small-business sites landing in the AED 5,000–15,000 range. The honest longer answer, what you are actually paying for and where people quietly overpay, is below.",
+        text: "Short answer: from what I quote and what I see quoted in Dubai, a professional website runs from around AED 1,500 for a simple landing page to AED 50,000+ for a complex custom build, with most small-business sites landing in the AED 5,000–15,000 range. These are my figures, not a surveyed average — my own published starting prices are on the pricing page. The honest longer answer, what you are actually paying for and where people quietly overpay, is below.",
       },
       { type: "h2", text: "What you are actually paying for" },
       {
@@ -495,6 +545,18 @@ export const INSIGHTS: InsightPost[] = [
   },
   {
     slug: "odoo-enterprise-vs-community",
+    sources: [
+      {
+        label: "Odoo editions comparison",
+        url: "https://www.odoo.com/page/editions",
+        note: "Odoo's own feature-by-feature split between Community and Enterprise.",
+      },
+      {
+        label: "Odoo pricing",
+        url: "https://www.odoo.com/pricing",
+        note: "Current per-user licence pricing, direct from Odoo.",
+      },
+    ],
     title: "Do you need Odoo Enterprise, or is Community enough?",
     description:
       "A no-spin guide to choosing between Odoo Community and Enterprise for a small business: what you get, what you give up, and how to decide without overpaying.",
@@ -593,9 +655,21 @@ export const INSIGHTS: InsightPost[] = [
   },
   {
     slug: "how-much-does-odoo-cost-dubai",
+    sources: [
+      {
+        label: "Odoo pricing",
+        url: "https://www.odoo.com/pricing",
+        note: "The licence half of the number. Implementation is quoted separately.",
+      },
+      {
+        label: "Odoo editions comparison",
+        url: "https://www.odoo.com/page/editions",
+        note: "What the paid edition adds over the free one.",
+      },
+    ],
     title: "How much does Odoo cost for a small business in Dubai?",
     description:
-      "A plain-English breakdown of what Odoo actually costs a Dubai small business, licenses, implementation, and the hidden costs, so you can budget without surprises.",
+      "A plain-English breakdown of what Odoo actually costs a Dubai small business: licences, implementation and the costs nobody mentions up front.",
     date: "2026-06-01",
     author: "Xerxes Duane",
     readingMinutes: 6,
@@ -654,6 +728,20 @@ export const INSIGHTS: InsightPost[] = [
   },
   {
     slug: "odoo-vs-zoho-uae",
+    sources: [
+      {
+        label: "Odoo pricing",
+        url: "https://www.odoo.com/pricing",
+      },
+      {
+        label: "Zoho CRM pricing",
+        url: "https://www.zoho.com/crm/pricing/",
+      },
+      {
+        label: "Zoho One pricing",
+        url: "https://www.zoho.com/one/pricing/",
+      },
+    ],
     title: "Odoo vs Zoho for UAE small businesses",
     description:
       "A practical comparison of Odoo and Zoho for small businesses in the UAE, where each one wins, where each one hurts, and how to choose without the sales spin.",

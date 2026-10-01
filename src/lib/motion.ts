@@ -11,6 +11,30 @@ export const fadeUp: Variants = {
   },
 };
 
+/**
+ * The entrance for anything above the fold — the page header and the home hero.
+ *
+ * `fadeUp` starts at `opacity: 0`, and framer writes a variant's initial state
+ * into the server render. So the prerendered HTML shipped the `h1` as
+ * `style="opacity:0"` and the largest contentful element on every route was
+ * invisible until React had hydrated and run a 700ms fade. Measured on
+ * `/seo-dubai`: first contentful paint at 160ms, the `h1` still at opacity 0 at
+ * 613ms, and LCP recorded at 1348ms — eight times later than the text was
+ * actually painted. A visitor whose JS is slow or blocked saw an empty header.
+ *
+ * This keeps the movement and drops the fade, so the text is legible in the
+ * prerendered HTML and from the first paint. `y` is a transform, so it neither
+ * hides the element from LCP nor shifts layout around it.
+ */
+export const riseIn: Variants = {
+  hidden: { opacity: 1, y: 14 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: EASE },
+  },
+};
+
 export const fade: Variants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { duration: 0.8, ease: EASE } },

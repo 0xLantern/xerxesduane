@@ -1,14 +1,18 @@
+import { Phone } from "lucide-react";
 import { MOBILE_BAR_NAV, isNavActive, navHref, navLabel } from "../../data/shell";
+import { useAssistantOpen } from "../../lib/assistantStore";
+import { ChatGlyph } from "../ui/NavIcons";
 
 /**
  * The phone's fixed bottom bar.
  *
- * Five destinations, with Contact raised into the middle as the primary
- * action — that is the one thing a visitor on a phone is most likely to want,
- * and it should not be buried in a menu. AI Lab is deliberately not here: it
- * stays one tap away in the Explore rail on the homepage and in the disclosure
- * menu at the top of every page, which keeps every target in this bar at a
- * comfortable size.
+ * Home, Projects, Contact, Services, and Ask. Contact is raised into the
+ * middle as the primary action — the one thing a visitor on a phone is most
+ * likely to want — and carries a phone glyph, so it no longer reads as a
+ * second chat button. Ask opens the chat assistant in place of the floating
+ * launcher, which is hidden below `lg` (see SiteAssistant): one chat button,
+ * and nothing floating over the content. About, Pricing and AI Lab stay one
+ * tap away in the menu at the top of every page.
  *
  * `env(safe-area-inset-bottom)` keeps the row clear of the iOS home indicator,
  * and App.tsx reserves the matching height at the end of the document so the
@@ -21,6 +25,9 @@ export default function MobileTabBar({
   path: string;
   locale?: "en" | "ar";
 }) {
+  const [assistantOpen, setAssistantOpen] = useAssistantOpen();
+  const askLabel = locale === "ar" ? "اسأل" : "Ask";
+
   return (
     <nav
       aria-label="Primary, compact"
@@ -42,7 +49,7 @@ export default function MobileTabBar({
                   className="group -mt-6 flex w-full flex-col items-center gap-1 rounded-2xl pb-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
                 >
                   <span className="grid h-14 w-14 place-items-center rounded-full border-4 border-panel bg-accent text-accent-ink shadow-card-hover transition duration-300 ease-smooth group-active:scale-95">
-                    <Icon size={22} />
+                    <Phone size={21} strokeWidth={2.2} aria-hidden />
                   </span>
                   <span className="text-[0.68rem] font-bold text-fg">{label}</span>
                 </a>
@@ -65,6 +72,20 @@ export default function MobileTabBar({
             </li>
           );
         })}
+        <li>
+          <button
+            type="button"
+            onClick={() => setAssistantOpen((v) => !v)}
+            aria-expanded={assistantOpen}
+            aria-haspopup="dialog"
+            className={`group flex min-h-[3.25rem] w-full flex-col items-center justify-center gap-1 rounded-xl px-1 pb-1.5 pt-1 text-[0.68rem] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+              assistantOpen ? "text-accent-deep" : "text-fg-soft"
+            }`}
+          >
+            <ChatGlyph size={21} className={assistantOpen ? "text-accent" : "text-fg-faint"} />
+            <span className="max-w-full truncate">{askLabel}</span>
+          </button>
+        </li>
       </ul>
     </nav>
   );

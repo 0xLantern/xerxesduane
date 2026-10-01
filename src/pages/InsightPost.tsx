@@ -62,9 +62,29 @@ export default function InsightPost({ post }: { post: Post }) {
           title={post.title}
           meta={
             <>
-              <span>{post.author}</span>
+              {/* The byline links to the page that actually describes the
+                  author, which is the same entity the Article schema names by
+                  @id. A name in plain text asserts authorship to a reader and
+                  proves nothing to anyone. */}
+              <a
+                href="/about"
+                rel="author"
+                className="font-semibold text-accent-deep underline decoration-accent/40 underline-offset-4 transition hover:decoration-accent"
+              >
+                {post.author}
+              </a>
               <span aria-hidden>·</span>
-              <span>{formatDate(post.date)}</span>
+              {/* Machine-readable, so the date a crawler reads and the date a
+                  person reads cannot drift apart. */}
+              <time dateTime={post.date}>{formatDate(post.date)}</time>
+              {post.updated && (
+                <>
+                  <span aria-hidden>·</span>
+                  <span>
+                    Updated <time dateTime={post.updated}>{formatDate(post.updated)}</time>
+                  </span>
+                </>
+              )}
               <span aria-hidden>·</span>
               <span>{post.readingMinutes} min read</span>
             </>
@@ -95,6 +115,33 @@ export default function InsightPost({ post }: { post: Post }) {
               </div>
             </div>
 
+            {post.sources && post.sources.length > 0 && (
+              <div className="mt-14">
+                <h2 className="font-technical text-[0.62rem] font-bold uppercase tracking-[0.16em] text-accent-deep">
+                  Sources
+                </h2>
+                {/* Vendor documentation and pricing pages, so the third-party
+                    claims above can be checked rather than taken on trust. */}
+                <ul className="mt-4 space-y-3">
+                  {post.sources.map((source) => {
+                    const external = source.url.startsWith("http");
+                    return (
+                      <li key={source.url} className="text-[15px] leading-relaxed text-muted">
+                        <a
+                          href={source.url}
+                          {...(external ? { target: "_blank", rel: "noopener" } : {})}
+                          className="inline-block rounded py-0.5 font-semibold text-fg-soft underline decoration-accent/40 underline-offset-4 transition hover:text-accent-deep hover:decoration-accent"
+                        >
+                          {source.label}
+                        </a>
+                        {source.note && <span className="ml-2">{source.note}</span>}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+
             {related.length > 0 && (
               <div className="mt-14">
                 <h2 className="font-technical text-[0.62rem] font-bold uppercase tracking-[0.16em] text-accent-deep">
@@ -105,7 +152,7 @@ export default function InsightPost({ post }: { post: Post }) {
                     <li key={s.slug}>
                       <a
                         href={`/${s.slug}`}
-                        className="text-fg-soft transition-colors hover:text-accent-deep"
+                        className="inline-block rounded py-0.5 text-fg-soft transition-colors hover:text-accent-deep"
                       >
                         {s.navLabel} in Dubai
                       </a>
@@ -125,7 +172,7 @@ export default function InsightPost({ post }: { post: Post }) {
                     <li key={p.slug}>
                       <a
                         href={`/insights/${p.slug}`}
-                        className="text-fg-soft transition-colors hover:text-accent-deep"
+                        className="inline-block rounded py-0.5 text-fg-soft transition-colors hover:text-accent-deep"
                       >
                         {p.title}
                       </a>

@@ -97,10 +97,13 @@
     />
     <meta name="author" content="Xerxes Duane" />
 
-    <!-- Geo targeting (Dubai, UAE) -->
+    <!-- Geo targeting (Dubai, UAE). Locality only, on purpose: the ICBM tag
+         that used to sit here carried 25.2048, 55.2708 — the centre of Dubai,
+         not this business — which is the same invented precision removed from
+         the JSON-LD under P0-2. It survived here because it is a meta tag
+         rather than schema. -->
     <meta name="geo.region" content="AE-DU" />
     <meta name="geo.placename" content="Dubai" />
-    <meta name="ICBM" content="25.2048, 55.2708" />
 
     <!-- Open Graph (site-level; per-route og:title/description/url/image injected above) -->
     <meta property="og:type" content="website" />
@@ -113,7 +116,10 @@
          Preload the render-critical body and display faces used above the fold. -->
     <link rel="preload" href="/fonts/plus-jakarta-sans-var.woff2" as="font" type="font/woff2" crossorigin />
 
-    <!-- Structured data: organisation, site, founder -->
+    <!-- Structured data: organisation, site, founder.
+         This @graph is injected into every prerendered page, so the WebSite
+         node's inLanguage lists both languages. As "en" it was telling /ar and
+         the four Arabic service pages that the site they are on is English. -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -125,7 +131,7 @@
             "alternateName": "Xerxes Duane",
             "url": "https://www.xerxesduane.com/",
             "logo": "https://www.xerxesduane.com/brand/favicon/icon-512.png",
-            "image": "https://www.xerxesduane.com/brand/og-image.png",
+            "image": "https://www.xerxesduane.com/brand/og/home.jpg",
             "description": "Xerxes Duane is an independent systems consultant in Dubai helping small businesses connect websites, CRM, Odoo/ERP, WhatsApp, automation, ads, and AI into one practical operating system.",
             "slogan": "Big-company systems for small businesses that can't afford a tech team.",
             "telephone": "+971543281995",
@@ -138,11 +144,6 @@
               "addressLocality": "Dubai",
               "addressRegion": "Dubai",
               "addressCountry": "AE"
-            },
-            "geo": {
-              "@type": "GeoCoordinates",
-              "latitude": 25.2048,
-              "longitude": 55.2708
             },
             "areaServed": [
               { "@type": "City", "name": "Dubai" },
@@ -215,7 +216,7 @@
             "url": "https://www.xerxesduane.com/",
             "name": "Xerxes Duane",
             "publisher": { "@id": "https://www.xerxesduane.com/#org" },
-            "inLanguage": "en"
+            "inLanguage": ["en", "ar"]
           }
         ]
       }

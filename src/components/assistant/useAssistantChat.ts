@@ -36,7 +36,7 @@ export interface ChatTurn {
  * Nothing is persisted: no localStorage, no server log. The widget tells
  * visitors chats aren't stored, so it must not quietly keep them.
  */
-export function useAssistantChat(locale: "en" | "ar", fallbackError: string) {
+export function useAssistantChat(endpoint: string, locale: "en" | "ar", fallbackError: string) {
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +68,7 @@ export function useAssistantChat(locale: "en" | "ar", fallbackError: string) {
 
       try {
         await streamDemo(
-          "/api/assistant",
+          endpoint,
           { messages: history, locale },
           (full) => {
             const next = [...turnsRef.current];
@@ -89,7 +89,7 @@ export function useAssistantChat(locale: "en" | "ar", fallbackError: string) {
         if (!controller.signal.aborted) setPending(false);
       }
     },
-    [locale, fallbackError, commit],
+    [endpoint, locale, fallbackError, commit],
   );
 
   const reset = useCallback(() => {

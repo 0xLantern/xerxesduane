@@ -19,6 +19,8 @@ export default defineConfig(({ isSsrBuild }) => {
               // lenis is dynamically imported post-hydration — keep it out of
               // the eagerly-loaded vendor chunk so it lazy-loads as its own.
               if (id.includes('lenis')) return undefined
+              // Same for the background shader, loaded once the page is idle.
+              if (id.includes('@paper-design')) return undefined
               return 'vendor'
             }
           },

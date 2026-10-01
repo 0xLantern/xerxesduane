@@ -32,7 +32,19 @@ export default function Services() {
             >
               See the full rate card
             </a>
-            , the budget package, and half price for churches and charities.
+            ,{" "}
+            {/*
+              The Starter was reachable from one page, /pricing. It is the
+              cheapest way in and the likeliest first purchase for a small
+              business, and these words were already sitting here as plain text.
+            */}
+            <a
+              href="/starter"
+              className="font-bold text-accent-deep underline decoration-accent/40 underline-offset-4 transition hover:decoration-accent"
+            >
+              the budget package
+            </a>
+            , and half price for churches and charities.
           </span>
         }
       />

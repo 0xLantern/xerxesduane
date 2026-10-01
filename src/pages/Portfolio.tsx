@@ -144,7 +144,7 @@ export default function Portfolio() {
       />
 
       {filter === null ? (
-        <PanelBoard rail cols="board:grid-cols-4">
+        <PanelBoard rail railLabel="Portfolio categories" cols="board:grid-cols-4">
           <Panel
             icon={LayoutTemplate}
             label={LABELS.web}

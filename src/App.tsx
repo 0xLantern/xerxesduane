@@ -7,6 +7,7 @@ import ConsentBanner from "./components/ConsentBanner";
 import SmoothScroll from "./components/fx/SmoothScroll";
 import PageTransition from "./components/fx/PageTransition";
 import IntroSequence from "./components/fx/IntroSequence";
+import Cursor from "./components/fx/Cursor";
 
 // Route-level code splitting: each page ships as its own chunk, so a visitor
 // only downloads the JS for the route they're on. The streaming prerender
@@ -35,7 +36,10 @@ const Terms = lazy(() =>
 const Showreel = lazy(() => import("./pages/Showreel"));
 const Portfolio = lazy(() => import("./pages/Portfolio"));
 const Demos = lazy(() => import("./pages/Demos"));
+// Unlisted: reachable by link, never linked or indexed. See pages/Ministry.tsx.
+const Ministry = lazy(() => import("./pages/Ministry"));
 import { getServicePage } from "./data/servicePages";
+import { AR_CHROME } from "./data/servicePagesAr";
 import { getServicePageAr } from "./data/servicePagesAr";
 import { getInsight } from "./data/insights";
 import { CASE_STUDIES } from "./data/content";
@@ -72,6 +76,7 @@ function Route({ path }: { path: string }) {
   if (slug === "showreel") return <Showreel />;
   if (slug === "portfolio") return <Portfolio />;
   if (slug === "ai-lab" || slug === "demos") return <Demos />;
+  if (slug === "ministry") return <Ministry />;
   if (slug === "ar") return <HomeAr />;
 
   // Arabic service pages: /ar/<service-slug>
@@ -100,12 +105,17 @@ export default function App({ path = "/" }: { path?: string }) {
     <LazyMotion features={domAnimation} strict>
       <MotionConfig reducedMotion="user">
       <div className="grain relative min-h-dvh" dir={isArabic ? "rtl" : "ltr"} lang={isArabic ? "ar" : "en"}>
+        {/*
+          The skip link is the first thing a keyboard or screen-reader user
+          reaches. On a page that declares `lang="ar"` it was still announcing
+          "Skip to content" in English.
+        */}
         <a
           href="#top"
           data-lenis-ignore
           className="skip-link"
         >
-          Skip to content
+          {isArabic ? AR_CHROME.skipToContent : "Skip to content"}
         </a>
 
         <SmoothScroll />
@@ -127,8 +137,14 @@ export default function App({ path = "/" }: { path?: string }) {
           className="h-[calc(5rem+env(safe-area-inset-bottom))] lg:hidden"
           aria-hidden
         />
-        <SiteAssistant locale={isArabic ? "ar" : "en"} />
+        {/* /ministry gets its own assistant, grounded in that page alone; the
+            business one never appears there. */}
+        <SiteAssistant
+          locale={isArabic ? "ar" : "en"}
+          variant={slug === "ministry" ? "ministry" : "site"}
+        />
         <MobileTabBar path={path} locale={isArabic ? "ar" : "en"} />
+        <Cursor />
       </div>
       </MotionConfig>
     </LazyMotion>

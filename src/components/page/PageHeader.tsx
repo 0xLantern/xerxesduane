@@ -1,7 +1,7 @@
 import { m } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { fadeUp, stagger } from "../../lib/motion";
+import { riseIn, stagger } from "../../lib/motion";
 
 interface PageHeaderProps {
   eyebrow: string;
@@ -16,12 +16,6 @@ interface PageHeaderProps {
   /** Override the title classes — Arabic needs looser leading than the
       Latin hero scale allows. */
   titleClass?: string;
-  /**
-   * Appended to the header element. Opt-in, and only for a page that has to
-   * buy back vertical space it cannot find anywhere else: the default rhythm
-   * is shared by every route and should stay that way.
-   */
-  className?: string;
 }
 
 /**
@@ -40,7 +34,6 @@ export default function PageHeader({
   actions,
   meta,
   titleClass = "text-hero",
-  className = "",
 }: PageHeaderProps) {
   return (
     <m.header
@@ -48,11 +41,19 @@ export default function PageHeader({
       variants={stagger}
       initial="hidden"
       animate="show"
-      className={`mb-4 ${className}`}
+      className="mb-4 board:mb-2.5"
     >
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
-        <div className="min-w-0">
-          <m.span variants={fadeUp} className="eyebrow">
+      {/*
+        From `board` up the actions move onto the eyebrow's row and the title
+        spans the full width beneath them. Beside the title they were taking
+        ~350px of an 908px header, which pushed two- and three-word headings
+        onto extra lines — 48px of vertical room bought with a row that is only
+        46px tall. `board:contents` dissolves the title column so the eyebrow,
+        title and meta become grid items in their own right.
+      */}
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8 board:grid board:grid-cols-[1fr_auto] board:gap-x-8 board:gap-y-0">
+        <div className="min-w-0 board:contents">
+          <m.span variants={riseIn} className="eyebrow board:col-start-1 board:row-start-1 board:self-center">
             {Icon ? (
               <Icon size={14} strokeWidth={2.1} aria-hidden />
             ) : (
@@ -61,15 +62,15 @@ export default function PageHeader({
             {eyebrow}
           </m.span>
           <m.h1
-            variants={fadeUp}
-            className={`mt-3 max-w-[20ch] text-balance font-display font-semibold text-fg ${titleClass}`}
+            variants={riseIn}
+            className={`mt-3 max-w-[20ch] text-balance font-display font-semibold text-fg board:col-span-2 board:row-start-2 board:mt-2 board:max-w-[26ch] ${titleClass}`}
           >
             {title}
           </m.h1>
           {meta && (
             <m.div
-              variants={fadeUp}
-              className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-technical text-xs text-fg-faint"
+              variants={riseIn}
+              className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-technical text-xs text-fg-faint board:col-span-2 board:row-start-3 board:mt-2"
             >
               {meta}
             </m.div>
@@ -77,7 +78,7 @@ export default function PageHeader({
         </div>
 
         {actions && (
-          <m.div variants={fadeUp} className="flex shrink-0 flex-wrap items-center gap-2">
+          <m.div variants={riseIn} className="flex shrink-0 flex-wrap items-center gap-2 board:col-start-2 board:row-start-1 board:justify-end">
             {actions}
           </m.div>
         )}
@@ -85,8 +86,8 @@ export default function PageHeader({
 
       {lede && (
         <m.p
-          variants={fadeUp}
-          className="mt-4 max-w-[68ch] text-[1.02rem] leading-relaxed text-fg-soft"
+          variants={riseIn}
+          className="mt-4 max-w-[68ch] text-[1.02rem] leading-relaxed text-fg-soft board:mt-2.5 board:text-[0.95rem] board:leading-[1.5]"
         >
           {lede}
         </m.p>

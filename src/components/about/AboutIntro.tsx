@@ -7,7 +7,6 @@ import {
   Database,
   LayoutDashboard,
   LineChart,
-  MapPin,
   Megaphone,
   MessageCircle,
   PanelsTopLeft,
@@ -15,13 +14,11 @@ import {
   ShoppingBag,
   Sparkles,
   Target,
-  UserRoundCheck,
   Users,
   Workflow,
   type LucideIcon,
 } from "lucide-react";
 import AboutFigure from "./AboutFigure";
-import { SHELL_IDENTITY } from "../../data/shell";
 import { TRUST } from "../../data/trust";
 import { fadeUp, stagger } from "../../lib/motion";
 
@@ -65,31 +62,6 @@ const DISCIPLINES: {
   },
 ];
 
-/** One half of the paired fact strip under the list. */
-function Fact({
-  icon: Icon,
-  title,
-  detail,
-}: {
-  icon: LucideIcon;
-  title: string;
-  detail: string;
-}) {
-  return (
-    <div className="flex min-w-0 flex-1 items-center gap-3 px-4 py-2.5 board:py-2">
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent-deep">
-        <Icon size={18} strokeWidth={2.2} aria-hidden />
-      </span>
-      <span className="min-w-0">
-        <span className="block text-[0.88rem] font-bold leading-tight text-fg">{title}</span>
-        <span className="block text-xs uppercase leading-tight tracking-[0.08em] text-fg-faint board:text-[0.72rem]">
-          {detail}
-        </span>
-      </span>
-    </div>
-  );
-}
-
 /**
  * The About page's opening card.
  *
@@ -120,7 +92,7 @@ export default function AboutIntro() {
             `min-w-0`: a grid item defaults to `min-width: auto`, so a long
             unbroken string inside would size the column and overflow the card
             on a phone. */}
-        <div className="order-2 min-w-0 p-5 sm:p-6 lg:order-1 lg:py-5 lg:pe-4 lg:ps-8 board:py-3">
+        <div className="order-2 min-w-0 p-5 sm:p-6 lg:order-1 lg:py-5 lg:pe-4 lg:ps-8 board:py-3.5">
           <m.p
             variants={fadeUp}
             className="max-w-[44ch] font-display text-[1.4rem] font-extrabold leading-[1.25] tracking-tight text-fg sm:text-[1.65rem]"
@@ -133,7 +105,7 @@ export default function AboutIntro() {
 
           <m.p
             variants={fadeUp}
-            className="mt-3 board:mt-2 max-w-[52ch] text-[0.95rem] leading-snug text-fg-soft"
+            className="mt-3 max-w-[52ch] text-[0.95rem] leading-snug text-fg-soft board:mt-2"
           >
             <span className="font-bold text-fg">Independent since {TRUST.since}</span>, and
             hands-on. My work sits between off-the-shelf tools that never quite fit and enterprise
@@ -141,66 +113,47 @@ export default function AboutIntro() {
             retainer is month to month, and if you don&rsquo;t need me I&rsquo;ll say so.
           </m.p>
 
-          {/* ---- what the work actually is ---- */}
-          <m.ol
-            variants={fadeUp}
-            /* One row of four from the board breakpoint up rather than two of
-               two. As two rows it cost 110px of the intro's height for four
-               short labels; in one it costs 55, and the labels still fit. */
-            className="mt-4 board:mt-3 grid max-w-[46rem] border-y border-line-soft board:grid-cols-4 board:gap-x-5"
-          >
+          {/* ---- what the work actually is ----
+              Two across, and each one a tile rather than a row. As a row the
+              four icons, the title and the number shared one line; in a
+              two-column grid that left the title 70px at 1536 and 4px at 1280,
+              so every discipline read as "System…". The title gets its own
+              line now and cannot be squeezed by anything beside it. */}
+          <m.ol variants={fadeUp} className="mt-4 grid gap-2 sm:grid-cols-2 board:mt-3">
             {DISCIPLINES.map((item, i) => (
-              <li key={item.title} className="border-b border-line-soft last:border-b-0 board:border-b-0">
+              <li key={item.title}>
                 <a
                   href={item.href}
-                  className="group flex flex-wrap items-center gap-x-4 gap-y-2 py-2.5 board:py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel sm:flex-nowrap"
+                  className="group flex flex-col gap-1.5 rounded-xl border border-line bg-panel/70 px-3 py-2 transition duration-300 ease-smooth hover:border-accent/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
                 >
-                  {/* Fixed-width so every title starts at the same x. */}
-                  <span
-                    role="img"
-                    aria-label={item.tools}
-                    title={item.tools}
-                    className="order-1 flex shrink-0 gap-1"
-                  >
-                    {item.icons.map((Glyph, g) => (
-                      <span
-                        key={g}
-                        className="grid h-[2.1rem] w-[2.1rem] place-items-center rounded-[0.6rem] border border-line bg-panel text-accent shadow-pill transition duration-300 ease-smooth group-hover:-translate-y-0.5"
-                        style={{ transitionDelay: `${g * 40}ms` }}
-                      >
-                        <Glyph size={16} strokeWidth={2.2} aria-hidden />
-                      </span>
-                    ))}
+                  <span className="flex items-center justify-between gap-2">
+                    <span
+                      role="img"
+                      aria-label={item.tools}
+                      title={item.tools}
+                      className="flex shrink-0 gap-1"
+                    >
+                      {item.icons.map((Glyph, g) => (
+                        <span
+                          key={g}
+                          className="grid h-7 w-7 place-items-center rounded-[0.5rem] border border-line bg-panel text-accent shadow-pill transition duration-300 ease-smooth group-hover:-translate-y-0.5"
+                          style={{ transitionDelay: `${g * 40}ms` }}
+                        >
+                          <Glyph size={14} strokeWidth={2.2} aria-hidden />
+                        </span>
+                      ))}
+                    </span>
+                    <span className="shrink-0 font-display text-xs font-bold tabular-nums text-fg-faint">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
                   </span>
-
-                  <span className="order-3 w-full min-w-0 truncate text-[0.95rem] font-bold text-fg transition-colors group-hover:text-accent-deep sm:order-2 sm:w-auto sm:flex-1">
+                  <span className="text-[0.9rem] font-bold leading-tight text-fg transition-colors group-hover:text-accent-deep">
                     {item.title}
-                  </span>
-
-                  <span className="order-2 ms-auto shrink-0 font-display text-xs board:text-[0.72rem] font-bold tabular-nums text-fg-faint sm:order-3 sm:ms-0">
-                    {String(i + 1).padStart(2, "0")}
                   </span>
                 </a>
               </li>
             ))}
           </m.ol>
-
-          {/* ---- two facts, one strip, split by a rule ---- */}
-          <m.div
-            variants={fadeUp}
-            className="mt-4 board:mt-3 flex max-w-[46rem] flex-col divide-y divide-line rounded-2xl border border-line bg-panel/70 sm:flex-row sm:divide-x sm:divide-y-0 sm:rtl:divide-x-reverse"
-          >
-            <Fact
-              icon={UserRoundCheck}
-              title="Founder & lead consultant"
-              detail={`Independent since ${TRUST.since}`}
-            />
-            <Fact
-              icon={MapPin}
-              title={`Based in ${SHELL_IDENTITY.location}`}
-              detail="GMT+4 · GCC, NZ & the Philippines"
-            />
-          </m.div>
         </div>
 
         {/* ---- the figure, bleeding to the card's bottom edge ---- */}
