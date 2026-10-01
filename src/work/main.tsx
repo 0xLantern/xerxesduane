@@ -7,6 +7,7 @@
  *
  *   /           the owner's log (sign in, timer, entries)
  *   /r/<token>  the client's read-only view
+ *   /gcn        the same view, open to anyone (see PUBLIC_SLUG in api/work/_lib.ts)
  */
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -15,7 +16,7 @@ import Owner from "./Owner";
 import Report from "./Report";
 
 const path = window.location.pathname;
-const share = /^\/r\/([A-Za-z0-9_-]{16,})\/?$/.exec(path);
+const share = /^\/r\/([A-Za-z0-9_-]{16,})\/?$/.exec(path) ?? /^\/(gcn)\/?$/i.exec(path);
 
 createRoot(document.getElementById("work-root")!).render(
   <StrictMode>{share ? <Report token={share[1]} /> : <Owner />}</StrictMode>,

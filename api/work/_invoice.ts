@@ -16,6 +16,13 @@ export const BILL_TO = {
   web: "www.gcn.live",
 } as const;
 
+/** The sender's address, under their name on every invoice. */
+export const FROM_ADDRESS = [
+  "1210, Al Mamzar Tower, Al Taawun St",
+  "Al Khalidiya District, Sharjah",
+  "United Arab Emirates",
+] as const;
+
 /**
  * Where GCN pays. The invoice is in USD, so the USD account comes first:
  * paying it needs no conversion on this side. The CHF account is there for
@@ -41,6 +48,7 @@ export function invoiceRecipients(): string[] {
 /** Same as WORK_ORIGIN in src/lib/host.ts, which is browser code and not importable here. */
 export const WORK_ORIGIN = "https://work.xerxesduane.com";
 const LOGO = `${WORK_ORIGIN}/brand/clients/gcn.png`;
+const OWN_LOGO_PATH = "/brand/mono/logo-black@2x.png";
 
 // Dubai time, UTC+4 all year: the same days and months the log shows.
 const OFFSET = 4 * 60 * 60 * 1000;
@@ -191,6 +199,7 @@ export function renderInvoice(inv: Invoice, opts: { printable?: boolean; viewUrl
   // The page loads the logo from its own origin (the CSP allows only that);
   // an email needs the absolute address.
   const logo = opts.printable ? "/brand/clients/gcn.png" : LOGO;
+  const ownLogo = opts.printable ? OWN_LOGO_PATH : `${WORK_ORIGIN}${OWN_LOGO_PATH}`;
   const cur = s.currency;
   const td = "padding:10px 8px;border-bottom:1px solid #e6e2d8;vertical-align:top;font-size:14px;color:#2b2420;";
   const th = "padding:8px;border-bottom:2px solid #2b1a14;text-align:left;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:#6b5f55;";
@@ -252,8 +261,10 @@ ${
         <a href="mailto:${BILL_TO.email}" style="color:#3b6b35;">${BILL_TO.email}</a> · <a href="https://${BILL_TO.web}" style="color:#3b6b35;">${BILL_TO.web}</a>
       </td>
       <td style="vertical-align:top;width:50%;padding-left:12px;font-size:14px;line-height:1.5;text-align:right;">
+        <img src="${ownLogo}" alt="Xerxes Duane" width="140" style="display:inline-block;width:140px;max-width:100%;height:auto;margin:0 -12px 6px 0;">
         <div style="font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:#8a7f75;margin-bottom:4px;">From</div>
         <strong>${esc(s.name)}</strong><br>
+        ${FROM_ADDRESS.join("<br>")}<br>
         <a href="mailto:${esc(OWNER_EMAIL)}" style="color:#3b6b35;">${esc(OWNER_EMAIL)}</a><br>
         Rate: ${money(s.rate, cur)} / hour
       </td>

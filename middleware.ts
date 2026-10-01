@@ -23,7 +23,7 @@ import { APEX_HOST, MINISTRY_HOST, MINISTRY_ORIGIN, SITE_HOST, WORK_HOST, WORK_O
  * every other route, on either host — is untouched and never reaches here.
  */
 export const config = {
-  matcher: ["/", "/ministry", "/robots.txt", "/work", "/r/:path*"],
+  matcher: ["/", "/ministry", "/robots.txt", "/work", "/r/:path*", "/gcn"],
   // The edge runtime is deprecated for middleware; the build warns on it.
   // Nothing here needs an edge-only API — it reads a header and returns.
   runtime: "nodejs",
@@ -50,7 +50,9 @@ export default function middleware(request: Request): Response {
   // client link, /r/<token>. Rewrites, so the address bar keeps the clean URL.
   // Paths outside the matcher (assets, fonts, /api) pass straight through.
   if (host === WORK_HOST) {
-    if (url.pathname === "/" || url.pathname.startsWith("/r/")) return rewrite(new URL("/work", url));
+    if (url.pathname === "/" || url.pathname.startsWith("/r/") || url.pathname === "/gcn") {
+      return rewrite(new URL("/work", url));
+    }
     if (url.pathname === "/robots.txt") return rewrite(new URL("/robots-work.txt", url));
     if (url.pathname === "/work") return Response.redirect(new URL("/", url), 308);
     return next();
@@ -60,7 +62,7 @@ export default function middleware(request: Request): Response {
   // it stays reachable at /work and /r/<token>, so it can be tried before release.
   if (host === SITE_HOST || host === APEX_HOST || host === MINISTRY_HOST) {
     if (url.pathname === "/work") return Response.redirect(`${WORK_ORIGIN}/`, 308);
-  } else if (url.pathname.startsWith("/r/")) {
+  } else if (url.pathname.startsWith("/r/") || url.pathname === "/gcn") {
     return rewrite(new URL("/work", url));
   }
 
