@@ -209,7 +209,19 @@ export async function requireOwner(req: Request, write: boolean): Promise<Respon
  */
 export async function canRead(req: Request): Promise<boolean> {
   if (await isOwner(req)) return true;
-  const token = new URL(req.url).searchParams.get("t") ?? "";
+  return tokenOk(new URL(req.url).searchParams.get("t") ?? "");
+}
+
+/**
+ * The open address, work.xerxesduane.com/gcn: a read-only view anyone can
+ * open, for a client who shouldn't need a long link. Its name is the "token".
+ * WORK_PUBLIC_SLUG renames it; "off" closes it (the private link still works).
+ */
+export const PUBLIC_SLUG = (process.env.WORK_PUBLIC_SLUG ?? "gcn").trim().toLowerCase();
+
+/** True for the client's private token, or the open address's name while it is on. */
+export async function tokenOk(token: string): Promise<boolean> {
+  if (PUBLIC_SLUG && PUBLIC_SLUG !== "off" && token.toLowerCase() === PUBLIC_SLUG) return true;
   return token.length >= 16 && safeEqual(token, await getShareToken());
 }
 

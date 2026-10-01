@@ -19,7 +19,7 @@
       "permanent": true
     },
     {
-      "source": "/:path((?!api/|assets/|fonts/|brand/|r/|robots|favicon).+)",
+      "source": "/:path((?!api/|assets/|fonts/|brand/|r/|gcn$|robots|favicon).+)",
       "has": [
         {
           "type": "host",

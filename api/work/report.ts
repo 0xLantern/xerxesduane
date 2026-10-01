@@ -8,11 +8,10 @@ import {
   allEntries,
   errorResponse,
   getSettings,
-  getShareToken,
   getTimer,
   handle,
   json,
-  safeEqual,
+  tokenOk,
   underLimit,
 } from "./_lib";
 
@@ -24,7 +23,7 @@ export default handle(async (req) => {
     return errorResponse("Too many requests. Wait a minute and refresh.", 429);
   }
   const token = new URL(req.url).searchParams.get("t") ?? "";
-  if (token.length < 16 || !(await safeEqual(token, await getShareToken()))) {
+  if (!(await tokenOk(token))) {
     return errorResponse("This link isn't valid any more. Ask for a new one.", 404);
   }
   const [entries, settings, timer] = await Promise.all([allEntries(), getSettings(), getTimer()]);

@@ -641,6 +641,13 @@ function SettingsSheet({
               Make a new link
             </Button>
           </div>
+          <p className="mt-3 text-[0.95rem] text-fg-soft">
+            Easy address, open to anyone who has it:{" "}
+            <a href="/gcn" target="_blank" rel="noopener noreferrer" className="font-semibold text-accent-deep underline-offset-2 hover:underline">
+              {window.location.host}/gcn
+            </a>
+            . Making a new link doesn't close this one.
+          </p>
         </section>
 
         <section className="border-t border-line pt-5">
