@@ -7,7 +7,7 @@
 // than failing the whole file.
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import { OWNER_EMAIL } from "./_lib";
-import { BILL_TO, PAYMENT, type Invoice } from "./_invoice";
+import { BILL_TO, FROM_ADDRESS, PAYMENT, type Invoice } from "./_invoice";
 
 const INK = rgb(0.17, 0.14, 0.13);
 const SOFT = rgb(0.42, 0.37, 0.33);
@@ -123,10 +123,10 @@ export async function renderPdf(inv: Invoice, kind: "invoice" | "log", origin: s
   right("FROM", colR, 8, bold, FAINT);
   y -= 15;
   const leftLines = [BILL_TO.name, ...BILL_TO.lines, BILL_TO.phone, `${BILL_TO.email} · ${BILL_TO.web}`];
-  const rightLines = [s.name, OWNER_EMAIL, `Rate: ${money(s.rate, s.currency)} / hour`];
+  const rightLines = [s.name, ...FROM_ADDRESS, OWNER_EMAIL, `Rate: ${money(s.rate, s.currency)} / hour`];
   for (let i = 0; i < Math.max(leftLines.length, rightLines.length); i++) {
     if (leftLines[i]) text(leftLines[i], M, 10, i === 0 ? bold : font, i === leftLines.length - 1 ? GREEN : INK);
-    if (rightLines[i]) right(rightLines[i], colR, 10, i === 0 ? bold : font, i === 1 ? GREEN : INK);
+    if (rightLines[i]) right(rightLines[i], colR, 10, i === 0 ? bold : font, rightLines[i] === OWNER_EMAIL ? GREEN : INK);
     y -= 14;
   }
   y -= 18;

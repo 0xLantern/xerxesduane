@@ -16,6 +16,13 @@ export const BILL_TO = {
   web: "www.gcn.live",
 } as const;
 
+/** The sender's address, under their name on every invoice. */
+export const FROM_ADDRESS = [
+  "1210, Al Mamzar Tower, Al Taawun St",
+  "Al Khalidiya District, Sharjah",
+  "United Arab Emirates",
+] as const;
+
 /**
  * Where GCN pays. The invoice is in USD, so the USD account comes first:
  * paying it needs no conversion on this side. The CHF account is there for
@@ -254,6 +261,7 @@ ${
       <td style="vertical-align:top;width:50%;padding-left:12px;font-size:14px;line-height:1.5;text-align:right;">
         <div style="font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:#8a7f75;margin-bottom:4px;">From</div>
         <strong>${esc(s.name)}</strong><br>
+        ${FROM_ADDRESS.join("<br>")}<br>
         <a href="mailto:${esc(OWNER_EMAIL)}" style="color:#3b6b35;">${esc(OWNER_EMAIL)}</a><br>
         Rate: ${money(s.rate, cur)} / hour
       </td>
