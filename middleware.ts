@@ -1,5 +1,8 @@
 import { next, rewrite } from "@vercel/functions";
-import { APEX_HOST, MINISTRY_HOST, MINISTRY_ORIGIN, SITE_HOST } from "./src/lib/host";
+// The .js extension is required: Vercel typechecks this file with node16
+// module resolution, where an extensionless relative import is an error.
+// tsconfig.middleware.json mirrors that, so the local build catches it too.
+import { APEX_HOST, MINISTRY_HOST, MINISTRY_ORIGIN, SITE_HOST } from "./src/lib/host.js";
 
 /**
  * Host routing for the two domains this one project serves.
@@ -21,6 +24,9 @@ import { APEX_HOST, MINISTRY_HOST, MINISTRY_ORIGIN, SITE_HOST } from "./src/lib/
  */
 export const config = {
   matcher: ["/", "/ministry", "/robots.txt"],
+  // The edge runtime is deprecated for middleware; the build warns on it.
+  // Nothing here needs an edge-only API — it reads a header and returns.
+  runtime: "nodejs",
 };
 
 export default function middleware(request: Request): Response {

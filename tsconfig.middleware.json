@@ -6,8 +6,8 @@
       "ES2023",
       "DOM"
     ],
-    "module": "esnext",
-    "moduleResolution": "bundler",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "types": [],
     "strict": true,
     "noEmit": true,
