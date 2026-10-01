@@ -1,4 +1,4 @@
-import { next, rewrite } from "@vercel/edge";
+import { next, rewrite } from "@vercel/functions";
 import { APEX_HOST, MINISTRY_HOST, MINISTRY_ORIGIN, SITE_HOST } from "./src/lib/host";
 
 /**
