@@ -70,17 +70,19 @@ function dubaiMidnight(y: number, m: number, d: number): number {
 }
 
 /**
- * Invoices go out twice a month, on the 15th and the 30th (the last day in
- * February). Each covers everything since the one before, so a 31st lands on
+ * Invoices go out twice a month, on the 15th and on the last day of the
+ * month (the 30th, 31st, or 28th/29th in February). Each covers everything
+ * since the one before, so no hour is billed twice or missed.
  * the next month's first invoice and no hour is billed twice or missed.
  *
- *   YYYY-MM-A  from the day after last month's 30th, through the 15th
- *   YYYY-MM-B  the 16th through the 30th (or the last day of the month)
+ *   YYYY-MM-A  the 1st through the 15th
+ *   YYYY-MM-B  the 16th through the last day of the month
  */
 export type Period = { id: string; from: number; to: number; label: string };
 
+/** The B period's last day: the month's last day. */
 function cutDay(y: number, m: number): number {
-  return Math.min(30, daysIn(y, m));
+  return daysIn(y, m);
 }
 
 export function periodFor(id: unknown): Period | null {

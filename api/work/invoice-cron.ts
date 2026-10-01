@@ -1,5 +1,6 @@
-// Vercel Cron, daily at 19:00 UTC (23:00 in Dubai). On the 15th and the 30th
-// (the last day in February) it emails the period that ends that day to GCN.
+// Vercel Cron, daily at 19:00 UTC (23:00 in Dubai). On the 15th and on the
+// month's last day (30th, 31st, or 28th/29th in February) it emails the
+// period that ends that day to GCN.
 // Every other day it does nothing. A sent-flag in Redis keeps a retried run
 // from sending the same invoice twice.
 import { allEntries, getSettings, getShareToken, handle, json, redis, safeEqual } from "./_lib";

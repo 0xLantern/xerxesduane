@@ -653,7 +653,7 @@ function SettingsSheet({
         <section className="border-t border-line pt-5">
           <h3 className="font-bold text-fg">Invoices</h3>
           <p className="mt-1 text-[0.95rem] text-fg-soft">
-            Emailed to bb@gcn.live automatically on the 15th and the 30th, at 23:00 Dubai time, for the hours since the last one.
+            Emailed to bb@gcn.live automatically on the 15th and the last day of each month, at 23:00 Dubai time, for the hours since the last one.
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             <a href="/api/work/invoice?p=last" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-[0.95rem] font-bold text-fg hover:bg-panel-alt">
