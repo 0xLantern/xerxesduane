@@ -4,8 +4,8 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { api, type ReportData } from "./api";
-import { Card, ErrorNote, MonthLog, TotalTile } from "./ui";
-import { DAY, TZ_LABEL, fmtTime, monthKey, monthStart, shiftMonth, totalsFor, weekStart } from "./time";
+import { Card, DownloadLink, ErrorNote, MonthLog, TotalTile } from "./ui";
+import { DAY, TZ_LABEL, fmtMonth, fmtTime, monthKey, monthStart, shiftMonth, totalsFor, weekStart } from "./time";
 
 export default function Report({ token }: { token: string }) {
   const [data, setData] = useState<ReportData | null>(null);
@@ -78,16 +78,10 @@ export default function Report({ token }: { token: string }) {
               emptyText="No hours logged yet."
             />
           </div>
-          <p className="mt-6 text-center">
-            <a
-              href={`/api/work/invoice?p=last&t=${encodeURIComponent(token)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-[0.95rem] font-bold text-fg hover:bg-panel-alt"
-            >
-              Latest invoice (PDF)
-            </a>
-          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            <DownloadLink href={`/api/work/pdf?kind=log&m=${month}&t=${encodeURIComponent(token)}`}>Download {fmtMonth(month)} (PDF)</DownloadLink>
+            <DownloadLink href={`/api/work/pdf?kind=invoice&p=last&t=${encodeURIComponent(token)}`}>Latest invoice (PDF)</DownloadLink>
+          </div>
           <p className="mt-4 text-center text-sm text-fg-faint">
             Times are in {TZ_LABEL}. Amounts are hours × the hourly rate.
           </p>

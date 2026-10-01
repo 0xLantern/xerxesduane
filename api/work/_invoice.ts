@@ -6,6 +6,7 @@
 // own rule (src/work/time.ts fmtMoney): hours rounded to two decimals, times
 // the rate, rounded to the cent once at the end.
 import { OWNER_EMAIL, type Entry, type Settings } from "./_lib";
+import { renderPdf, toBase64 } from "./_pdf";
 
 export const BILL_TO = {
   name: "GCN Great Commission Network",
@@ -22,7 +23,7 @@ export function invoiceRecipients(): string[] {
 }
 
 /** Same as WORK_ORIGIN in src/lib/host.ts, which is browser code and not importable here. */
-const WORK_ORIGIN = "https://work.xerxesduane.com";
+export const WORK_ORIGIN = "https://work.xerxesduane.com";
 const LOGO = `${WORK_ORIGIN}/brand/clients/gcn.png`;
 
 // Dubai time, UTC+4 all year: the same days and months the log shows.
@@ -91,6 +92,21 @@ export function periodContaining(ms: number): Period {
   return periodFor(`${y}-${pad(m + 1)}-${day <= 15 ? "A" : "B"}`)!;
 }
 
+/** A whole calendar month in Dubai, for the work log export. id is YYYY-MM. */
+export function monthPeriod(id: unknown): Period | null {
+  const match = typeof id === "string" ? /^(20\d{2})-(0[1-9]|1[0-2])$/.exec(id) : null;
+  if (!match) return null;
+  const [y, m] = [Number(match[1]), Number(match[2]) - 1];
+  return { id: match[0], from: dubaiMidnight(y, m, 1), to: dubaiMidnight(y, m + 1, 1), label: `${MONTHS[m]} ${y}` };
+}
+
+/** A period id, or "current" (still open) or "last" (the last one closed, the default). */
+export function resolvePeriod(p: unknown): Period {
+  const now = periodContaining(Date.now());
+  if (p === "current") return now;
+  return periodFor(p) ?? previousPeriod(now);
+}
+
 /** The period just before the given one. */
 export function previousPeriod(p: Period): Period {
   return periodContaining(p.from - 1);
@@ -154,7 +170,7 @@ export function buildInvoice(entries: Entry[], settings: Settings, period: Perio
  * the same markup survives Gmail and Outlook as well as the print dialog.
  * `printable` adds the Print / Save as PDF button, which the email leaves out.
  */
-export function renderInvoice(inv: Invoice, opts: { printable?: boolean; viewUrl?: string } = {}): string {
+export function renderInvoice(inv: Invoice, opts: { printable?: boolean; viewUrl?: string; pdfUrl?: string } = {}): string {
   const { settings: s } = inv;
   // The page loads the logo from its own origin (the CSP allows only that);
   // an email needs the absolute address.
@@ -190,7 +206,8 @@ export function renderInvoice(inv: Invoice, opts: { printable?: boolean; viewUrl
 ${
   opts.printable
     ? `<div class="no-print" style="max-width:760px;margin:16px auto 0;padding:0 16px;text-align:right;">
-  <button onclick="window.print()" style="font:600 15px/1 inherit;padding:12px 20px;border-radius:999px;border:0;background:#2b1a14;color:#fff;cursor:pointer;">Print / Save as PDF</button>
+  ${opts.pdfUrl ? `<a href="${esc(opts.pdfUrl)}" style="display:inline-block;font:600 15px/1 inherit;padding:12px 20px;margin-right:8px;border-radius:999px;border:1px solid #2b1a14;color:#2b1a14;text-decoration:none;">Download PDF</a>` : ""}
+  <button onclick="window.print()" style="font:600 15px/1 inherit;padding:12px 20px;border-radius:999px;border:0;background:#2b1a14;color:#fff;cursor:pointer;">Print</button>
 </div>`
     : ""
 }
@@ -244,7 +261,7 @@ ${rows}
 </td></tr>
 <tr><td style="padding:0 32px 32px;font-size:12px;color:#8a7f75;line-height:1.5;">
   Times are in Dubai time (UTC+4). Amount is total hours × the hourly rate.${
-    opts.viewUrl ? `<br>View or download this invoice: <a href="${esc(opts.viewUrl)}" style="color:#3b6b35;">${esc(opts.viewUrl)}</a>` : ""
+    opts.viewUrl ? `<br>View this invoice online: <a href="${esc(opts.viewUrl)}" style="color:#3b6b35;">${esc(opts.viewUrl)}</a>` : ""
   }
 </td></tr>
 </table>
@@ -276,9 +293,7 @@ export async function emailInvoice(inv: Invoice, viewUrl: string): Promise<void>
       reply_to: OWNER_EMAIL,
       subject: `Invoice ${inv.number} · ${inv.period} · ${money(inv.total, inv.settings.currency)}`,
       html,
-      attachments: [
-        { filename: `Invoice-${inv.number}.html`, content: btoa(unescape(encodeURIComponent(renderInvoice(inv, { printable: true })))) },
-      ],
+      attachments: [{ filename: `Invoice-${inv.number}.pdf`, content: toBase64(await renderPdf(inv, "invoice", WORK_ORIGIN)) }],
     }),
   });
   if (!res.ok) throw new Error(`resend ${res.status}: ${(await res.text()).slice(0, 200)}`);

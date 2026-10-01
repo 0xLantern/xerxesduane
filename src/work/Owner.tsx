@@ -5,8 +5,8 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { ApiError, api, type Entry, type OwnerData, type Settings } from "./api";
-import { Button, Card, ErrorNote, Field, MonthLog, Sheet, TextArea, TextInput, TotalTile } from "./ui";
-import { DAY, HOUR, TZ_LABEL, dateInput, fmtClock, monthKey, monthStart, rangeFromInputs, shiftMonth, timeInput, totalsFor, weekStart } from "./time";
+import { Button, Card, DownloadLink, ErrorNote, Field, MonthLog, Sheet, TextArea, TextInput, TotalTile } from "./ui";
+import { DAY, HOUR, TZ_LABEL, dateInput, fmtClock, fmtMonth, monthKey, monthStart, rangeFromInputs, shiftMonth, timeInput, totalsFor, weekStart } from "./time";
 
 type State =
   | { kind: "loading" }
@@ -205,7 +205,10 @@ function Log({
           emptyText="Nothing logged yet. Press Start when you begin, or add time by hand."
         />
       </div>
-      <p className="mt-6 text-center text-sm text-fg-faint">Times are in {TZ_LABEL}.</p>
+      <div className="mt-6 flex justify-center">
+        <DownloadLink href={`/api/work/pdf?kind=log&m=${month}`}>Download {fmtMonth(month)} (PDF)</DownloadLink>
+      </div>
+      <p className="mt-4 text-center text-sm text-fg-faint">Times are in {TZ_LABEL}.</p>
 
       {editing && (
         <EntryEditor
@@ -652,6 +655,7 @@ function SettingsSheet({
             <a href="/api/work/invoice?p=current" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-[0.95rem] font-bold text-fg hover:bg-panel-alt">
               Current period so far
             </a>
+            <DownloadLink href="/api/work/pdf?kind=invoice&p=last">Last invoice (PDF)</DownloadLink>
             <Button kind="ghost" onClick={() => void sendInvoice("last")} disabled={busy}>
               Email last invoice now
             </Button>

@@ -203,6 +203,16 @@ export async function requireOwner(req: Request, write: boolean): Promise<Respon
   return null;
 }
 
+/**
+ * Read access to the log: the signed-in owner, or anyone holding the
+ * client's link token as ?t=. The token is the credential, as in report.ts.
+ */
+export async function canRead(req: Request): Promise<boolean> {
+  if (await isOwner(req)) return true;
+  const token = new URL(req.url).searchParams.get("t") ?? "";
+  return token.length >= 16 && safeEqual(token, await getShareToken());
+}
+
 // ---------------------------------------------------------------------------
 // Data
 // ---------------------------------------------------------------------------

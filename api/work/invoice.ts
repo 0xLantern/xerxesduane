@@ -7,39 +7,31 @@ import {
   allEntries,
   errorResponse,
   getSettings,
+  canRead,
   getShareToken,
   handle,
-  isOwner,
   json,
   readJson,
   requireOwner,
-  safeEqual,
   underLimit,
 } from "./_lib";
-import { MailMissing, buildInvoice, emailInvoice, invoiceRecipients, invoiceUrl, periodContaining, periodFor, previousPeriod, renderInvoice } from "./_invoice";
+import { MailMissing, buildInvoice, emailInvoice, invoiceRecipients, invoiceUrl, renderInvoice, resolvePeriod } from "./_invoice";
 
 export const config = { runtime: "edge" };
-
-/** A period id, or "current" (still open) or "last" (the last one closed, the default). */
-function resolve(p: unknown) {
-  const now = periodContaining(Date.now());
-  if (p === "current") return now;
-  return periodFor(p) ?? previousPeriod(now);
-}
 
 export default handle(async (req) => {
   const url = new URL(req.url);
 
   if (req.method === "GET") {
     if (!(await underLimit("invoice", req, 60, 60))) return errorResponse("Too many requests. Wait a minute.", 429);
-    const token = url.searchParams.get("t") ?? "";
-    const owner = await isOwner(req);
-    if (!owner && (token.length < 16 || !(await safeEqual(token, await getShareToken())))) {
+    if (!(await canRead(req))) {
       return errorResponse("This link isn't valid any more. Ask for a new one.", 404);
     }
-    const period = resolve(url.searchParams.get("p"));
+    const period = resolvePeriod(url.searchParams.get("p"));
     const [entries, settings] = await Promise.all([allEntries(), getSettings()]);
-    const html = renderInvoice(buildInvoice(entries, settings, period), { printable: true });
+    const t = url.searchParams.get("t");
+    const pdfUrl = `/api/work/pdf?kind=invoice&p=${period.id}${t ? `&t=${encodeURIComponent(t)}` : ""}`;
+    const html = renderInvoice(buildInvoice(entries, settings, period), { printable: true, pdfUrl });
     return new Response(html, {
       headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex, nofollow" },
     });
@@ -49,7 +41,7 @@ export default handle(async (req) => {
   const denied = await requireOwner(req, true);
   if (denied) return denied;
   const body = await readJson(req);
-  const period = resolve(body.period);
+  const period = resolvePeriod(body.period);
   const [entries, settings, token] = await Promise.all([allEntries(), getSettings(), getShareToken()]);
   const inv = buildInvoice(entries, settings, period);
   try {
