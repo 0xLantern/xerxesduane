@@ -14,8 +14,7 @@ export default handle(async (req) => {
   const scope = await readScope(req);
   const url = new URL(req.url);
   const kind = url.searchParams.get("kind") === "log" ? "log" : "invoice";
-  // The work log is for anyone with a link; invoices (bank details) are not for the open address.
-  if (!scope || (kind === "invoice" && scope === "public")) {
+  if (!scope) {
     return errorResponse("This link isn't valid any more. Ask for a new one.", 404);
   }
   const period =

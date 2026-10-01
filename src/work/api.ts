@@ -10,8 +10,6 @@ export type ReportData = {
   settings: Settings;
   email: string;
   working: { start: number } | null;
-  /** "public" for the open address, which gets no invoices. */
-  scope: "private" | "public";
   now: number;
 };
 
@@ -54,5 +52,6 @@ export const api = {
   rotateLink: () => call<{ shareToken: string }>("settings", "POST", { rotate: true }),
   emailInvoice: (period: "last" | "current", resend = false) =>
     call<{ sent: string; to: string[] }>("invoice", "POST", { period, resend }),
+  clientLogin: (password: string) => call<{ ok: true }>("client-login", "POST", { password }),
   report: (token: string) => call<ReportData>(`report?t=${encodeURIComponent(token)}`),
 };

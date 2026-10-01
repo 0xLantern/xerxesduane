@@ -13,9 +13,7 @@ export default handle(async (req) => {
 
   if (req.method === "GET") {
     if (!(await underLimit("invoice", req, 60, 60))) return errorResponse("Too many requests. Wait a minute.", 429);
-    // Invoices carry the bank details, so the open address can't reach them.
-    const scope = await readScope(req);
-    if (scope !== "owner" && scope !== "private") {
+    if (!(await readScope(req))) {
       return errorResponse("This link isn't valid any more. Ask for a new one.", 404);
     }
     const period = resolvePeriod(url.searchParams.get("p"));

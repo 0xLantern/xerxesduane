@@ -204,31 +204,79 @@ export async function requireOwner(req: Request, write: boolean): Promise<Respon
 }
 
 /**
- * Who is reading. "owner" is the signed-in owner; "private" holds the
- * client's long link token; "public" opened the easy address (/gcn), which
- * anyone can guess, so it sees the work log but never an invoice, the bank
- * details on it, or the live timer.
+ * Who is reading. "owner" is the signed-in owner; "private" is the client,
+ * either through the long link token or through the easy address (/gcn)
+ * after giving the client password. Both see everything, invoices and bank
+ * details included.
  */
-export type Scope = "owner" | "private" | "public";
+export type Scope = "owner" | "private";
 
 /**
- * The open address, work.xerxesduane.com/gcn: a read-only view anyone can
- * open, for a client who shouldn't need a long link. Its name is the "token".
+ * The easy address, work.xerxesduane.com/gcn. Its name is the "token" the
+ * page sends, but on its own it opens nothing: the client password does.
  * WORK_PUBLIC_SLUG renames it; "off" closes it (the private link still works).
  */
 export const PUBLIC_SLUG = (process.env.WORK_PUBLIC_SLUG ?? "gcn").trim().toLowerCase();
 
-/** The scope a client token grants, or null for a wrong one. */
-export async function tokenScope(token: string): Promise<Scope | null> {
-  if (PUBLIC_SLUG && PUBLIC_SLUG !== "off" && token.toLowerCase() === PUBLIC_SLUG) return "public";
+const CLIENT_COOKIE = "xdw_client";
+const CLIENT_SECONDS = 365 * 24 * 60 * 60;
+
+/** The password the client types at /gcn (WORK_CLIENT_PASSWORD). Unset, /gcn stays locked. */
+function clientPassword(): string | null {
+  const p = process.env.WORK_CLIENT_PASSWORD;
+  return p && p.trim().length >= 4 ? p.trim() : null;
+}
+
+export function clientPasswordSet(): boolean {
+  return clientPassword() !== null;
+}
+
+/** True when this browser has given the client password (and it hasn't changed since). */
+async function hasClientCookie(req: Request): Promise<boolean> {
+  const pw = clientPassword();
+  const raw = readCookie(req, CLIENT_COOKIE);
+  if (!pw || !raw) return false;
+  const [expStr, sig] = raw.split(".");
+  const exp = Number(expStr);
+  if (!Number.isFinite(exp) || exp * 1000 < Date.now() || !sig) return false;
+  return safeEqual(sig, await hmac(pw, `xdc|${exp}`));
+}
+
+/** Check the client password; case and surrounding spaces don't matter. */
+export async function checkClientPassword(given: string): Promise<boolean> {
+  const pw = clientPassword();
+  if (!pw) return false;
+  return safeEqual(given.trim().toLowerCase(), pw.toLowerCase());
+}
+
+/**
+ * Remembered for a year. SameSite=Lax rather than Strict so a link to /gcn
+ * from Beat's email opens straight into the page. Signed under the password,
+ * so changing WORK_CLIENT_PASSWORD signs every browser out.
+ */
+export async function clientCookie(): Promise<string> {
+  const exp = Math.floor(Date.now() / 1000) + CLIENT_SECONDS;
+  const value = `${exp}.${await hmac(clientPassword()!, `xdc|${exp}`)}`;
+  return `${CLIENT_COOKIE}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${CLIENT_SECONDS}`;
+}
+
+/**
+ * The scope a client token grants. "locked" is the easy address without the
+ * password yet: the page should ask for it. null is a wrong token.
+ */
+export async function tokenScope(token: string, req: Request): Promise<Scope | "locked" | null> {
+  if (PUBLIC_SLUG && PUBLIC_SLUG !== "off" && token.toLowerCase() === PUBLIC_SLUG) {
+    return (await hasClientCookie(req)) ? "private" : "locked";
+  }
   if (token.length >= 16 && (await safeEqual(token, await getShareToken()))) return "private";
   return null;
 }
 
-/** The scope of a read request: the owner's cookie, or the client's ?t= token. */
+/** The scope of a read request: the owner's cookie, or a client token that has been let in. */
 export async function readScope(req: Request): Promise<Scope | null> {
   if (await isOwner(req)) return "owner";
-  return tokenScope(new URL(req.url).searchParams.get("t") ?? "");
+  const s = await tokenScope(new URL(req.url).searchParams.get("t") ?? "", req);
+  return s === "private" ? s : null;
 }
 
 // ---------------------------------------------------------------------------
