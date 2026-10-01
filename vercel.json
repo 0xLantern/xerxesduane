@@ -66,6 +66,21 @@
           "value": "noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate"
         }
       ]
+    },
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "ministry.xerxesduane.com"
+        }
+      ],
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate"
+        }
+      ]
     }
   ]
 }

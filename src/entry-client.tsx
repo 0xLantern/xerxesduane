@@ -4,6 +4,7 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import "./index.css";
 import App from "./App";
 import { initCtaTracking } from "./lib/analytics";
+import { routePath } from "./lib/host";
 
 initCtaTracking();
 
@@ -14,7 +15,10 @@ document.documentElement.classList.add("js-ready");
 const container = document.getElementById("root")!;
 const tree = (
   <StrictMode>
-    <App path={window.location.pathname} />
+    {/* The host is part of the address: ministry.xerxesduane.com serves the
+        ministry page at "/", so the path alone would render the home page
+        over it. See lib/host.ts and middleware.ts. */}
+    <App path={routePath(window.location.hostname, window.location.pathname)} />
   </StrictMode>
 );
 

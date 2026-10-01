@@ -2,6 +2,7 @@ import { Phone } from "lucide-react";
 import { MOBILE_BAR_NAV, isNavActive, navHref, navLabel } from "../../data/shell";
 import { useAssistantOpen } from "../../lib/assistantStore";
 import { ChatGlyph } from "../ui/NavIcons";
+import { siteHref } from "../../lib/host";
 
 /**
  * The phone's fixed bottom bar.
@@ -45,7 +46,7 @@ export default function MobileTabBar({
             return (
               <li key={item.href} className="flex justify-center">
                 <a
-                  href={href}
+                  href={siteHref(href)}
                   className="group -mt-6 flex w-full flex-col items-center gap-1 rounded-2xl pb-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
                 >
                   <span className="grid h-14 w-14 place-items-center rounded-full border-4 border-panel bg-accent text-accent-ink shadow-card-hover transition duration-300 ease-smooth group-active:scale-95">
@@ -60,7 +61,7 @@ export default function MobileTabBar({
           return (
             <li key={item.href}>
               <a
-                href={href}
+                href={siteHref(href)}
                 aria-current={active ? "page" : undefined}
                 className={`group flex min-h-[3.25rem] flex-col items-center justify-center gap-1 rounded-xl px-1 pb-1.5 pt-1 text-[0.68rem] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                   active ? "text-accent-deep" : "text-fg-soft"
