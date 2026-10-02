@@ -113,9 +113,7 @@ export function linkFor(copyId: string, linkKey: string): string {
 }
 
 /** A date as partners read it, in Dubai time like the emails: "1 November 2026". */
-export function fmtDate(ms: number): string {
-  return new Date(ms).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Dubai" });
-}
+export { fmtDate } from "./shared";
 
 export const fmtShort = (ms: number) => new Date(ms).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Dubai" });
 export const fmtTime = (ms: number) => new Date(ms).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Dubai" });

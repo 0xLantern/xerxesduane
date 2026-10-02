@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import { PdfPages } from "./Pages";
 import { openPdf, pdfjs } from "./pdf";
-import { LINK_KEY, decrypt, fromB64url, importKey, type Wrapped } from "./shared";
+import { LINK_KEY, decrypt, fmtDate, fromB64url, importKey, type Wrapped } from "./shared";
 import { ACCENT, Bar, INK, PAPER, SERIF, SOFT } from "./ui";
 
 type State =
@@ -20,7 +20,6 @@ type State =
   | { kind: "loading"; w: Wrapped; got: number; total: number }
   | { kind: "ready"; w: Wrapped; doc: PDFDocumentProxy };
 
-const fmt = (ms: number) => new Date(ms).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
 
 const INCOMPLETE = "This link isn't complete. Please open it straight from the message it came in, without changing it.";
 const GONE = "This letter has expired or was withdrawn.";
@@ -193,7 +192,7 @@ export default function Reader({ copyId }: { copyId: string }) {
               {w.title}
             </h1>
             <p className="mt-3 text-[0.95rem]" style={{ color: SOFT }}>
-              Private, just for you{w.hello ? `, ${w.hello}` : ""}. Available until {fmt(w.expiresAt)}.
+              Private, just for you{w.hello ? `, ${w.hello}` : ""}. Available until {fmtDate(w.expiresAt)}.
             </p>
             {state.kind === "ready" && w.allowDownload && (
               <button
@@ -222,7 +221,7 @@ export default function Reader({ copyId }: { copyId: string }) {
             </p>
             <p className="mt-1">
               This letter was encrypted before it was sent, and only the key in your link opens it, here in your browser. The website never has a copy it can read, and deletes even
-              the encrypted one after {fmt(w.expiresAt)}. Please don't forward your link: it's just for you.
+              the encrypted one after {fmtDate(w.expiresAt)}. Please don't forward your link: it's just for you.
             </p>
           </footer>
         </>

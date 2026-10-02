@@ -140,7 +140,7 @@ export default function LetterDetail({ id, fresh, partners, settings, onBack }: 
                 <button
                   type="button"
                   disabled={!!busy}
-                  className="ml-auto min-h-11 shrink-0 rounded-full px-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                  className="min-h-11 shrink-0 rounded-full px-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
                   onClick={() => {
                     if (!window.confirm(`Withdraw ${c.name}'s copy? Their link stops working at once.`)) return;
                     void act("withdraw", async () => {
@@ -161,8 +161,8 @@ export default function LetterDetail({ id, fresh, partners, settings, onBack }: 
               ) : null;
               return (
                 <li key={c.copyId} className="py-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
+                  <div className="flex items-start gap-2">
+                    <div className="min-w-0 flex-1">
                       <p className="font-semibold" style={{ color: INK }}>
                         {c.name}
                       </p>
@@ -181,9 +181,8 @@ export default function LetterDetail({ id, fresh, partners, settings, onBack }: 
                       >
                         <span aria-hidden="true">{done ? "✓" : "○"}</span> Sent
                       </button>
-                    ) : (
-                      withdraw
-                    )}
+                    ) : null}
+                    {withdraw}
                   </div>
                   {link && (
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -206,7 +205,6 @@ export default function LetterDetail({ id, fresh, partners, settings, onBack }: 
                           Send email
                         </Btn>
                       )}
-                      {withdraw}
                     </div>
                   )}
                 </li>

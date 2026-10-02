@@ -17,6 +17,8 @@ import { ACCENT, Bar, Box, Btn, Check, Err, INK, Label, Reach, SERIF, SOFT, inpu
 type Picked = { name: string; bytes: Uint8Array; doc: PDFDocumentProxy };
 
 /** "Xerxes_Loraine_Arise_Asia_2026_1.pdf" -> "Xerxes Loraine Arise Asia 2026 1" */
+/** Drop a trailing " | Senders" or " - Senders" from a PDF title: partners already see who it is from. */
+const bareTitle = (t: string) => t.replace(/\s+[|\u2013\u2014-]\s+[^|\u2013\u2014-]+$/, "").trim();
 const fromFileName = (name: string) => name.replace(/\.pdf$/i, "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 140);
 
 export default function Publish({ partners, settings, onCancel, onDone }: { partners: Partner[]; settings: Settings; onCancel: () => void; onDone: (id: string, fresh: Fresh) => void }) {
@@ -48,7 +50,7 @@ export default function Publish({ partners, settings, onCancel, onDone }: { part
         throw new Error("That PDF couldn't be opened. Is it damaged, or protected with a password?");
       });
       setFile({ name: f.name, bytes, doc });
-      setTitle((await pdfTitle(doc)) || fromFileName(f.name));
+      setTitle(bareTitle((await pdfTitle(doc)) || "") || fromFileName(f.name));
     } catch (e) {
       setError(msg(e));
     } finally {
@@ -157,7 +159,7 @@ export default function Publish({ partners, settings, onCancel, onDone }: { part
           }}
         />
         {file && (
-          <Label text="Title" hint="Partners see it at the top of their letter, and as the email's subject.">
+          <Label text="Title" hint="Just the letter's name: partners see it at the top of their letter, and as the email's subject.">
             <input className={`${inputCls} font-bold`} value={title} maxLength={140} onChange={(e) => setTitle(e.target.value)} />
           </Label>
         )}
