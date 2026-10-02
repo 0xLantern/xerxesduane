@@ -1,6 +1,6 @@
 // PDF downloads, for the owner or the client's link (?t=<token>).
 //
-//   ?kind=invoice&p=YYYY-MM-A|B|last|current   the invoice for a half-month
+//   ?kind=invoice&p=YYYY-MM|last|current       the invoice for a month
 //   ?kind=log&m=YYYY-MM                        the month's work log
 import { allEntries, errorResponse, getSettings, handle, readScope, underLimit } from "./_lib";
 import { WORK_ORIGIN, buildInvoice, invoiceFor, monthPeriod, resolvePeriod } from "./_invoice";

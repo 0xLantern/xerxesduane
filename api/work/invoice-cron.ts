@@ -1,11 +1,10 @@
 // Vercel Cron, daily at 20:05 UTC (00:05 in Dubai), just after a day ends.
 //
-// It sends the last half-month that has fully closed (1st-15th, or 16th to
-// the month's last day) if that invoice hasn't gone out yet. So the invoice
-// for the 15th goes at 00:05 on the 16th, with every hour of the 15th on it,
-// and a send that failed is tried again the next night. Each failure emails
-// the owner. A saved copy of each sent invoice (see sendInvoice) is what
-// stops it going twice.
+// It sends the last month that has fully closed, if that invoice hasn't
+// gone out yet. So October's invoice goes at 00:05 on 1 November, with every
+// hour of the 31st on it, and a send that failed is tried again the next
+// night. Each failure emails the owner. A saved copy of each sent invoice
+// (see sendInvoice) is what stops it going twice.
 //
 // It also emails the owner once about a timer left running over six hours.
 import { getShareToken, getTimer, handle, json, redis, safeEqual } from "./_lib";

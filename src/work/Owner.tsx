@@ -696,7 +696,7 @@ function SettingsSheet({
         <section className="border-t border-line pt-5">
           <h3 className="font-bold text-fg">Invoices</h3>
           <p className="mt-1 text-[0.95rem] text-fg-soft">
-            Emailed to bb@gcn.live automatically just after midnight (Dubai time) once each half-month ends: on the 16th for the 1st–15th, and on the 1st for the rest of the month. A sent invoice is saved as sent and never changes; one not sent yet shows as a draft.
+            Emailed to bb@gcn.live automatically once a month, just after midnight (Dubai time) on the 1st, for the month before. A sent invoice is saved as sent and never changes; one not sent yet shows as a draft.
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             <a href="/api/work/invoice?p=last" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-[0.95rem] font-bold text-fg hover:bg-panel-alt">
