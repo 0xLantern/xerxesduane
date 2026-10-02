@@ -15,7 +15,8 @@ export default defineConfig(({ isSsrBuild }) => {
       rollupOptions: {
         // work.html is the hours log on work.xerxesduane.com: its own page,
         // never prerendered, so it only exists in the client build.
-        input: { main: 'index.html', work: 'work.html' },
+        // letters.html is the partner letters on ministry.xerxesduane.com, the same way.
+        input: { main: 'index.html', work: 'work.html', letters: 'letters.html' },
         output: {
           manualChunks(id) {
             if (id.includes('node_modules')) {
