@@ -1,142 +1,64 @@
 /**
  * Shared by the partner-letter pages (src/letters) and their API
- * (api/letters): the letter's shape, a strict Markdown renderer, and the
- * encryption helpers. Imports nothing, so both sides can use it.
+ * (api/letters): the sizes and id shapes both sides check, what a partner's
+ * copy holds, and the encryption helpers. Imports nothing, so both sides can
+ * use it.
  *
- * The design follows Stello's (github.com/gracious-tech/stello, MIT-0):
- * every partner gets their own copy, encrypted with AES-GCM-256 under a key
- * that lives only in the fragment of their link (after the #). Browsers
- * never send the fragment to a server, so what is stored is ciphertext the
- * server cannot read, and each copy is deleted after 30 days.
+ * The design follows Stello's (github.com/gracious-tech/stello, MIT-0): the
+ * letter is encrypted before it leaves the writer's device, and each partner
+ * gets their own copy whose key lives only in the fragment of their link
+ * (after the #). Browsers never send the fragment to a server, so what is
+ * stored is ciphertext the server cannot read, and all of it is deleted
+ * after 30 days.
+ *
+ * Here the letter is a PDF the owner made elsewhere. In the owner's browser:
+ *   1. a random file key encrypts the whole PDF once (iv | ciphertext | tag),
+ *      and the result is uploaded in CHUNK_BYTES pieces;
+ *   2. for each partner, a random link key encrypts a small Wrapped record
+ *      (the file key, the title, the partner's greeting, the expiry), which is
+ *      uploaded as that partner's copy under a random copy id;
+ *   3. the partner's link is ministry.xerxesduane.com/l/<copyId>#<linkKey>.
+ * The reader reverses it: copy -> link key -> Wrapped -> file key -> PDF.
  */
 
 export const LIFESPAN_DAYS = 30;
 
-export type Section = { heading: string; body: string };
+/** Binary bytes per uploaded piece of the encrypted PDF (base64url on the wire). */
+export const CHUNK_BYTES = 512 * 1024;
 
-/** A letter as written: Markdown bodies, plain prayer lines. */
-export type Draft = {
-  title: string;
-  sections: Section[];
-  prayer: string[];
-  images: { id: string; caption: string }[];
-  giving: { url: string; label: string };
-};
+/** The largest PDF that can be published. */
+export const MAX_PDF_BYTES = 25 * 1024 * 1024;
 
-/** What a partner's copy decrypts to: rendered, personalised, ready to show. */
-export type Letter = {
+/** What AES-GCM adds to a plaintext: the 12-byte IV in front, the 16-byte tag behind. */
+export const SEAL_OVERHEAD = 28;
+
+/** A letter id: 12 random bytes, base64url. */
+export const LETTER_ID = /^[A-Za-z0-9_-]{16}$/;
+/** A copy id: 16 random bytes, base64url, made in the owner's browser. */
+export const COPY_ID = /^[A-Za-z0-9_-]{22}$/;
+/** A link key: a raw 256-bit AES key, base64url. */
+export const LINK_KEY = /^[A-Za-z0-9_-]{43}$/;
+
+/** What a partner's copy decrypts to. */
+export type Wrapped = {
+  /** The PDF's AES key, base64url. */
+  fileKey: string;
   title: string;
+  /** The partner's greeting name. */
+  hello: string;
   sender: string;
-  sentAt: number;
   expiresAt: number;
-  sections: { heading: string; html: string }[];
-  prayer: string[];
-  images: { id: string; caption: string }[];
-  giving: { url: string; label: string } | null;
-  /** The key for this send's images, base64url. Absent in previews. */
-  imageKey?: string;
-  sendId?: string;
+  allowDownload: boolean;
 };
 
-// ---------------------------------------------------------------------------
-// Markdown: a small, strict subset. Everything is escaped first, so no HTML a
-// writer types can reach a partner's page; only these constructs come back.
-//   ## heading   ### subheading   - bullets   1. numbers   > quote
-//   **bold**   *italic*   [text](https://…)   blank line = new paragraph
-// ---------------------------------------------------------------------------
-
-export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+/** The base64url length (no padding) of `bytes` bytes. */
+export function b64urlLength(bytes: number): number {
+  return Math.ceil((bytes * 4) / 3);
 }
 
-/** Only http(s) and mailto links survive. */
-export function safeUrl(url: string): string | null {
-  const u = url.trim();
-  // eslint-disable-next-line no-control-regex -- control characters are exactly what this rejects
-  if (/[\x00-\x1f\x7f\s]/.test(u)) return null;
-  if (/^(https?:\/\/|mailto:)/i.test(u)) return u;
-  if (/^[a-z0-9-]+(\.[a-z0-9-]+)+(\/\S*)?$/i.test(u)) return `https://${u}`;
-  return null;
-}
-
-function inline(text: string): string {
-  let s = escapeHtml(text);
-  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m, label: string, href: string) => {
-    const url = safeUrl(href.replace(/&amp;/g, "&"));
-    return url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${label}</a>` : label;
-  });
-  s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-  s = s.replace(/(^|[\s(])\*(?!\s)(.+?)\*(?=[\s).,!?:;]|$)/g, "$1<em>$2</em>");
-  return s;
-}
-
-export function markdownToHtml(md: string): string {
-  const out: string[] = [];
-  let list: { tag: "ul" | "ol"; items: string[] } | null = null;
-  let para: string[] = [];
-  const flushPara = () => {
-    if (para.length) out.push(`<p>${inline(para.join(" "))}</p>`);
-    para = [];
-  };
-  const flushList = () => {
-    if (list) out.push(`<${list.tag}>${list.items.map((i) => `<li>${inline(i)}</li>`).join("")}</${list.tag}>`);
-    list = null;
-  };
-  for (const raw of md.replace(/\r/g, "").split("\n")) {
-    const line = raw.trim();
-    let m: RegExpExecArray | null;
-    if (!line) {
-      flushPara();
-      flushList();
-    } else if ((m = /^(#{2,3})\s+(.+)$/.exec(line))) {
-      flushPara();
-      flushList();
-      out.push(m[1].length === 2 ? `<h3>${inline(m[2])}</h3>` : `<h4>${inline(m[2])}</h4>`);
-    } else if ((m = /^[-*•]\s+(.+)$/.exec(line)) || (m = /^\d+[.)]\s+(.+)$/.exec(line))) {
-      flushPara();
-      const tag = /^\d/.test(line) ? "ol" : "ul";
-      if (!list || list.tag !== tag) {
-        flushList();
-        list = { tag, items: [] };
-      }
-      list.items.push(m[1]);
-    } else if ((m = /^>\s?(.*)$/.exec(line))) {
-      flushPara();
-      flushList();
-      out.push(`<blockquote>${inline(m[1])}</blockquote>`);
-    } else {
-      flushList();
-      para.push(line);
-    }
-  }
-  flushPara();
-  flushList();
-  return out.join("\n");
-}
-
-/** {{hello}} and {{name}} become the partner's greeting name and full name. */
-export function personalise(text: string, p: { name: string; hello: string }): string {
-  return text.replace(/\{\{\s*(hello|name)\s*\}\}/gi, (_m, k: string) => (k.toLowerCase() === "name" ? p.name : p.hello || p.name));
-}
-
-export function renderLetter(
-  d: Draft,
-  p: { name: string; hello: string },
-  meta: { sender: string; sentAt: number; expiresAt: number },
-): Letter {
-  const giving = d.giving.url && safeUrl(d.giving.url) ? { url: safeUrl(d.giving.url)!, label: d.giving.label || "Support the work" } : null;
-  return {
-    title: personalise(d.title, p),
-    sender: meta.sender,
-    sentAt: meta.sentAt,
-    expiresAt: meta.expiresAt,
-    sections: d.sections
-      .filter((s) => s.heading.trim() || s.body.trim())
-      .map((s) => ({ heading: personalise(s.heading, p), html: markdownToHtml(personalise(s.body, p)) })),
-    prayer: d.prayer.map((x) => personalise(x, p).trim()).filter(Boolean),
-    images: d.images,
-    giving,
-  };
+/** How many chunks an encrypted PDF of `size` bytes is cut into. */
+export function chunkCount(size: number): number {
+  return Math.ceil(size / CHUNK_BYTES);
 }
 
 /** A Web Crypto key, typed the same in the browser and in edge functions. */
@@ -153,11 +75,16 @@ export function toB64url(bytes: Uint8Array): string {
   return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-export function fromB64url(s: string): Uint8Array {
+export function fromB64url(s: string): Uint8Array<ArrayBuffer> {
   const b = atob(s.replace(/-/g, "+").replace(/_/g, "/"));
   const out = new Uint8Array(b.length);
   for (let i = 0; i < b.length; i++) out[i] = b.charCodeAt(i);
   return out;
+}
+
+/** `bytes` random bytes, base64url: copy ids and the like. */
+export function randomId(bytes: number): string {
+  return toB64url(crypto.getRandomValues(new Uint8Array(bytes)));
 }
 
 export async function newKey(): Promise<{ key: Key; raw: string }> {
@@ -169,7 +96,7 @@ export function importKey(raw: string): Promise<Key> {
   return crypto.subtle.importKey("raw", fromB64url(raw) as Bytes, "AES-GCM", false, ["decrypt"]);
 }
 
-export async function encrypt(data: Uint8Array, key: Key): Promise<Uint8Array> {
+export async function encrypt(data: Uint8Array, key: Key): Promise<Uint8Array<ArrayBuffer>> {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, data as Bytes));
   const out = new Uint8Array(12 + ct.length);
@@ -178,6 +105,6 @@ export async function encrypt(data: Uint8Array, key: Key): Promise<Uint8Array> {
   return out;
 }
 
-export async function decrypt(data: Uint8Array, key: Key): Promise<Uint8Array> {
+export async function decrypt(data: Uint8Array, key: Key): Promise<Uint8Array<ArrayBuffer>> {
   return new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: data.subarray(0, 12) as Bytes }, key, data.subarray(12) as Bytes));
 }

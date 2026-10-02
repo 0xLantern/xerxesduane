@@ -25,6 +25,8 @@ export default defineConfig(({ isSsrBuild }) => {
               if (id.includes('lenis')) return undefined
               // Same for the background shader, loaded once the page is idle.
               if (id.includes('@paper-design')) return undefined
+              // pdf.js is for the partner letters only, loaded when a letter opens.
+              if (id.includes('pdfjs-dist')) return undefined
               return 'vendor'
             }
           },

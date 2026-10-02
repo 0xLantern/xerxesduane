@@ -199,10 +199,6 @@
     {
       "path": "/api/work/invoice-cron",
       "schedule": "5 20 * * *"
-    },
-    {
-      "path": "/api/letters/cron",
-      "schedule": "15 5 * * *"
     }
   ]
 }

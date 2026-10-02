@@ -46,7 +46,7 @@ export default function middleware(request: Request): Response {
     if (url.pathname === "/ministry") return Response.redirect(new URL("/", url), 308);
 
     // Partner letters: each partner's private copy is /l/<id>, read by the
-    // letters page; /letters itself is the writer's desk (a static page).
+    // letters page; /letters itself is the owner's desk (a static page).
     if (url.pathname.startsWith("/l/")) return rewrite(new URL("/letters", url));
     if (url.pathname === "/letters") return next();
   }

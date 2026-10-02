@@ -1,17 +1,9 @@
 // The partner list. GET lists; POST adds one or many ({partners:[...]});
-// PATCH updates one; DELETE removes one.
-import { allPartners, deletePartner, errorResponse, handle, json, randomToken, readJson, requireOwner, savePartners, type Partner } from "./_lib";
+// PATCH updates one; DELETE removes one. Each partner needs an email address
+// or a WhatsApp number (or both).
+import { allPartners, cleanPartner, deletePartner, errorResponse, handle, json, readJson, requireOwner, savePartners, type Partner } from "./_lib";
 
 export const config = { runtime: "edge" };
-
-function clean(p: Record<string, unknown>, id?: string): Partner | string {
-  const name = String(p.name ?? "").trim().slice(0, 100);
-  const email = String(p.email ?? "").trim().toLowerCase().slice(0, 200);
-  if (!name) return "Give the partner's name.";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return `"${email || name}" doesn't look like an email address.`;
-  const hello = String(p.hello ?? "").trim().slice(0, 60) || name.split(/\s+/)[0];
-  return { id: id ?? randomToken(8), name, email, hello, active: p.active !== false };
-}
 
 export default handle(async (req) => {
   const denied = await requireOwner(req, req.method !== "GET");
@@ -21,15 +13,19 @@ export default handle(async (req) => {
 
   if (req.method === "POST") {
     const list = Array.isArray(body.partners) ? body.partners : [body];
-    const existing = new Set((await allPartners()).map((p) => p.email));
+    const current = await allPartners();
+    const emails = new Set(current.map((p) => p.email).filter(Boolean));
+    const numbers = new Set(current.map((p) => p.whatsapp).filter(Boolean));
     const add: Partner[] = [];
     const skipped: string[] = [];
     for (const raw of list.slice(0, 500)) {
-      const p = clean((raw ?? {}) as Record<string, unknown>);
+      const p = cleanPartner((raw ?? {}) as Record<string, unknown>);
       if (typeof p === "string") skipped.push(p);
-      else if (existing.has(p.email)) skipped.push(`${p.email} is already on the list.`);
+      else if (p.email && emails.has(p.email)) skipped.push(`${p.email} is already on the list.`);
+      else if (p.whatsapp && numbers.has(p.whatsapp)) skipped.push(`+${p.whatsapp} is already on the list.`);
       else {
-        existing.add(p.email);
+        if (p.email) emails.add(p.email);
+        if (p.whatsapp) numbers.add(p.whatsapp);
         add.push(p);
       }
     }
@@ -39,8 +35,8 @@ export default handle(async (req) => {
 
   if (req.method === "PATCH") {
     const id = String(body.id ?? "");
-    const p = clean(body, id);
-    if (!id) return errorResponse("Which partner?");
+    if (!id || !(await allPartners()).some((p) => p.id === id)) return errorResponse("That partner isn't on the list any more.", 404);
+    const p = cleanPartner(body, id);
     if (typeof p === "string") return errorResponse(p);
     await savePartners([p]);
     return json({ partner: p });
