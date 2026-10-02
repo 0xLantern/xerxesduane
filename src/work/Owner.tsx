@@ -418,8 +418,8 @@ function TimerCard({
         </Field>
         {timer && (
           <>
-            <Field label="Notes: what I did or built">
-              <TextArea value={notes} onChange={(e) => setNotes(e.target.value)} onBlur={persist} maxLength={2000} />
+            <Field label="Notes: what I did or built" hint="One point per line. Each line shows as its own bullet.">
+              <TextArea rows={5} value={notes} onChange={(e) => setNotes(e.target.value)} onBlur={persist} maxLength={2000} placeholder={"Revised the proposal with Beat's feedback\nWrote the workflow page\nStarted the post type review"} />
             </Field>
             <Field label="Link (optional)">
               <TextInput type="url" inputMode="url" value={link} onChange={(e) => setLink(e.target.value)} onBlur={persist} placeholder="https://" />
@@ -553,8 +553,8 @@ function EntryEditor({
         <Field label="What I worked on">
           <TextInput value={task} onChange={(e) => setTask(e.target.value)} maxLength={120} required placeholder="e.g. Directory page fixes" />
         </Field>
-        <Field label="Notes: what I did or built">
-          <TextArea value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={2000} />
+        <Field label="Notes: what I did or built" hint="One point per line. Each line shows as its own bullet.">
+          <TextArea rows={5} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={2000} placeholder={"Revised the proposal with Beat's feedback\nWrote the workflow page\nStarted the post type review"} />
         </Field>
         <Field label="Link (optional)">
           <TextInput type="url" inputMode="url" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://" />
