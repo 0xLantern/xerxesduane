@@ -1,21 +1,10 @@
 // The invoice for one half-month period (see _invoice.ts).
 //
-//   GET  ?p=YYYY-MM-A|B&t=<token>   the printable invoice, for the client's
-//                                   link or the signed-in owner
-//   POST { period? }                email it to GCN now (owner only)
-import {
-  allEntries,
-  errorResponse,
-  getSettings,
-  canRead,
-  getShareToken,
-  handle,
-  json,
-  readJson,
-  requireOwner,
-  underLimit,
-} from "./_lib";
-import { MailMissing, buildInvoice, emailInvoice, invoiceRecipients, invoiceUrl, renderInvoice, resolvePeriod } from "./_invoice";
+//   GET  ?p=YYYY-MM-A|B&t=<token>   the printable invoice, for the owner or
+//                                   the client's private link (never /gcn)
+//   POST { period?, resend? }       email it to GCN now (owner only)
+import { errorResponse, getShareToken, handle, json, readJson, readScope, requireOwner, underLimit } from "./_lib";
+import { AlreadySent, EmptyInvoice, MailMissing, fmtDate, invoiceFor, invoiceRecipients, renderInvoice, resolvePeriod, sendInvoice } from "./_invoice";
 
 export const config = { runtime: "edge" };
 
@@ -24,14 +13,13 @@ export default handle(async (req) => {
 
   if (req.method === "GET") {
     if (!(await underLimit("invoice", req, 60, 60))) return errorResponse("Too many requests. Wait a minute.", 429);
-    if (!(await canRead(req))) {
+    if (!(await readScope(req))) {
       return errorResponse("This link isn't valid any more. Ask for a new one.", 404);
     }
     const period = resolvePeriod(url.searchParams.get("p"));
-    const [entries, settings] = await Promise.all([allEntries(), getSettings()]);
     const t = url.searchParams.get("t");
     const pdfUrl = `/api/work/pdf?kind=invoice&p=${period.id}${t ? `&t=${encodeURIComponent(t)}` : ""}`;
-    const html = renderInvoice(buildInvoice(entries, settings, period), { printable: true, pdfUrl });
+    const html = renderInvoice(await invoiceFor(period), { printable: true, pdfUrl });
     return new Response(html, {
       headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex, nofollow" },
     });
@@ -42,13 +30,13 @@ export default handle(async (req) => {
   if (denied) return denied;
   const body = await readJson(req);
   const period = resolvePeriod(body.period);
-  const [entries, settings, token] = await Promise.all([allEntries(), getSettings(), getShareToken()]);
-  const inv = buildInvoice(entries, settings, period);
   try {
-    await emailInvoice(inv, invoiceUrl(token, period.id));
+    const inv = await sendInvoice(period, await getShareToken(), { resend: body.resend === true });
+    return json({ sent: inv.number, to: invoiceRecipients() });
   } catch (err) {
     if (err instanceof MailMissing) return errorResponse("Email isn't set up yet: add RESEND_API_KEY in Vercel.", 503);
+    if (err instanceof EmptyInvoice) return errorResponse("There are no hours in that period, so there's nothing to invoice.");
+    if (err instanceof AlreadySent) return json({ error: `This invoice was already sent${err.sentAt ? ` on ${fmtDate(err.sentAt)}` : ""}.`, sentAt: err.sentAt }, 409);
     throw err;
   }
-  return json({ sent: inv.number, to: invoiceRecipients() });
 });

@@ -5,8 +5,8 @@
  * readable list. It always renders light, on the client's own colours, so it
  * looks the same however the reader's phone is set.
  */
-import { useEffect, useMemo, useState } from "react";
-import { api, type Entry, type ReportData } from "./api";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { ApiError, api, type Entry, type ReportData } from "./api";
 import {
   DAY,
   TZ_LABEL,
@@ -32,19 +32,29 @@ const GREEN = "#3b6b35";
 export default function Report({ token }: { token: string }) {
   const [data, setData] = useState<ReportData | null>(null);
   const [error, setError] = useState("");
+  // The easy address asks for the client password first.
+  const [locked, setLocked] = useState(false);
   const [month, setMonth] = useState(() => monthKey(Date.now()));
+
+  const load = useCallback(() => {
+    api
+      .report(token)
+      .then((d) => {
+        setLocked(false);
+        setData(d);
+        setMonth(monthKey(d.now));
+      })
+      .catch((err) => {
+        if (err instanceof ApiError && err.status === 401) setLocked(true);
+        else setError(err instanceof Error ? err.message : "Couldn't load the hours.");
+      });
+  }, [token]);
 
   useEffect(() => {
     // This page is always light: the logo is artwork on white.
     document.documentElement.dataset.theme = "light";
-    api
-      .report(token)
-      .then((d) => {
-        setData(d);
-        setMonth(monthKey(d.now));
-      })
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load the hours."));
-  }, [token]);
+    load();
+  }, [load]);
 
   const view = useMemo(() => {
     if (!data) return null;
@@ -84,7 +94,8 @@ export default function Report({ token }: { token: string }) {
         </header>
 
         {error && <p className="mt-10 rounded-2xl border border-red-200 bg-white px-5 py-4 text-center text-red-700">{error}</p>}
-        {!data && !error && <p className="py-24 text-center text-[#8a7f75]">Loading…</p>}
+        {locked && <PasswordGate onIn={load} />}
+        {!data && !error && !locked && <p className="py-24 text-center text-[#8a7f75]">Loading…</p>}
 
         {data && view && (
           <>
@@ -197,6 +208,57 @@ export default function Report({ token }: { token: string }) {
         )}
       </main>
     </div>
+  );
+}
+
+/** The client password, asked once; the browser then remembers it for a year. */
+function PasswordGate({ onIn }: { onIn: () => void }) {
+  const [pw, setPw] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!pw.trim()) return;
+    setBusy(true);
+    setError("");
+    try {
+      await api.clientLogin(pw);
+      onIn();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't check the password.");
+      setBusy(false);
+    }
+  };
+  return (
+    <form
+      onSubmit={submit}
+      className="mx-auto mt-8 max-w-sm rounded-3xl bg-white p-6 text-center shadow-[0_1px_2px_rgba(43,26,20,.05),0_12px_32px_-18px_rgba(43,26,20,.25)]"
+    >
+      <h1 className="text-lg font-bold" style={{ color: INK }}>
+        Welcome
+      </h1>
+      <p className="mt-1 text-[0.95rem] text-[#6b5f55]">Please enter the password to see the work report.</p>
+      <input
+        type="password"
+        autoComplete="current-password"
+        autoFocus
+        value={pw}
+        onChange={(e) => setPw(e.target.value)}
+        aria-label="Password"
+        placeholder="Password"
+        className="mt-5 min-h-12 w-full rounded-full border border-[#ddd5c7] bg-[#faf8f4] px-5 text-center text-base text-[#2b2420] outline-none focus:border-[#8a6a2e] focus:ring-2 focus:ring-[#8a6a2e]/20"
+      />
+      {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
+      <button
+        type="submit"
+        disabled={busy}
+        className="mt-4 min-h-12 w-full rounded-full font-bold text-white transition hover:opacity-90 disabled:opacity-60"
+        style={{ background: INK }}
+      >
+        {busy ? "Opening…" : "Open report"}
+      </button>
+      <p className="mt-4 text-xs text-[#8a7f75]">This browser will remember it, so you only need to enter it once.</p>
+    </form>
   );
 }
 

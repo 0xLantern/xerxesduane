@@ -2,8 +2,8 @@
 //
 //   ?kind=invoice&p=YYYY-MM-A|B|last|current   the invoice for a half-month
 //   ?kind=log&m=YYYY-MM                        the month's work log
-import { allEntries, canRead, errorResponse, getSettings, handle, underLimit } from "./_lib";
-import { WORK_ORIGIN, buildInvoice, monthPeriod, resolvePeriod } from "./_invoice";
+import { allEntries, errorResponse, getSettings, handle, readScope, underLimit } from "./_lib";
+import { WORK_ORIGIN, buildInvoice, invoiceFor, monthPeriod, resolvePeriod } from "./_invoice";
 import { renderPdf } from "./_pdf";
 
 export const config = { runtime: "edge" };
@@ -11,10 +11,12 @@ export const config = { runtime: "edge" };
 export default handle(async (req) => {
   if (req.method !== "GET") return errorResponse("Method not allowed.", 405);
   if (!(await underLimit("pdf", req, 30, 60))) return errorResponse("Too many requests. Wait a minute.", 429);
-  if (!(await canRead(req))) return errorResponse("This link isn't valid any more. Ask for a new one.", 404);
-
+  const scope = await readScope(req);
   const url = new URL(req.url);
   const kind = url.searchParams.get("kind") === "log" ? "log" : "invoice";
+  if (!scope) {
+    return errorResponse("This link isn't valid any more. Ask for a new one.", 404);
+  }
   const period =
     kind === "log"
       ? // No month given: this month, in Dubai.
@@ -22,7 +24,7 @@ export default handle(async (req) => {
       : resolvePeriod(url.searchParams.get("p"));
 
   const [entries, settings] = await Promise.all([allEntries(), getSettings()]);
-  const inv = buildInvoice(entries, settings, period);
+  const inv = kind === "invoice" ? await invoiceFor(period) : buildInvoice(entries, settings, period);
   // The logo is read from this deployment, so previews work before release.
   const pdf = await renderPdf(inv, kind, url.origin.includes("localhost") ? WORK_ORIGIN : url.origin);
   const name = kind === "log" ? `Work-log-${settings.client}-${period.id}.pdf` : `Invoice-${inv.number}.pdf`;

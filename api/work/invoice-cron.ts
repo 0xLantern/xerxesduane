@@ -1,34 +1,61 @@
-// Vercel Cron, daily at 19:00 UTC (23:00 in Dubai). On the 15th and on the
-// month's last day (30th, 31st, or 28th/29th in February) it emails the
-// period that ends that day to GCN.
-// Every other day it does nothing. A sent-flag in Redis keeps a retried run
-// from sending the same invoice twice.
-import { allEntries, getSettings, getShareToken, handle, json, redis, safeEqual } from "./_lib";
-import { buildInvoice, emailInvoice, invoiceUrl, periodEndingOn } from "./_invoice";
+// Vercel Cron, daily at 20:05 UTC (00:05 in Dubai), just after a day ends.
+//
+// It sends the last half-month that has fully closed (1st-15th, or 16th to
+// the month's last day) if that invoice hasn't gone out yet. So the invoice
+// for the 15th goes at 00:05 on the 16th, with every hour of the 15th on it,
+// and a send that failed is tried again the next night. Each failure emails
+// the owner. A saved copy of each sent invoice (see sendInvoice) is what
+// stops it going twice.
+//
+// It also emails the owner once about a timer left running over six hours.
+import { getShareToken, getTimer, handle, json, redis, safeEqual } from "./_lib";
+import { EmptyInvoice, FIRST_SAVED, notifyOwner, periodContaining, previousPeriod, savedInvoice, sendInvoice } from "./_invoice";
 
 export const config = { runtime: "edge" };
+
+const HOUR = 60 * 60 * 1000;
 
 export default handle(async (req) => {
   const secret = process.env.CRON_SECRET;
   const auth = req.headers.get("authorization") ?? "";
   if (!secret || !(await safeEqual(auth, `Bearer ${secret}`))) return json({ error: "Unauthorized." }, 401);
 
-  const period = periodEndingOn(Date.now());
-  if (!period) return json({ skipped: "not an invoice day" });
+  const out: Record<string, string> = {};
 
-  const flag = `work:v1:invoiced:${period.id}`;
-  const [claimed] = await redis([["SET", flag, String(Date.now()), "NX", "EX", 90 * 24 * 60 * 60]]);
-  if (claimed !== "OK") return json({ skipped: `already sent ${period.id}` });
+  // A timer running this long was almost certainly forgotten.
+  const timer = await getTimer();
+  if (timer && Date.now() - timer.start > 6 * HOUR) {
+    const [first] = await redis([["SET", `work:v1:timer-warned:${timer.start}`, "1", "NX", "EX", 7 * 24 * 3600]]);
+    if (first === "OK") {
+      const hours = Math.floor((Date.now() - timer.start) / HOUR);
+      await notifyOwner(
+        "Your work timer is still running",
+        `<p>The timer${timer.task ? ` for <strong>${escapeHtml(timer.task)}</strong>` : ""} has been running for ${hours} hours.</p>
+         <p>If you forgot to stop it, open work.xerxesduane.com and use <strong>I stopped earlier</strong> to save the real end time.</p>`,
+      );
+      out.timer = "warned";
+    }
+  }
 
-  const [entries, settings, token] = await Promise.all([allEntries(), getSettings(), getShareToken()]);
-  const inv = buildInvoice(entries, settings, period);
-  if (inv.lines.length === 0) return json({ skipped: `no hours in ${period.id}` });
+  const period = previousPeriod(periodContaining(Date.now()));
+  if (period.id < FIRST_SAVED) return json({ ...out, skipped: `${period.id} was sent by hand` });
+  if (await savedInvoice(period.id)) return json({ ...out, skipped: `already sent ${period.id}` });
+
   try {
-    await emailInvoice(inv, invoiceUrl(token, period.id));
+    const inv = await sendInvoice(period, await getShareToken());
+    return json({ ...out, sent: inv.number, total: inv.total });
   } catch (err) {
-    // Let tomorrow's manual send or a re-run try again.
-    await redis([["DEL", flag]]);
+    if (err instanceof EmptyInvoice) return json({ ...out, skipped: `no hours in ${period.id}` });
+    await notifyOwner(
+      `Invoice for ${period.label} didn't send`,
+      `<p>The automatic invoice for <strong>${period.label}</strong> failed to send. It will be tried again tonight at 00:05.</p>
+       <p>To send it now, open work.xerxesduane.com → Share &amp; settings → Email last invoice now.</p>
+       <p style="color:#8a7f75;font-size:13px;">${escapeHtml(String(err).slice(0, 300))}</p>`,
+    );
     throw err;
   }
-  return json({ sent: inv.number, total: inv.total });
 });
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+}

@@ -7,7 +7,7 @@
  *
  *   /           the owner's log (sign in, timer, entries)
  *   /r/<token>  the client's read-only view
- *   /gcn        the same view, open to anyone (see PUBLIC_SLUG in api/work/_lib.ts)
+ *   /gcn        the same view behind the client password (see PUBLIC_SLUG in api/work/_lib.ts)
  */
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
