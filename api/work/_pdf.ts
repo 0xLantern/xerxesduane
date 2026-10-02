@@ -223,6 +223,8 @@ async function renderLogPdf(inv: Invoice, kind: "invoice" | "log", origin: strin
     y -= 14;
     text(`Account holder: ${PAYMENT.holder}`, M, 9.5);
     y -= 12.5;
+    text(`Holder address: ${PAYMENT.holderAddress}`, M, 9.5);
+    y -= 12.5;
     text(`Bank: ${PAYMENT.bank}  ·  SWIFT/BIC: ${PAYMENT.swift}`, M, 9.5);
     y -= 20;
     const colW = (W - 2 * M - 12) / 2;
@@ -259,7 +261,7 @@ function fit(text: string, font: PDFFont, size: number, width: number): string {
 /**
  * The invoice, on one page: who, when, one line per day, the amount, how to
  * pay. Session notes belong to the work log (kind "log"), not here. A day's
- * tasks share one line, so even a full half-month (16 days) fits.
+ * tasks share one line, so even a full month (31 days) fits: rows tighten as days grow.
  */
 async function renderInvoicePdf(inv: Invoice, origin: string): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
@@ -336,43 +338,41 @@ async function renderInvoicePdf(inv: Invoice, origin: string): Promise<Uint8Arra
   right("HOURS", R, 7, bold, FAINT);
   y -= 7;
   rule(y, L, R, 0.9, INK);
-  // Rows shrink a little if a long period would otherwise crowd the page.
-  const rowH = days.length > 12 ? 17 : 20;
-  y -= rowH - 6;
+  // Rows share what the page has left after the total, payment and footer
+  // (about 250pt), between 10.5pt and 20pt each, so a 31-day month still fits.
+  const rowH = Math.max(10.5, Math.min(20, (y - 14 - 250) / Math.max(1, days.length)));
+  const size = rowH < 12 ? 8 : rowH < 15 ? 8.5 : 9.5;
+  y -= 14;
   if (!days.length) {
     text("No hours in this period.", cWork, 9.5, font, FAINT);
     y -= rowH;
   }
   for (const d of days) {
-    text(d.date, L, 9.5);
-    text(fit(d.tasks.join(" · "), font, 9.5, workW), cWork, 9.5);
-    right(d.hours.toFixed(2), R, 9.5);
-    rule(y - 6);
+    text(d.date, L, size);
+    text(fit(d.tasks.join(" · "), font, size, workW), cWork, size);
+    right(d.hours.toFixed(2), R, size);
+    rule(y - rowH * 0.32);
     y -= rowH;
   }
 
-  // Totals.
-  y -= 6;
-  const lx = R - 190;
-  text("Hours", lx, 9.5, font, SOFT);
-  right(`${inv.hours.toFixed(2)} h`, R, 9.5);
-  y -= 15;
-  text("Rate", lx, 9.5, font, SOFT);
-  right(`${money(s.rate, s.currency)} / h`, R, 9.5);
-  y -= 9;
-  rule(y, lx, R, 0.9, INK);
-  y -= 17;
-  text("Amount due", lx, 12, bold);
+  // Total, in one line: hours × rate = amount.
+  y -= 8;
+  const lx = R - 250;
+  text(`${inv.hours.toFixed(2)} h × ${money(s.rate, s.currency)} / h`, lx, 9.5, font, SOFT);
   right(money(inv.total, s.currency), R, 13, bold);
-  y -= 40;
+  y -= 8;
+  rule(y, lx, R, 0.9, INK);
+  y -= 30;
 
   // Payment, in a quiet panel.
-  const panelH = 92;
+  const panelH = 106;
   page.drawRectangle({ x: L, y: y - panelH + 14, width: R - L, height: panelH, color: rgb(0.975, 0.968, 0.952) });
   const px = L + 16;
   page.drawText("PAYMENT BY BANK TRANSFER", { x: px, y, size: 7, font: bold, color: FAINT });
   y -= 15;
   text(`${PAYMENT.holder}  ·  ${PAYMENT.bank}  ·  SWIFT ${PAYMENT.swift}`, px, 9);
+  y -= 13;
+  text(PAYMENT.holderAddress, px, 8.5, font, SOFT);
   y -= 18;
   for (const a of PAYMENT.accounts) {
     text(a.currency, px, 9, bold);

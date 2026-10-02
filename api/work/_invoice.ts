@@ -31,6 +31,8 @@ export const FROM_ADDRESS = [
  */
 export const PAYMENT = {
   holder: "XERXES DUANE IBANEZ MAGDALUYO",
+  /** The holder's address as registered with the bank, which GCN's bank asks for. */
+  holderAddress: "1210 Al Mamzar Tower, Al Taawun Street, Al Khalidiya, Sharjah, United Arab Emirates",
   bank: "Mashreq Bank, Dubai, UAE",
   swift: "BOMLAEAD",
   accounts: [
@@ -59,61 +61,41 @@ const pad = (n: number) => String(n).padStart(2, "0");
 
 const DAY = 24 * HOUR;
 
-/** Days in a month (0-based month), by UTC calendar. */
-function daysIn(y: number, m: number): number {
-  return new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
-}
-
 /** The instant of a Dubai midnight. Month is 0-based and may overflow. */
 function dubaiMidnight(y: number, m: number, d: number): number {
   return Date.UTC(y, m, d) - OFFSET;
 }
 
 /**
- * Invoices go out twice a month, on the 15th and on the last day of the
- * month (the 30th, 31st, or 28th/29th in February). Each covers everything
- * since the one before, so no hour is billed twice or missed.
- * the next month's first invoice and no hour is billed twice or missed.
- *
- *   YYYY-MM-A  the 1st through the 15th
- *   YYYY-MM-B  the 16th through the last day of the month
+ * Invoices are monthly: one per calendar month in Dubai, id YYYY-MM, sent
+ * just after the month ends. September 2026 was billed by hand as a
+ * half-month, so its id (2026-09-B) is still understood for viewing.
  */
 export type Period = { id: string; from: number; to: number; label: string };
 
-/** The B period's last day: the month's last day. */
-function cutDay(y: number, m: number): number {
-  return daysIn(y, m);
-}
-
-export function periodFor(id: unknown): Period | null {
-  const match = typeof id === "string" ? /^(20\d{2})-(0[1-9]|1[0-2])-([AB])$/.exec(id) : null;
-  if (!match) return null;
-  const y = Number(match[1]);
-  const m = Number(match[2]) - 1;
-  if (match[3] === "A") {
-    const from = dubaiMidnight(y, m - 1, cutDay(y, m - 1) + 1);
-    const to = dubaiMidnight(y, m, 16);
-    return { id: match[0], from, to, label: `${fmtDate(from)} – ${fmtDate(to - DAY)}` };
-  }
-  const from = dubaiMidnight(y, m, 16);
-  const to = dubaiMidnight(y, m, cutDay(y, m) + 1);
-  return { id: match[0], from, to, label: `${fmtDate(from)} – ${fmtDate(to - DAY)}` };
-}
-
-/** The period an instant falls in. */
-export function periodContaining(ms: number): Period {
-  const d = new Date(ms + OFFSET);
-  const [y, m, day] = [d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()];
-  if (day > cutDay(y, m)) return periodFor(`${y + (m === 11 ? 1 : 0)}-${pad(((m + 1) % 12) + 1)}-A`)!;
-  return periodFor(`${y}-${pad(m + 1)}-${day <= 15 ? "A" : "B"}`)!;
-}
-
-/** A whole calendar month in Dubai, for the work log export. id is YYYY-MM. */
+/** A whole calendar month in Dubai. id is YYYY-MM. */
 export function monthPeriod(id: unknown): Period | null {
   const match = typeof id === "string" ? /^(20\d{2})-(0[1-9]|1[0-2])$/.exec(id) : null;
   if (!match) return null;
   const [y, m] = [Number(match[1]), Number(match[2]) - 1];
   return { id: match[0], from: dubaiMidnight(y, m, 1), to: dubaiMidnight(y, m + 1, 1), label: `${MONTHS[m]} ${y}` };
+}
+
+/** A month (YYYY-MM), or one of the old half-months (YYYY-MM-A / -B). */
+export function periodFor(id: unknown): Period | null {
+  const month = monthPeriod(id);
+  if (month) return month;
+  const match = typeof id === "string" ? /^(20\d{2})-(0[1-9]|1[0-2])-([AB])$/.exec(id) : null;
+  if (!match) return null;
+  const [y, m] = [Number(match[1]), Number(match[2]) - 1];
+  const from = match[3] === "A" ? dubaiMidnight(y, m, 1) : dubaiMidnight(y, m, 16);
+  const to = match[3] === "A" ? dubaiMidnight(y, m, 16) : dubaiMidnight(y, m + 1, 1);
+  return { id: match[0], from, to, label: `${fmtDate(from)} – ${fmtDate(to - DAY)}` };
+}
+
+/** The month an instant falls in. */
+export function periodContaining(ms: number): Period {
+  return monthPeriod(new Date(ms + OFFSET).toISOString().slice(0, 7))!;
 }
 
 /** A period id, or "current" (still open) or "last" (the last one closed, the default). */
@@ -195,7 +177,7 @@ export function buildInvoice(entries: Entry[], settings: Settings, period: Perio
 }
 
 /** Invoices before this period were sent before saved copies existed. */
-export const FIRST_SAVED = "2026-10-A";
+export const FIRST_SAVED = "2026-10";
 
 const SNAP = (id: string) => `work:v1:inv:${id}`;
 
@@ -232,6 +214,8 @@ export class EmptyInvoice extends Error {}
  * the same period only happens with `resend`, and mails the saved copy.
  */
 export async function sendInvoice(period: Period, token: string, opts: { resend?: boolean } = {}): Promise<Invoice> {
+  // September 2026 went out by hand before saved copies existed.
+  if (period.id < FIRST_SAVED) throw new AlreadySent(0);
   const saved = await savedInvoice(period.id);
   if (saved) {
     if (!opts.resend) throw new AlreadySent(saved.sentAt ?? 0);
@@ -373,7 +357,7 @@ ${rows}
 </td></tr>
 <tr><td style="padding:0 32px 20px;">
   <div style="font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:#8a7f75;margin-bottom:6px;">Payment by bank transfer</div>
-  <div style="font-size:13px;line-height:1.5;color:#2b2420;">Account holder: <strong>${PAYMENT.holder}</strong><br>Bank: ${PAYMENT.bank} · SWIFT/BIC: <strong>${PAYMENT.swift}</strong></div>
+  <div style="font-size:13px;line-height:1.5;color:#2b2420;">Account holder: <strong>${PAYMENT.holder}</strong><br>Holder address: ${PAYMENT.holderAddress}<br>Bank: ${PAYMENT.bank} · SWIFT/BIC: <strong>${PAYMENT.swift}</strong></div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:8px;font-size:13px;line-height:1.5;">
     <tr>${PAYMENT.accounts
       .map(

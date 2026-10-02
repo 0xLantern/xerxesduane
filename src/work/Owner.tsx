@@ -418,8 +418,8 @@ function TimerCard({
         </Field>
         {timer && (
           <>
-            <Field label="Notes: what I did or built">
-              <TextArea value={notes} onChange={(e) => setNotes(e.target.value)} onBlur={persist} maxLength={2000} />
+            <Field label="Notes: what I did or built" hint="One point per line. Each line shows as its own bullet.">
+              <TextArea rows={5} value={notes} onChange={(e) => setNotes(e.target.value)} onBlur={persist} maxLength={2000} placeholder={"Revised the proposal with Beat's feedback\nWrote the workflow page\nStarted the post type review"} />
             </Field>
             <Field label="Link (optional)">
               <TextInput type="url" inputMode="url" value={link} onChange={(e) => setLink(e.target.value)} onBlur={persist} placeholder="https://" />
@@ -553,8 +553,8 @@ function EntryEditor({
         <Field label="What I worked on">
           <TextInput value={task} onChange={(e) => setTask(e.target.value)} maxLength={120} required placeholder="e.g. Directory page fixes" />
         </Field>
-        <Field label="Notes: what I did or built">
-          <TextArea value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={2000} />
+        <Field label="Notes: what I did or built" hint="One point per line. Each line shows as its own bullet.">
+          <TextArea rows={5} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={2000} placeholder={"Revised the proposal with Beat's feedback\nWrote the workflow page\nStarted the post type review"} />
         </Field>
         <Field label="Link (optional)">
           <TextInput type="url" inputMode="url" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://" />
@@ -696,7 +696,7 @@ function SettingsSheet({
         <section className="border-t border-line pt-5">
           <h3 className="font-bold text-fg">Invoices</h3>
           <p className="mt-1 text-[0.95rem] text-fg-soft">
-            Emailed to bb@gcn.live automatically just after midnight (Dubai time) once each half-month ends: on the 16th for the 1st–15th, and on the 1st for the rest of the month. A sent invoice is saved as sent and never changes; one not sent yet shows as a draft.
+            Emailed to bb@gcn.live automatically once a month, just after midnight (Dubai time) on the 1st, for the month before. A sent invoice is saved as sent and never changes; one not sent yet shows as a draft.
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             <a href="/api/work/invoice?p=last" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-[0.95rem] font-bold text-fg hover:bg-panel-alt">

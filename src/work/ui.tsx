@@ -3,8 +3,9 @@
  * the small form controls. Phone first: every control is at least 44px tall,
  * text never drops below 15px where it is read, and nothing scrolls sideways.
  */
-import { useEffect, useMemo, useRef, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
+import { useEffect, useMemo, useRef, useState, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
 import type { Entry, Settings } from "./api";
+import { notePoints } from "./notes";
 import { dayKey, fmtDay, fmtHours, fmtMoney, fmtMonth, fmtTime, monthKey, shiftMonth } from "./time";
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
@@ -239,29 +240,52 @@ export function MonthLog({
   );
 }
 
+/** How many points show before "Show all". */
+const FOLD = 3;
+
 function EntryCard({ entry: e, onEdit }: { entry: Entry; onEdit?: (e: Entry) => void }) {
+  const [open, setOpen] = useState(false);
   const overnight = dayKey(e.start) !== dayKey(e.end);
-  const body = (
+  const points = useMemo(() => notePoints(e.notes), [e.notes]);
+  const shown = open ? points : points.slice(0, FOLD);
+  const head = (
     <>
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="min-w-0 break-words text-[0.98rem] font-bold text-fg">{e.task}</p>
-        <span className="shrink-0 text-[0.95rem] font-bold tabular-nums text-fg">{fmtHours(e.end - e.start)} h</span>
+      <div className="flex items-start justify-between gap-3">
+        <p className="min-w-0 break-words text-[0.98rem] font-bold leading-snug text-fg">{e.task}</p>
+        <span className="shrink-0 rounded-full bg-panel-alt px-2.5 py-0.5 text-sm font-bold tabular-nums text-fg">{fmtHours(e.end - e.start)} h</span>
       </div>
-      <p className="text-sm tabular-nums text-fg-soft">
+      <p className="mt-0.5 text-sm tabular-nums text-fg-soft">
         {fmtTime(e.start)}–{fmtTime(e.end)}
         {overnight && " (next day)"}
+        {onEdit && <span className="ml-2 font-semibold text-accent-deep">Edit</span>}
       </p>
-      {e.notes && <p className="mt-1.5 whitespace-pre-line break-words text-[0.95rem] leading-relaxed text-fg-soft">{e.notes}</p>}
     </>
   );
   return (
     <div className="rounded-2xl border border-line bg-panel">
       {onEdit ? (
-        <button type="button" onClick={() => onEdit(e)} className="block w-full rounded-2xl px-4 py-3 text-left hover:bg-panel-alt" aria-label={`Edit: ${e.task}`}>
-          {body}
+        <button type="button" onClick={() => onEdit(e)} className="block w-full rounded-t-2xl px-4 pb-2 pt-3 text-left hover:bg-panel-alt" aria-label={`Edit: ${e.task}`}>
+          {head}
         </button>
       ) : (
-        <div className="px-4 py-3">{body}</div>
+        <div className="px-4 pb-2 pt-3">{head}</div>
+      )}
+      {points.length > 0 && (
+        <div className="border-t border-line px-4 py-2.5">
+          <ul className="space-y-1.5">
+            {shown.map((p, i) => (
+              <li key={i} className="flex gap-2 text-[0.93rem] leading-relaxed text-fg-soft">
+                <span className="mt-[0.55rem] h-1.5 w-1.5 shrink-0 rounded-full bg-accent" aria-hidden />
+                <span className="min-w-0 break-words">{p}</span>
+              </li>
+            ))}
+          </ul>
+          {points.length > FOLD && (
+            <button type="button" onClick={() => setOpen(!open)} className="mt-1.5 text-sm font-semibold text-accent-deep hover:underline">
+              {open ? "Show less" : `Show all ${points.length} points`}
+            </button>
+          )}
+        </div>
       )}
       {e.link && (
         <a

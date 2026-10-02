@@ -7,6 +7,7 @@
  */
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { ApiError, api, type Entry, type ReportData } from "./api";
+import { notePoints } from "./notes";
 import {
   DAY,
   TZ_LABEL,
@@ -265,10 +266,9 @@ function PasswordGate({ onIn }: { onIn: () => void }) {
 /** One session: what it was, when, how long, and what was done, as a list. */
 function WorkCard({ entry: e }: { entry: Entry }) {
   // Notes are written as paragraphs; each one reads best as its own point.
-  const points = e.notes
-    .split(/\n\s*\n|\n(?=\s*[-•*]\s)/)
-    .map((p) => p.replace(/^\s*[-•*]\s*/, "").trim())
-    .filter(Boolean);
+  const points = useMemo(() => notePoints(e.notes), [e.notes]);
+  const [open, setOpen] = useState(false);
+  const shown = open ? points : points.slice(0, 4);
   const overnight = dayKey(e.start) !== dayKey(e.end);
   return (
     <article className="rounded-2xl bg-white p-4 shadow-[0_1px_2px_rgba(43,26,20,.05)] sm:p-5">
@@ -286,13 +286,18 @@ function WorkCard({ entry: e }: { entry: Entry }) {
       </p>
       {points.length > 0 && (
         <ul className="mt-3 space-y-2 border-t border-[#f0ebe2] pt-3">
-          {points.map((p, i) => (
+          {shown.map((p, i) => (
             <li key={i} className="flex gap-2.5 text-[0.95rem] leading-relaxed text-[#4a3f37]">
               <span className="mt-[0.6rem] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: BRONZE }} aria-hidden />
-              <span className="min-w-0 whitespace-pre-line break-words">{p}</span>
+              <span className="min-w-0 break-words">{p}</span>
             </li>
           ))}
         </ul>
+      )}
+      {points.length > 4 && (
+        <button type="button" onClick={() => setOpen(!open)} className="mt-2 text-sm font-semibold" style={{ color: GREEN }}>
+          {open ? "Show less" : `Show all ${points.length} points`}
+        </button>
       )}
       {e.link && (
         <a

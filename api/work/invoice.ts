@@ -1,6 +1,6 @@
-// The invoice for one half-month period (see _invoice.ts).
+// The invoice for one month (see _invoice.ts).
 //
-//   GET  ?p=YYYY-MM-A|B&t=<token>   the printable invoice, for the owner or
+//   GET  ?p=YYYY-MM&t=<token>        the printable invoice, for the owner or
 //                                   the client's private link (never /gcn)
 //   POST { period?, resend? }       email it to GCN now (owner only)
 import { errorResponse, getShareToken, handle, json, readJson, readScope, requireOwner, underLimit } from "./_lib";
