@@ -1,0 +1,190 @@
+/**
+ * The partner list: who gets each letter, and how. Every partner needs an
+ * email address or a WhatsApp number, or both; the greeting is the name the
+ * letter and messages use ("Dear Beat").
+ */
+import { useState } from "react";
+import { api, type Partner } from "./api";
+import { msg } from "./local";
+import { ACCENT, Box, Btn, Err, INK, Note, Pill, SOFT, inputCls } from "./ui";
+
+type Draft = { name: string; email: string; whatsapp: string; hello: string };
+const empty: Draft = { name: "", email: "", whatsapp: "", hello: "" };
+
+const looksLikeNumber = (s: string) => /^[+\d\s().-]+$/.test(s) && s.replace(/\D/g, "").length >= 7;
+
+/**
+ * One partner per line, "Name, email, WhatsApp, greeting". The fields after
+ * the name are recognised by their look, so any of them can be left out:
+ * "Anna Meier, +41 79 123 45 67" works too.
+ */
+function parseBulk(text: string): Draft[] {
+  return text
+    .split("\n")
+    .map((line) => line.split(/[,;\t]/).map((x) => x.trim()))
+    .filter((cells) => cells[0])
+    .map(([name, ...rest]) => {
+      const d: Draft = { ...empty, name };
+      for (const c of rest) {
+        if (!c) continue;
+        if (c.includes("@") && !d.email) d.email = c;
+        else if (looksLikeNumber(c) && !d.whatsapp) d.whatsapp = c;
+        else if (!d.hello) d.hello = c;
+      }
+      return d;
+    });
+}
+
+export default function Partners({ partners, reload }: { partners: Partner[]; reload: () => Promise<void> }) {
+  const [draft, setDraft] = useState<Draft>(empty);
+  const [bulk, setBulk] = useState("");
+  const [error, setError] = useState("");
+  const [note, setNote] = useState("");
+
+  const add = async (rows: Draft[]) => {
+    setError("");
+    setNote("");
+    try {
+      const r = await api.addPartners(rows);
+      if (r.added === 0 && r.skipped.length) setError(r.skipped.join(" "));
+      else setNote(`Added ${r.added}.${r.skipped.length ? ` Skipped: ${r.skipped.join(" ")}` : ""}`);
+      await reload();
+      return r.added > 0;
+    } catch (e) {
+      setError(msg(e));
+      return false;
+    }
+  };
+
+  const active = partners.filter((p) => p.active).length;
+  const preview = parseBulk(bulk);
+  return (
+    <div className="space-y-4">
+      <Box className="space-y-3">
+        <p className="font-bold" style={{ color: INK }}>
+          Add a partner
+        </p>
+        <Fields value={draft} onChange={setDraft} />
+        <p className="text-sm" style={{ color: SOFT }}>
+          An email address, a WhatsApp number, or both. WhatsApp numbers need the country code.
+        </p>
+        <Btn
+          kind="primary"
+          onClick={() =>
+            void add([draft]).then((ok) => {
+              if (ok) setDraft(empty);
+            })
+          }
+        >
+          Add partner
+        </Btn>
+        <details className="pt-1">
+          <summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold" style={{ color: ACCENT }}>
+            Add many at once
+          </summary>
+          <textarea
+            className={`${inputCls} mt-2 min-h-[8rem] font-mono text-sm`}
+            value={bulk}
+            onChange={(e) => setBulk(e.target.value)}
+            placeholder={"One per line: Name, email, WhatsApp, greeting\nBeat Baumann, bb@gcn.live, +41 79 376 87 33, Beat\nAnna Meier, , +41 79 123 45 67\nPastor Ramon Cruz, ramon@example.ph, , Pastor Ramon"}
+          />
+          {preview.length > 0 && (
+            <p className="mt-1 text-sm" style={{ color: SOFT }}>
+              {preview.length} line{preview.length === 1 ? "" : "s"}: {preview.filter((d) => d.email).length} with email, {preview.filter((d) => d.whatsapp).length} with WhatsApp.
+            </p>
+          )}
+          <Btn className="mt-2" disabled={!preview.length} onClick={() => void add(preview).then((ok) => ok && setBulk(""))}>
+            Add all
+          </Btn>
+        </details>
+        <Err>{error}</Err>
+        <Note>{note}</Note>
+      </Box>
+
+      <Box>
+        <p className="font-bold" style={{ color: INK }}>
+          {partners.length} partner{partners.length === 1 ? "" : "s"} · {active} receive letters
+        </p>
+        <ul className="mt-2 divide-y divide-[#efe9df]">
+          {partners.map((p) => (
+            <Row key={p.id} p={p} reload={reload} />
+          ))}
+        </ul>
+      </Box>
+    </div>
+  );
+}
+
+function Fields({ value, onChange }: { value: Draft; onChange: (d: Draft) => void }) {
+  const set = (k: keyof Draft) => (e: { target: { value: string } }) => onChange({ ...value, [k]: e.target.value });
+  return (
+    <div className="grid gap-2 sm:grid-cols-2">
+      <input className={inputCls} placeholder="Full name" aria-label="Full name" value={value.name} onChange={set("name")} autoComplete="off" />
+      <input className={inputCls} placeholder="Greeting, e.g. Beat (optional)" aria-label="Greeting" value={value.hello} onChange={set("hello")} autoComplete="off" />
+      <input className={inputCls} type="email" placeholder="Email (optional)" aria-label="Email" value={value.email} onChange={set("email")} autoComplete="off" />
+      <input className={inputCls} type="tel" inputMode="tel" placeholder="WhatsApp, e.g. +971 50 123 4567" aria-label="WhatsApp number" value={value.whatsapp} onChange={set("whatsapp")} autoComplete="off" />
+    </div>
+  );
+}
+
+function Row({ p, reload }: { p: Partner; reload: () => Promise<void> }) {
+  const [edit, setEdit] = useState<Draft | null>(null);
+  const [error, setError] = useState("");
+  const run = async (fn: () => Promise<unknown>) => {
+    setError("");
+    try {
+      await fn();
+      await reload();
+      return true;
+    } catch (e) {
+      setError(msg(e));
+      return false;
+    }
+  };
+
+  if (edit) {
+    return (
+      <li className="space-y-2 py-3">
+        <Fields value={edit} onChange={setEdit} />
+        <Err>{error}</Err>
+        <div className="flex gap-2">
+          <Btn kind="primary" onClick={() => void run(() => api.savePartner({ ...p, ...edit })).then((ok) => ok && setEdit(null))}>
+            Save
+          </Btn>
+          <Btn onClick={() => setEdit(null)}>Cancel</Btn>
+        </div>
+      </li>
+    );
+  }
+
+  return (
+    <li className="py-3">
+      <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+        <div className="min-w-0">
+          <p className="font-semibold" style={{ color: p.active ? INK : SOFT }}>
+            {p.name} <span className="font-normal" style={{ color: SOFT }}>· “Dear {p.hello}”</span> {!p.active && <Pill>Paused</Pill>}
+          </p>
+          <p className="break-words text-sm" style={{ color: SOFT }}>
+            {[p.email, p.whatsapp && `+${p.whatsapp}`].filter(Boolean).join(" · ")}
+          </p>
+        </div>
+        <div className="flex shrink-0 gap-1">
+          <button type="button" className="min-h-11 rounded-full px-3 text-sm font-semibold hover:bg-[#f2ede4]" style={{ color: INK }} onClick={() => setEdit({ name: p.name, email: p.email, whatsapp: p.whatsapp ? `+${p.whatsapp}` : "", hello: p.hello })}>
+            Edit
+          </button>
+          <button type="button" className="min-h-11 rounded-full px-3 text-sm font-semibold hover:bg-[#f2ede4]" style={{ color: INK }} onClick={() => void run(() => api.savePartner({ ...p, whatsapp: p.whatsapp ? `+${p.whatsapp}` : "", active: !p.active }))}>
+            {p.active ? "Pause" : "Resume"}
+          </button>
+          <button
+            type="button"
+            className="min-h-11 rounded-full px-3 text-sm font-semibold text-red-700 hover:bg-red-50"
+            onClick={() => window.confirm(`Remove ${p.name}? Copies already sent keep working until they expire or you withdraw them.`) && void run(() => api.deletePartner(p.id))}
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+      <Err>{error}</Err>
+    </li>
+  );
+}

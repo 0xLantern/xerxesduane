@@ -15,7 +15,8 @@ export default defineConfig(({ isSsrBuild }) => {
       rollupOptions: {
         // work.html is the hours log on work.xerxesduane.com: its own page,
         // never prerendered, so it only exists in the client build.
-        input: { main: 'index.html', work: 'work.html' },
+        // letters.html is the partner letters on ministry.xerxesduane.com, the same way.
+        input: { main: 'index.html', work: 'work.html', letters: 'letters.html' },
         output: {
           manualChunks(id) {
             if (id.includes('node_modules')) {
@@ -24,6 +25,8 @@ export default defineConfig(({ isSsrBuild }) => {
               if (id.includes('lenis')) return undefined
               // Same for the background shader, loaded once the page is idle.
               if (id.includes('@paper-design')) return undefined
+              // pdf.js is for the partner letters only, loaded when a letter opens.
+              if (id.includes('pdfjs-dist')) return undefined
               return 'vendor'
             }
           },
