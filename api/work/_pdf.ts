@@ -7,8 +7,8 @@
 // than failing the whole file.
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import { OWNER_EMAIL } from "./_lib";
-import { BILL_TO, FROM_ADDRESS, PAYMENT, fmtDate, type Invoice, type InvoiceRow } from "./_invoice";
-import type { Settings, Summary } from "./_lib";
+import { FROM_ADDRESS, PAYMENT, billToOf, fmtDate, logoOf, type Invoice, type InvoiceRow } from "./_invoice";
+import type { Client, Settings, Summary } from "./_lib";
 
 const INK = rgb(0.17, 0.14, 0.13);
 const SOFT = rgb(0.42, 0.37, 0.33);
@@ -92,11 +92,12 @@ async function renderLogPdf(inv: Invoice, kind: "invoice" | "log", origin: strin
   const title = kind === "invoice" ? `Invoice ${inv.number}` : `Work log · ${inv.period}`;
   doc.setTitle(clean(title));
   doc.setAuthor(clean(inv.settings.name));
+  const BILL_TO = billToOf(inv);
   doc.setSubject(clean(`${BILL_TO.name} · ${inv.period}`));
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const [logo, ownLogo] = await Promise.all([
-    loadLogo(doc, origin, "/brand/clients/gcn.png"),
+    logoOf(inv) ? loadLogo(doc, origin, logoOf(inv)) : null,
     loadLogo(doc, origin, "/brand/mono/logo-black@2x.png"),
   ]);
   const s = inv.settings;
@@ -108,12 +109,12 @@ async function renderLogPdf(inv: Invoice, kind: "invoice" | "log", origin: strin
   const right = (t: string, xr: number, size: number, f = font, color = INK) =>
     page.drawText(clean(t), { x: xr - f.widthOfTextAtSize(clean(t), size), y, size, font: f, color });
 
-  // Header: logo left, title block right.
+  // Header: logo left (or the client's name), title block right.
   if (logo) {
     const w = 170;
     const h = (logo.height / logo.width) * w;
     page.drawImage(logo, { x: M - 6, y: y - h + 6, width: w, height: h });
-  }
+  } else text(s.client, M, 18, bold);
   y -= 18;
   const draft = kind === "invoice" && inv.status === "draft";
   right(kind === "invoice" ? (draft ? "DRAFT" : "INVOICE") : "WORK LOG", W - M, 22, bold, draft ? rgb(0.65, 0.25, 0.04) : INK);
@@ -140,7 +141,7 @@ async function renderLogPdf(inv: Invoice, kind: "invoice" | "log", origin: strin
   text(kind === "invoice" ? "BILL TO" : "CLIENT", M, 8, bold, FAINT);
   right("FROM", colR, 8, bold, FAINT);
   y -= 15;
-  const leftLines = [BILL_TO.name, ...BILL_TO.lines, BILL_TO.phone, `${BILL_TO.email} · ${BILL_TO.web}`];
+  const leftLines = [BILL_TO.name, ...BILL_TO.lines, BILL_TO.phone, [BILL_TO.email, BILL_TO.web].filter(Boolean).join(" · ")].filter(Boolean);
   const rightLines = [s.name, ...FROM_ADDRESS, OWNER_EMAIL, `Rate: ${money(s.rate, s.currency)} / hour`];
   for (let i = 0; i < Math.max(leftLines.length, rightLines.length); i++) {
     if (leftLines[i]) text(leftLines[i], M, 10, i === 0 ? bold : font, i === leftLines.length - 1 ? GREEN : INK);
@@ -286,11 +287,12 @@ async function renderInvoicePdf(inv: Invoice, origin: string): Promise<Uint8Arra
   const doc = await PDFDocument.create();
   doc.setTitle(clean(`Invoice ${inv.number}`));
   doc.setAuthor(clean(inv.settings.name));
+  const BILL_TO = billToOf(inv);
   doc.setSubject(clean(`${BILL_TO.name} · ${inv.period}`));
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const [logo, ownLogo] = await Promise.all([
-    loadLogo(doc, origin, "/brand/clients/gcn.png"),
+    logoOf(inv) ? loadLogo(doc, origin, logoOf(inv)) : null,
     loadLogo(doc, origin, "/brand/mono/logo-black@2x.png"),
   ]);
   const s = inv.settings;
@@ -305,12 +307,12 @@ async function renderInvoicePdf(inv: Invoice, origin: string): Promise<Uint8Arra
   const rule = (yy: number, x1 = L, x2 = R, t = 0.6, color = RULE) =>
     page.drawLine({ start: { x: x1, y: yy }, end: { x: x2, y: yy }, thickness: t, color });
 
-  // Header: client's logo, and the document's name and number.
+  // Header: client's logo (or name), and the document's name and number.
   if (logo) {
     const w = 130;
     const h = (logo.height / logo.width) * w;
     page.drawImage(logo, { x: L - 6, y: y - h + 10, width: w, height: h });
-  }
+  } else text(s.client, L, 18, bold);
   right(draft ? "DRAFT" : "Invoice", R, 24, bold, draft ? rgb(0.65, 0.25, 0.04) : INK);
   y -= 20;
   right(inv.number, R, 9.5, font, SOFT);
@@ -334,7 +336,7 @@ async function renderInvoicePdf(inv: Invoice, origin: string): Promise<Uint8Arra
   page.drawText("BILLED TO", { x: L, y, size: 7, font: bold, color: FAINT });
   page.drawText("FROM", { x: colB, y, size: 7, font: bold, color: FAINT });
   y -= 14;
-  const billed = [BILL_TO.name, ...BILL_TO.lines, BILL_TO.email];
+  const billed = [BILL_TO.name, ...BILL_TO.lines, BILL_TO.email].filter(Boolean);
   const from = [s.name, ...FROM_ADDRESS, OWNER_EMAIL];
   const top = y;
   billed.forEach((t, i) => page.drawText(clean(t), { x: L, y: top - i * 12.5, size: 9, font: i === 0 ? bold : font, color: i === 0 ? INK : SOFT }));
@@ -420,15 +422,16 @@ async function renderInvoicePdf(inv: Invoice, origin: string): Promise<Uint8Arra
  * hours, amount, and whether it was sent and paid. For the client's own
  * reporting, and the owner's.
  */
-export async function renderYearPdf(year: number, rows: InvoiceRow[], settings: Settings, origin: string, now = Date.now()): Promise<Uint8Array> {
+export async function renderYearPdf(year: number, rows: InvoiceRow[], settings: Settings, client: Client, origin: string, now = Date.now()): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
+  const BILL_TO = client.billTo;
   doc.setTitle(clean(`Year statement ${year} · ${BILL_TO.name}`));
   doc.setAuthor(clean(settings.name));
   doc.setSubject(clean(`${BILL_TO.name} · ${year}`));
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const [logo, ownLogo] = await Promise.all([
-    loadLogo(doc, origin, "/brand/clients/gcn.png"),
+    client.logo ? loadLogo(doc, origin, client.logo) : null,
     loadLogo(doc, origin, "/brand/mono/logo-black@2x.png"),
   ]);
   const page = doc.addPage([W, H]);
@@ -445,7 +448,7 @@ export async function renderYearPdf(year: number, rows: InvoiceRow[], settings: 
     const w = 130;
     const h = (logo.height / logo.width) * w;
     page.drawImage(logo, { x: L - 6, y: y - h + 10, width: w, height: h });
-  }
+  } else text(client.name, L, 18, bold);
   right("Year statement", R, 24, bold);
   y -= 20;
   right(`${year} · as of ${fmtDate(now)}`, R, 9.5, font, SOFT);
@@ -475,12 +478,12 @@ export async function renderYearPdf(year: number, rows: InvoiceRow[], settings: 
   page.drawText("CLIENT", { x: L, y, size: 7, font: bold, color: FAINT });
   page.drawText("FROM", { x: colB, y, size: 7, font: bold, color: FAINT });
   y -= 14;
-  const client = [BILL_TO.name, ...BILL_TO.lines, BILL_TO.email];
+  const who = [BILL_TO.name, ...BILL_TO.lines, BILL_TO.email].filter(Boolean);
   const from = [settings.name, ...FROM_ADDRESS, OWNER_EMAIL];
   const top = y;
-  client.forEach((t, i) => page.drawText(clean(t), { x: L, y: top - i * 12.5, size: 9, font: i === 0 ? bold : font, color: i === 0 ? INK : SOFT }));
+  who.forEach((t, i) => page.drawText(clean(t), { x: L, y: top - i * 12.5, size: 9, font: i === 0 ? bold : font, color: i === 0 ? INK : SOFT }));
   from.forEach((t, i) => page.drawText(clean(t), { x: colB, y: top - i * 12.5, size: 9, font: i === 0 ? bold : font, color: i === 0 ? INK : SOFT }));
-  y = top - Math.max(client.length, from.length) * 12.5 - 22;
+  y = top - Math.max(who.length, from.length) * 12.5 - 22;
 
   // One row per month.
   const cInv = L + 110;

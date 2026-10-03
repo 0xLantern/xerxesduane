@@ -4,12 +4,23 @@
  * button sit at the top, the month's log below.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { ApiError, api, type Entry, type OwnerData, type Settings } from "./api";
+import { ApiError, api, type Client, type Entry, type OwnerData, type Settings } from "./api";
 import { Button, Card, DownloadLink, ErrorNote, Field, MonthLog, Sheet, TextArea, TextInput, TotalTile } from "./ui";
 import { DAY, HOUR, TZ_LABEL, dateInput, fmtClock, fmtDay, fmtMonth, fmtTime, monthKey, monthStart, rangeFromInputs, shiftMonth, timeInput, totalsFor, weekStart } from "./time";
 import { overlapIds, overlapping } from "./overlap";
-import { InvoicesSheet, SummarySheet, TrashList } from "./Sheets";
-import { money } from "./invoices";
+import { ClientSheet, InvoicesSheet, SummarySheet, TrashList } from "./Sheets";
+import { money, owedOf } from "./invoices";
+
+const CLIENT_KEY = "xd-work-client";
+
+/** The client the owner last worked on, on this device. */
+function rememberedClient(): string {
+  try {
+    return localStorage.getItem(CLIENT_KEY) ?? "gcn";
+  } catch {
+    return "gcn";
+  }
+}
 
 type State =
   | { kind: "loading" }
@@ -138,7 +149,20 @@ function Log({
   // The entry just deleted, so one tap brings it back.
   const [undo, setUndo] = useState<Entry | null>(null);
 
-  const { entries, settings } = data;
+  // Which client is on screen. Everything below (totals, log, invoices, note) is theirs.
+  const [clientId, setClientIdState] = useState(rememberedClient);
+  const clients = data.clients.filter((c) => !c.archived || c.id === clientId);
+  const client = data.clients.find((c) => c.id === clientId) ?? data.clients[0];
+  const setClientId = (id: string) => {
+    setClientIdState(id);
+    try {
+      localStorage.setItem(CLIENT_KEY, id);
+    } catch {
+      /* fine */
+    }
+  };
+  const settings: Settings = { name: data.settings.name, client: client.name, rate: client.rate, currency: client.currency };
+  const entries = useMemo(() => data.entries.filter((e) => e.client === client.id), [data.entries, client.id]);
   const week = weekStart(now());
   const thisMonth = monthKey(now());
   const weekMs = totalsFor(entries, week, week + 7 * DAY);
@@ -146,8 +170,12 @@ function Log({
 
   const upsert = (entry: Entry, replacing?: string) =>
     setData((d) => ({ ...d, entries: [...d.entries.filter((e) => e.id !== entry.id && e.id !== replacing), entry] }));
-  const flagged = useMemo(() => overlapIds(entries), [entries]);
-  const summary = data.summaries[month];
+  // Overlaps are checked across every client: the same minutes can't be worked twice for anyone.
+  const flagged = useMemo(() => overlapIds(data.entries), [data.entries]);
+  const summary = data.summaries[client.id]?.[month];
+  const invoiceRows = useMemo(() => data.invoices.filter((r) => r.client === client.id), [data.invoices, client.id]);
+  const owed = useMemo(() => owedOf(invoiceRows), [invoiceRows]);
+  const replaceRows = (rows: OwnerData["invoices"]) => setData((d) => ({ ...d, invoices: [...d.invoices.filter((r) => r.client !== client.id), ...rows] }));
 
   // A 401 anywhere means the session ended (password changed, or 30 days up).
   const guard = async <T,>(p: Promise<T>): Promise<T> => {
@@ -164,9 +192,29 @@ function Log({
       <header className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h1 className="font-display text-2xl font-bold text-fg">Work log</h1>
-          <p className="truncate text-[0.95rem] text-fg-soft">
-            {settings.client} · {settings.rate.toFixed(2)} {settings.currency}/hr
-          </p>
+          {clients.length > 1 ? (
+            <label className="mt-0.5 flex items-center gap-1 text-[0.95rem] text-fg-soft">
+              <span className="sr-only">Client</span>
+              <select
+                value={client.id}
+                onChange={(e) => setClientId(e.target.value)}
+                className="min-h-9 max-w-[12rem] rounded-lg border border-line bg-panel px-2 font-semibold text-fg"
+              >
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <span className="truncate">
+                · {settings.rate.toFixed(2)} {settings.currency}/hr
+              </span>
+            </label>
+          ) : (
+            <p className="truncate text-[0.95rem] text-fg-soft">
+              {settings.client} · {settings.rate.toFixed(2)} {settings.currency}/hr
+            </p>
+          )}
         </div>
         <Button onClick={() => setMenu(true)}>Share &amp; settings</Button>
       </header>
@@ -175,6 +223,8 @@ function Log({
         key={data.timer?.start ?? "idle"}
         reload={reload}
         data={data}
+        client={client}
+        clients={data.clients}
         now={now}
         guard={guard}
         onChange={(timer) => setData((d) => ({ ...d, timer }))}
@@ -223,10 +273,8 @@ function Log({
       <div className="mt-2 grid grid-cols-2 gap-2">
         <button type="button" onClick={() => setInvoices(true)} className="min-w-0 rounded-2xl border border-line bg-panel px-4 py-3 text-left hover:bg-panel-alt">
           <p className="text-sm font-bold text-fg-soft">Owed by {settings.client}</p>
-          <p className="mt-0.5 font-display text-2xl font-bold tabular-nums text-fg">{money(data.owed.total, settings.currency)}</p>
-          <p className="text-[0.95rem] font-semibold text-accent-deep">
-            {data.owed.count === 0 ? "All paid · Invoices" : `${data.owed.count} unpaid · Invoices`}
-          </p>
+          <p className="mt-0.5 font-display text-2xl font-bold tabular-nums text-fg">{money(owed.total, settings.currency)}</p>
+          <p className="text-[0.95rem] font-semibold text-accent-deep">{owed.count === 0 ? "All paid · Invoices" : `${owed.count} unpaid · Invoices`}</p>
         </button>
         <button type="button" onClick={() => setNote(true)} className="min-w-0 rounded-2xl border border-line bg-panel px-4 py-3 text-left hover:bg-panel-alt">
           <p className="text-sm font-bold text-fg-soft">Note for {settings.client}</p>
@@ -259,15 +307,17 @@ function Log({
         </p>
       )}
       <div className="mt-6 flex flex-wrap justify-center gap-2">
-        <DownloadLink href={`/api/work/pdf?kind=log&m=${month}`}>Download {fmtMonth(month)} (PDF)</DownloadLink>
-        <DownloadLink href={`/api/work/pdf?kind=year&y=${month.slice(0, 4)}`}>Year statement {month.slice(0, 4)} (PDF)</DownloadLink>
+        <DownloadLink href={`/api/work/pdf?kind=log&m=${month}&c=${client.id}`}>Download {fmtMonth(month)} (PDF)</DownloadLink>
+        <DownloadLink href={`/api/work/pdf?kind=year&y=${month.slice(0, 4)}&c=${client.id}`}>Year statement {month.slice(0, 4)} (PDF)</DownloadLink>
       </div>
       <p className="mt-4 text-center text-sm text-fg-faint">Times are in {TZ_LABEL}.</p>
 
       {editing && (
         <EntryEditor
           entry={editing.mode === "edit" ? editing.entry : null}
-          entries={entries}
+          entries={data.entries}
+          clients={data.clients}
+          defaultClient={client.id}
           now={now}
           onClose={() => setEditing(null)}
           onSave={async (fields) => {
@@ -299,10 +349,11 @@ function Log({
 
       {invoices && (
         <InvoicesSheet
-          invoices={data.invoices}
-          owed={data.owed}
+          client={client}
+          invoices={invoiceRows}
+          owed={owed}
           guard={guard}
-          onChange={(inv, owed) => setData((d) => ({ ...d, invoices: inv, owed }))}
+          onChange={(inv) => replaceRows(inv)}
           onClose={() => setInvoices(false)}
         />
       )}
@@ -310,10 +361,10 @@ function Log({
       {note && (
         <SummarySheet
           month={month}
-          client={settings.client}
+          client={client}
           summary={summary}
           guard={guard}
-          onSaved={(summaries) => setData((d) => ({ ...d, summaries }))}
+          onSaved={(summaries) => setData((d) => ({ ...d, summaries: { ...d.summaries, [client.id]: summaries } }))}
           onClose={() => setNote(false)}
         />
       )}
@@ -321,10 +372,16 @@ function Log({
       {menu && (
         <SettingsSheet
           data={data}
+          client={client}
           onClose={() => setMenu(false)}
           guard={guard}
           onSettings={(s) => setData((d) => ({ ...d, settings: s }))}
-          onToken={(t) => setData((d) => ({ ...d, shareToken: t }))}
+          onClients={(clients, pick) => {
+            setData((d) => ({ ...d, clients }));
+            if (pick) setClientId(pick);
+            void reload();
+          }}
+          onToken={(id, t) => setData((d) => ({ ...d, shareTokens: { ...d.shareTokens, [id]: t } }))}
           onRestored={(entry) => {
             upsert(entry);
             setMonth(monthKey(entry.start));
@@ -356,6 +413,8 @@ function readDraft(start: number | undefined): { task: string; notes: string; li
 function TimerCard({
   reload,
   data,
+  client,
+  clients,
   now,
   guard,
   onChange,
@@ -363,6 +422,9 @@ function TimerCard({
 }: {
   reload: () => Promise<void>;
   data: OwnerData;
+  /** The client on screen: what a new timer is for. */
+  client: Client;
+  clients: Client[];
   now: () => number;
   guard: <T>(p: Promise<T>) => Promise<T>;
   onChange: (t: OwnerData["timer"]) => void;
@@ -410,7 +472,7 @@ function TimerCard({
   const start = () =>
     run(async () => {
       try {
-        const res = await guard(api.timer("start", { task, notes, link }));
+        const res = await guard(api.timer("start", { task, notes, link, client: client.id }));
         onChange(res.timer);
         onSaved(null, "");
       } catch (err) {
@@ -482,15 +544,19 @@ function TimerCard({
   // "I stopped earlier": the end time typed in, or null while closed.
   const [earlier, setEarlier] = useState<string | null>(null);
 
-  // The most recent entry, to pick up where the last session left off.
-  const last = useMemo(() => (data.entries.length ? data.entries.reduce((a, b) => (b.end > a.end ? b : a)) : null), [data.entries]);
+  // The most recent entry for this client, to pick up where the last session left off.
+  const last = useMemo(() => {
+    const mine = data.entries.filter((e) => e.client === client.id);
+    return mine.length ? mine.reduce((a, b) => (b.end > a.end ? b : a)) : null;
+  }, [data.entries, client.id]);
+  const timerClient = timer ? (clients.find((c) => c.id === timer.client)?.name ?? timer.client) : "";
   const continueLast = () =>
     run(async () => {
       if (!last) return;
       setTask(last.task);
       setLink(last.link);
       try {
-        const res = await guard(api.timer("start", { task: last.task, notes: "", link: last.link }));
+        const res = await guard(api.timer("start", { task: last.task, notes: "", link: last.link, client: client.id }));
         onChange(res.timer);
         onSaved(null, "");
       } catch (err) {
@@ -503,7 +569,7 @@ function TimerCard({
     <Card className="mt-5">
       {timer ? (
         <div className="text-center">
-          <p className="text-sm font-bold uppercase tracking-wide text-accent-deep">Working now</p>
+          <p className="text-sm font-bold uppercase tracking-wide text-accent-deep">Working now{clients.length > 1 ? ` · ${timerClient}` : ""}</p>
           <p className="mt-1 font-display text-5xl font-bold tabular-nums text-fg" aria-live="off">
             {fmtClock(elapsed)}
           </p>
@@ -514,7 +580,7 @@ function TimerCard({
           )}
         </div>
       ) : (
-        <p className="text-[0.98rem] font-bold text-fg">Start the timer when you begin.</p>
+        <p className="text-[0.98rem] font-bold text-fg">Start the timer when you begin{clients.length > 1 ? ` (for ${client.name})` : ""}.</p>
       )}
 
       <div className="mt-4 space-y-3">
@@ -601,6 +667,8 @@ function TimerCard({
 function EntryEditor({
   entry,
   entries,
+  clients,
+  defaultClient,
   now,
   onClose,
   onSave,
@@ -608,6 +676,8 @@ function EntryEditor({
 }: {
   entry: Entry | null;
   entries: Entry[];
+  clients: Client[];
+  defaultClient: string;
   now: () => number;
   onClose: () => void;
   onSave: (fields: Omit<Entry, "id"> & { key?: string }) => Promise<void>;
@@ -620,6 +690,7 @@ function EntryEditor({
   const [task, setTask] = useState(entry?.task ?? "");
   const [notes, setNotes] = useState(entry?.notes ?? "");
   const [link, setLink] = useState(entry?.link ?? "");
+  const [client, setClient] = useState(entry?.client ?? defaultClient);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -643,7 +714,7 @@ function EntryEditor({
     setBusy(true);
     setError("");
     try {
-      await onSave({ ...r, task: task.trim(), notes: notes.trim(), link: link.trim(), key });
+      await onSave({ ...r, task: task.trim(), notes: notes.trim(), link: link.trim(), client, key });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't save that.");
       setBusy(false);
@@ -664,6 +735,19 @@ function EntryEditor({
   return (
     <Sheet title={entry ? "Edit time" : "Add time"} onClose={onClose} locked={busy}>
       <form onSubmit={submit} className="space-y-3">
+        {clients.length > 1 && (
+          <Field label="Client">
+            <select value={client} onChange={(e) => setClient(e.target.value)} className="min-h-11 w-full rounded-xl border border-line bg-canvas px-3 text-base text-fg">
+              {clients
+                .filter((c) => !c.archived || c.id === client)
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+            </select>
+          </Field>
+        )}
         <Field label="Date">
           <TextInput type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
         </Field>
@@ -716,9 +800,11 @@ function EntryEditor({
 
 function SettingsSheet({
   data,
+  client,
   onClose,
   guard,
   onSettings,
+  onClients,
   onToken,
   onRestored,
   onTrash,
@@ -726,39 +812,44 @@ function SettingsSheet({
   onRefresh,
 }: {
   data: OwnerData;
+  /** The client on screen: its link, invoices and details. */
+  client: Client;
   onClose: () => void;
   guard: <T>(p: Promise<T>) => Promise<T>;
   onSettings: (s: Settings) => void;
-  onToken: (t: string) => void;
+  /** The client list changed; `pick` switches the page to that client. */
+  onClients: (clients: Client[], pick?: string) => void;
+  onToken: (client: string, t: string) => void;
   onRestored: (e: Entry) => void;
   onTrash: (t: OwnerData["trash"]) => void;
   onSignOut: () => Promise<void>;
   onRefresh: () => Promise<void>;
 }) {
-  const link = `${window.location.origin}/r/${data.shareToken}`;
+  const link = `${window.location.origin}/r/${data.shareTokens[client.id] ?? ""}`;
   const [name, setName] = useState(data.settings.name);
-  const [client, setClient] = useState(data.settings.client);
-  const [rate, setRate] = useState(String(data.settings.rate));
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [mailed, setMailed] = useState("");
+  const [editClient, setEditClient] = useState<Client | null | "new">(null);
+  const invoiceTo = client.invoiceTo.length ? client.invoiceTo.join(", ") : client.id === "gcn" ? "bb@gcn.live" : "";
 
   const sendInvoice = async (period: "last" | "current") => {
-    if (!window.confirm("Email this invoice to GCN (bb@gcn.live) now?")) return;
+    if (!invoiceTo) return setError(`${client.name} has no invoice email yet. Add one under Client details.`);
+    if (!window.confirm(`Email this invoice to ${client.name} (${invoiceTo}) now?`)) return;
     setBusy(true);
     setError("");
     setMailed("");
     try {
       let res;
       try {
-        res = await guard(api.emailInvoice(period));
+        res = await guard(api.emailInvoice(client.id, period));
       } catch (err) {
         // Already sent: say when, and only send the same copy again if asked.
         if (!(err instanceof ApiError && err.status === 409)) throw err;
         if (!window.confirm(`${err.message} Send the same invoice again?`)) return;
-        res = await guard(api.emailInvoice(period, true));
+        res = await guard(api.emailInvoice(client.id, period, true));
       }
       setMailed(`Sent ${res.sent} to ${res.to.join(", ")}.`);
     } catch (err) {
@@ -782,8 +873,8 @@ function SettingsSheet({
     if (!window.confirm("Make a new link? The old one stops working right away, so you'll need to send the new one.")) return;
     setBusy(true);
     try {
-      const res = await guard(api.rotateLink());
-      onToken(res.shareToken);
+      const res = await guard(api.rotateLink(client.id));
+      onToken(client.id, res.shareToken);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't make a new link.");
     } finally {
@@ -797,7 +888,7 @@ function SettingsSheet({
     setError("");
     setSaved(false);
     try {
-      const res = await guard(api.saveSettings({ name, client, rate: Number(rate) }));
+      const res = await guard(api.saveName(name));
       onSettings(res.settings);
       setSaved(true);
     } catch (err) {
@@ -811,7 +902,7 @@ function SettingsSheet({
     <Sheet title="Share & settings" onClose={onClose}>
       <div className="space-y-6">
         <section>
-          <h3 className="font-bold text-fg">Link for {data.settings.client}</h3>
+          <h3 className="font-bold text-fg">Link for {client.name}</h3>
           <p className="mt-1 text-[0.95rem] text-fg-soft">
             Anyone with this link can see your hours, notes and totals. They can't change anything.
           </p>
@@ -827,28 +918,35 @@ function SettingsSheet({
               Make a new link
             </Button>
           </div>
-          <p className="mt-3 text-[0.95rem] text-fg-soft">
-            Easy address, opened with the client password (WORK_CLIENT_PASSWORD in Vercel):{" "}
-            <a href="/gcn" target="_blank" rel="noopener noreferrer" className="font-semibold text-accent-deep underline-offset-2 hover:underline">
-              {window.location.host}/gcn
-            </a>
-            . Changing that password signs everyone out of it; making a new link doesn't.
-          </p>
+          {client.slug && (
+            <p className="mt-3 text-[0.95rem] text-fg-soft">
+              Easy address, opened with the client password (WORK_CLIENT_PASSWORD in Vercel):{" "}
+              <a href={`/${client.slug}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-accent-deep underline-offset-2 hover:underline">
+                {window.location.host}/{client.slug}
+              </a>
+              . Changing that password signs everyone out of it; making a new link doesn't.
+            </p>
+          )}
         </section>
 
         <section className="border-t border-line pt-5">
-          <h3 className="font-bold text-fg">Invoices</h3>
+          <h3 className="font-bold text-fg">Invoices for {client.name}</h3>
           <p className="mt-1 text-[0.95rem] text-fg-soft">
-            Emailed to bb@gcn.live automatically once a month, just after midnight (Dubai time) on the 1st, for the month before. A sent invoice is saved as sent and never changes; one not sent yet shows as a draft.
+            {invoiceTo
+              ? client.autoInvoice
+                ? `Emailed to ${invoiceTo} automatically once a month, just after midnight (Dubai time) on the 1st, for the month before.`
+                : `Not sent automatically. Email them from here when ready; they go to ${invoiceTo}.`
+              : "No invoice email yet, so invoices are made and saved but not emailed."}{" "}
+            A sent invoice is saved as sent and never changes; one not sent yet shows as a draft.
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
-            <a href="/api/work/invoice?p=last" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-[0.95rem] font-bold text-fg hover:bg-panel-alt">
+            <a href={`/api/work/invoice?p=last&c=${client.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-[0.95rem] font-bold text-fg hover:bg-panel-alt">
               Last invoice
             </a>
-            <a href="/api/work/invoice?p=current" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-[0.95rem] font-bold text-fg hover:bg-panel-alt">
+            <a href={`/api/work/invoice?p=current&c=${client.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-[0.95rem] font-bold text-fg hover:bg-panel-alt">
               Current period so far
             </a>
-            <DownloadLink href="/api/work/pdf?kind=invoice&p=last">Last invoice (PDF)</DownloadLink>
+            <DownloadLink href={`/api/work/pdf?kind=invoice&p=last&c=${client.id}`}>Last invoice (PDF)</DownloadLink>
             <Button kind="ghost" onClick={() => void sendInvoice("last")} disabled={busy}>
               Email last invoice now
             </Button>
@@ -856,21 +954,50 @@ function SettingsSheet({
           {mailed && <p className="mt-2 text-[0.95rem] font-semibold text-accent-deep">{mailed}</p>}
         </section>
 
+        <section className="border-t border-line pt-5">
+          <h3 className="font-bold text-fg">Clients</h3>
+          <ul className="mt-2 space-y-2">
+            {data.clients.map((c) => (
+              <li key={c.id} className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-panel px-4 py-2.5">
+                <div className="min-w-0">
+                  <p className="truncate font-bold text-fg">
+                    {c.name} <span className="font-mono text-xs font-semibold text-fg-soft">{c.short}</span>
+                    {c.archived && <span className="ml-2 rounded-full bg-panel-alt px-2 py-0.5 text-xs font-bold text-fg-soft">Archived</span>}
+                  </p>
+                  <p className="truncate text-sm text-fg-soft">
+                    {c.rate.toFixed(2)} {c.currency}/hr · {c.invoiceTo.length ? c.invoiceTo.join(", ") : c.id === "gcn" ? "bb@gcn.live" : "no invoice email"}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-1">
+                  {c.id !== client.id && !c.archived && (
+                    <Button kind="ghost" onClick={() => onClients(data.clients, c.id)}>
+                      Switch
+                    </Button>
+                  )}
+                  <Button kind="ghost" onClick={() => setEditClient(c)}>
+                    Edit
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-2">
+            <Button kind="primary" onClick={() => setEditClient("new")}>
+              + Add client
+            </Button>
+          </div>
+          <p className="mt-2 text-[0.95rem] text-fg-soft">Each client has its own rate, invoice numbers, private link, invoices and monthly notes. Hours are logged for the client on screen.</p>
+        </section>
+
         <form onSubmit={save} className="space-y-3 border-t border-line pt-5">
-          <h3 className="font-bold text-fg">Details</h3>
-          <Field label="Your name">
+          <h3 className="font-bold text-fg">Your name</h3>
+          <Field label="As it appears on invoices and the client's page">
             <TextInput value={name} onChange={(e) => setName(e.target.value)} maxLength={80} required />
-          </Field>
-          <Field label="Client">
-            <TextInput value={client} onChange={(e) => setClient(e.target.value)} maxLength={80} required />
-          </Field>
-          <Field label={`Hourly rate (${data.settings.currency})`} hint="Changing it recalculates every total, past ones included.">
-            <TextInput type="number" inputMode="decimal" min="0.01" step="0.01" value={rate} onChange={(e) => setRate(e.target.value)} required />
           </Field>
           <ErrorNote>{error}</ErrorNote>
           {saved && <p className="text-[0.95rem] font-semibold text-accent-deep">Saved.</p>}
           <Button kind="primary" type="submit" disabled={busy}>
-            Save details
+            Save name
           </Button>
         </form>
 
@@ -896,6 +1023,14 @@ function SettingsSheet({
           </Button>
         </div>
       </div>
+      {editClient && (
+        <ClientSheet
+          client={editClient === "new" ? null : editClient}
+          guard={guard}
+          onSaved={(clients, saved) => onClients(clients, editClient === "new" ? saved.id : undefined)}
+          onClose={() => setEditClient(null)}
+        />
+      )}
     </Sheet>
   );
 }

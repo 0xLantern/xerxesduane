@@ -4,7 +4,7 @@
  * rather than crowd Owner.tsx.
  */
 import { useMemo, useState, type FormEvent } from "react";
-import { api, type Entry, type InvoiceRow, type Owed, type Payment, type Summary, type Trashed } from "./api";
+import { api, type Client, type ClientFields, type Entry, type InvoiceRow, type Owed, type Payment, type Summary, type Trashed } from "./api";
 import { TONE, byYear, fmtDate, invoiceState, money, yearTotals } from "./invoices";
 import { Button, DownloadLink, ErrorNote, Field, Sheet, TextArea, TextInput } from "./ui";
 import { dateInput, fmtDay, fmtHours, fmtMonth, fmtTime } from "./time";
@@ -22,18 +22,21 @@ export function StatusPill({ row }: { row: InvoiceRow }) {
 // ---------------------------------------------------------------------------
 
 export function InvoicesSheet({
+  client,
   invoices,
   owed,
   guard,
   onChange,
   onClose,
 }: {
+  client: Client;
   invoices: InvoiceRow[];
   owed: Owed;
   guard: Guard;
   onChange: (invoices: InvoiceRow[], owed: Owed) => void;
   onClose: () => void;
 }) {
+  const c = `&c=${encodeURIComponent(client.id)}`;
   const [marking, setMarking] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -45,7 +48,7 @@ export function InvoicesSheet({
     setBusy(true);
     setError("");
     try {
-      const res = await guard(api.unmarkPaid(r.periodId));
+      const res = await guard(api.unmarkPaid(client.id, r.periodId));
       onChange(res.invoices, res.owed);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't change that.");
@@ -55,7 +58,7 @@ export function InvoicesSheet({
   };
 
   return (
-    <Sheet title="Invoices" onClose={onClose} locked={busy}>
+    <Sheet title={`Invoices · ${client.name}`} onClose={onClose} locked={busy}>
       <div className="space-y-5">
         <div className="rounded-2xl border border-line bg-canvas px-4 py-3">
           <p className="text-sm font-bold text-fg-soft">Still owed</p>
@@ -103,6 +106,7 @@ export function InvoicesSheet({
                     </div>
                     {marking === r.periodId ? (
                       <MarkPaidForm
+                        client={client.id}
                         row={r}
                         guard={guard}
                         onDone={(inv, o) => {
@@ -126,14 +130,14 @@ export function InvoicesSheet({
                         {r.hours > 0 && (
                           <>
                             <a
-                              href={`/api/work/invoice?p=${r.periodId}`}
+                              href={`/api/work/invoice?p=${r.periodId}${c}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-[0.95rem] font-bold text-fg hover:bg-panel-alt"
                             >
                               View
                             </a>
-                            <DownloadLink href={`/api/work/pdf?kind=invoice&p=${r.periodId}`}>PDF</DownloadLink>
+                            <DownloadLink href={`/api/work/pdf?kind=invoice&p=${r.periodId}${c}`}>PDF</DownloadLink>
                           </>
                         )}
                       </div>
@@ -142,7 +146,7 @@ export function InvoicesSheet({
                 ))}
               </ul>
               <div className="mt-3">
-                <DownloadLink href={`/api/work/pdf?kind=year&y=${year}`}>Year statement {year} (PDF)</DownloadLink>
+                <DownloadLink href={`/api/work/pdf?kind=year&y=${year}${c}`}>Year statement {year} (PDF)</DownloadLink>
               </div>
             </section>
           );
@@ -153,11 +157,13 @@ export function InvoicesSheet({
 }
 
 function MarkPaidForm({
+  client,
   row,
   guard,
   onDone,
   onCancel,
 }: {
+  client: string;
   row: InvoiceRow;
   guard: Guard;
   onDone: (invoices: InvoiceRow[], owed: Owed) => void;
@@ -183,7 +189,7 @@ function MarkPaidForm({
     try {
       const n = amount.trim() === "" ? null : Number(amount);
       if (n !== null && !Number.isFinite(n)) throw new Error("The amount has to be a number, or left empty.");
-      const res = await guard(api.markPaid(row.periodId, { currency, amount: n, paidAt: date, note: note.trim() }));
+      const res = await guard(api.markPaid(client, row.periodId, { currency, amount: n, paidAt: date, note: note.trim() }));
       onDone(res.invoices, res.owed);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't save that.");
@@ -243,7 +249,7 @@ export function SummarySheet({
   onClose,
 }: {
   month: string;
-  client: string;
+  client: Client;
   summary: Summary | undefined;
   guard: Guard;
   onSaved: (s: Record<string, Summary>) => void;
@@ -260,7 +266,7 @@ export function SummarySheet({
     setBusy(true);
     setError("");
     try {
-      const res = await guard(api.saveSummary(month, { delivered, next, decide }));
+      const res = await guard(api.saveSummary(client.id, month, { delivered, next, decide }));
       onSaved(res.summaries);
       onClose();
     } catch (err) {
@@ -270,10 +276,10 @@ export function SummarySheet({
   };
 
   return (
-    <Sheet title={`${fmtMonth(month)} for ${client}`} onClose={onClose} locked={busy}>
+    <Sheet title={`${fmtMonth(month)} for ${client.name}`} onClose={onClose} locked={busy}>
       <form onSubmit={save} className="space-y-3">
         <p className="text-[0.95rem] text-fg-soft">
-          Three short lines at the top of {client}'s page for this month, so the board reads the month at a glance. Leave a line empty to hide it.
+          Three short lines at the top of {client.name}'s page for this month, so the board reads the month at a glance. Leave a line empty to hide it.
         </p>
         <Field label="Delivered" hint="What was finished this month.">
           <TextArea rows={3} value={delivered} onChange={(e) => setDelivered(e.target.value)} maxLength={400} placeholder="Directory page live; proposal revised with Beat's feedback" />
@@ -281,7 +287,7 @@ export function SummarySheet({
         <Field label="Next" hint="What comes next month.">
           <TextArea rows={2} value={next} onChange={(e) => setNext(e.target.value)} maxLength={400} placeholder="Workflow page and post type review" />
         </Field>
-        <Field label="Needs your decision" hint={`What ${client} has to decide, so it doesn't wait.`}>
+        <Field label="Needs your decision" hint={`What ${client.name} has to decide, so it doesn't wait.`}>
           <TextArea rows={2} value={decide} onChange={(e) => setDecide(e.target.value)} maxLength={400} placeholder="Which of the two logo colours for the print version" />
         </Field>
         <ErrorNote>{error}</ErrorNote>
@@ -379,5 +385,125 @@ export function TrashList({
         ))}
       </ul>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// A client: name, rate, billing details, where invoices go
+// ---------------------------------------------------------------------------
+
+export function ClientSheet({
+  client,
+  guard,
+  onSaved,
+  onClose,
+}: {
+  /** null: a new client. */
+  client: Client | null;
+  guard: Guard;
+  onSaved: (clients: Client[], saved: Client) => void;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState(client?.name ?? "");
+  const [short, setShort] = useState(client?.short ?? "");
+  const [rate, setRate] = useState(client ? String(client.rate) : "");
+  const [currency, setCurrency] = useState(client?.currency ?? "USD");
+  const [billName, setBillName] = useState(client?.billTo.name ?? "");
+  const [lines, setLines] = useState(client?.billTo.lines.join("\n") ?? "");
+  const [phone, setPhone] = useState(client?.billTo.phone ?? "");
+  const [email, setEmail] = useState(client?.billTo.email ?? "");
+  const [web, setWeb] = useState(client?.billTo.web ?? "");
+  const [invoiceTo, setInvoiceTo] = useState(client?.invoiceTo.join(", ") ?? "");
+  const [auto, setAuto] = useState(client?.autoInvoice ?? true);
+  const [archived, setArchived] = useState(client?.archived ?? false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setError("");
+    const fields: ClientFields = {
+      name: name.trim(),
+      short: (short.trim() || name).toUpperCase().replace(/[^A-Z0-9]+/g, "").slice(0, 12),
+      rate: Number(rate),
+      currency: currency.trim().toUpperCase(),
+      billTo: { name: billName.trim() || name.trim(), lines: lines.split("\n").map((l) => l.trim()).filter(Boolean), phone: phone.trim(), email: email.trim(), web: web.trim() },
+      invoiceTo: invoiceTo.split(/[,;\n]/).map((x) => x.trim()).filter(Boolean),
+      autoInvoice: auto,
+      archived,
+    };
+    try {
+      const res = client ? await guard(api.saveClient(client.id, fields)) : await guard(api.addClient(fields));
+      onSaved(res.clients, res.client);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't save that.");
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Sheet title={client ? `${client.name}` : "New client"} onClose={onClose} locked={busy}>
+      <form onSubmit={submit} className="space-y-3">
+        <div className="grid grid-cols-[1fr_7rem] gap-3">
+          <Field label="Client">
+            <TextInput value={name} onChange={(e) => setName(e.target.value)} maxLength={80} required placeholder="e.g. Hope Church" />
+          </Field>
+          <Field label="Tag" hint="In invoice numbers">
+            <TextInput value={short} onChange={(e) => setShort(e.target.value.toUpperCase())} maxLength={12} placeholder="HOPE" className="font-mono uppercase" />
+          </Field>
+        </div>
+        <div className="grid grid-cols-[1fr_7rem] gap-3">
+          <Field label="Hourly rate" hint={client ? "Changing it recalculates every total, past ones included." : undefined}>
+            <TextInput type="number" inputMode="decimal" min="0.01" step="0.01" value={rate} onChange={(e) => setRate(e.target.value)} required />
+          </Field>
+          <Field label="Currency">
+            <TextInput value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} maxLength={3} required className="font-mono uppercase" />
+          </Field>
+        </div>
+        <h3 className="pt-2 font-bold text-fg">On the invoice: bill to</h3>
+        <Field label="Name on the invoice" hint="Empty: the client's name.">
+          <TextInput value={billName} onChange={(e) => setBillName(e.target.value)} maxLength={120} placeholder={name || "e.g. Hope Church Trust"} />
+        </Field>
+        <Field label="Address" hint="One line per row.">
+          <TextArea rows={3} value={lines} onChange={(e) => setLines(e.target.value)} placeholder={"Mattenstrasse 62\n3800 Matten – Switzerland"} />
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Phone (optional)">
+            <TextInput type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={40} />
+          </Field>
+          <Field label="Website (optional)">
+            <TextInput value={web} onChange={(e) => setWeb(e.target.value)} maxLength={120} placeholder="www.example.org" />
+          </Field>
+        </div>
+        <Field label="Billing email (optional)" hint="Printed on the invoice.">
+          <TextInput type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={200} />
+        </Field>
+        <h3 className="pt-2 font-bold text-fg">Sending invoices</h3>
+        <Field label="Email invoices to" hint="Comma-separated. Empty: invoices are made and saved but not emailed.">
+          <TextInput value={invoiceTo} onChange={(e) => setInvoiceTo(e.target.value)} placeholder="finance@example.org, pastor@example.org" />
+        </Field>
+        <label className="flex min-h-11 cursor-pointer items-center gap-3">
+          <input type="checkbox" className="h-5 w-5 accent-navy" checked={auto} onChange={(e) => setAuto(e.target.checked)} />
+          <span className="text-[0.95rem] text-fg">Email the month's invoice automatically the night the month ends</span>
+        </label>
+        {client && client.id !== "gcn" && (
+          <label className="flex min-h-11 cursor-pointer items-center gap-3">
+            <input type="checkbox" className="h-5 w-5 accent-navy" checked={archived} onChange={(e) => setArchived(e.target.checked)} />
+            <span className="text-[0.95rem] text-fg">Archived: hidden from the switcher, no more invoices (the hours and link stay)</span>
+          </label>
+        )}
+        <ErrorNote>{error}</ErrorNote>
+        <div className="flex gap-2 pt-1">
+          <Button kind="primary" type="submit" disabled={busy} className="flex-1">
+            {busy ? "Saving…" : client ? "Save client" : "Add client"}
+          </Button>
+          <Button onClick={onClose} disabled={busy}>
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </Sheet>
   );
 }

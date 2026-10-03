@@ -1,8 +1,10 @@
 // The start/stop timer. Stopping turns the running time into an entry.
 import {
+  DEFAULT_CLIENT,
   LIMITS,
   cleanEntry,
   errorResponse,
+  getClients,
   getTimer,
   handle,
   json,
@@ -33,11 +35,14 @@ export default handle(async (req) => {
 
   if (action === "start") {
     if (timer) return errorResponse("The timer is already running.", 409);
+    const client = text(body.client, 40) || DEFAULT_CLIENT;
+    if (!(await getClients()).some((c) => c.id === client)) return errorResponse("That client isn't on the list any more. Refresh the page.");
     const started = {
       start: Date.now(),
       task: text(body.task, LIMITS.task),
       notes: text(body.notes, LIMITS.notes),
       link: text(body.link, LIMITS.link),
+      client,
     };
     await setTimer(started);
     return json({ timer: started });
@@ -68,13 +73,17 @@ export default handle(async (req) => {
       await setTimer(null);
       return json({ timer: null, entry: null, note: "Under a minute, so nothing was saved." });
     }
-    const clean = cleanEntry({
-      start: timer.start,
-      end,
-      task: body.task ?? timer.task,
-      notes: body.notes ?? timer.notes,
-      link: body.link ?? timer.link,
-    });
+    const clean = cleanEntry(
+      {
+        start: timer.start,
+        end,
+        task: body.task ?? timer.task,
+        notes: body.notes ?? timer.notes,
+        link: body.link ?? timer.link,
+        client: timer.client,
+      },
+      await getClients(),
+    );
     if (typeof clean === "string") return errorResponse(clean);
     // Claim the timer first: if another stop already took it, this one saves nothing.
     const claimed = await takeTimer();

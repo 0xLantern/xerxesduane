@@ -3,7 +3,18 @@
  * row's status says, totals for a year, and the rows grouped by year. Shared
  * by the owner's panels and the client's page.
  */
-import type { InvoiceRow } from "./api";
+import type { InvoiceRow, Owed } from "./api";
+
+/** What is still owed in these rows: every sent invoice not yet marked paid. */
+export function owedOf(rows: InvoiceRow[]): Owed {
+  const due = rows.filter((r) => r.status === "sent" && !r.paid && r.total > 0);
+  return { total: Math.round(due.reduce((n, r) => n + r.total, 0) * 100) / 100, count: due.length };
+}
+
+/** Whole days since an instant. */
+export function daysSince(ms: number, now = Date.now()): number {
+  return Math.max(0, Math.floor((now - ms) / 864e5));
+}
 
 export function money(amount: number, currency: string): string {
   try {
@@ -22,7 +33,7 @@ export function fmtDate(ms: number): string {
 export function invoiceState(r: InvoiceRow): { label: string; tone: "paid" | "due" | "soon" | "open" | "none" } {
   if (r.hours <= 0) return { label: "No hours", tone: "none" };
   if (r.paid) return { label: `Paid ${fmtDate(r.paid.paidAt)}${r.paid.currency !== r.currency ? ` in ${r.paid.currency}` : ""}`, tone: "paid" };
-  if (r.status === "sent") return { label: `Sent${r.sentAt ? ` ${fmtDate(r.sentAt)}` : ""} · awaiting payment`, tone: "due" };
+  if (r.status === "sent") return { label: `Sent${r.sentAt ? ` ${fmtDate(r.sentAt)}` : ""} · awaiting payment${r.sentAt ? ` ${daysSince(r.sentAt)} days` : ""}`, tone: "due" };
   if (r.status === "pending") return { label: "Invoice goes out tonight", tone: "soon" };
   return { label: "Month in progress", tone: "open" };
 }

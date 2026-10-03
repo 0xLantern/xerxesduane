@@ -17,6 +17,12 @@
 //   work:v1:paid        hash, invoice period id -> payment JSON
 //   work:v1:summary     hash, YYYY-MM -> the month's note for the client
 //   work:v1:trash       hash, entry id -> deleted entry JSON, kept 90 days
+//   work:v1:clients     hash, client id -> client JSON (rate, billing, link)
+//
+// Clients. The log began with one client, GCN, and its keys above have no
+// client in them. Other clients keep theirs under work:v1:c:<id>:… (see
+// scoped), so GCN's data and links never had to move. An entry names its
+// client; one without is GCN's.
 //
 // Auth is one email and one password, both from the environment. The session
 // cookie is an expiry signed with HMAC under the password itself, so changing
@@ -265,22 +271,35 @@ export async function clientCookie(): Promise<string> {
 }
 
 /**
- * The scope a client token grants. "locked" is the easy address without the
- * password yet: the page should ask for it. null is a wrong token.
+ * The scope a client token grants, and whose. "locked" is the easy address
+ * without the password yet: the page should ask for it. null is a wrong token.
  */
-export async function tokenScope(token: string, req: Request): Promise<Scope | "locked" | null> {
+export async function tokenScope(token: string, req: Request): Promise<{ scope: Scope; client: Client } | "locked" | null> {
+  const clients = await getClients();
   if (PUBLIC_SLUG && PUBLIC_SLUG !== "off" && token.toLowerCase() === PUBLIC_SLUG) {
-    return (await hasClientCookie(req)) ? "private" : "locked";
+    const gcn = clients.find((c) => c.id === DEFAULT_CLIENT)!;
+    return (await hasClientCookie(req)) ? { scope: "private", client: gcn } : "locked";
   }
-  if (token.length >= 16 && (await safeEqual(token, await getShareToken()))) return "private";
+  if (token.length < 16) return null;
+  const tokens = await allShareTokens(clients);
+  for (const c of clients) {
+    if (await safeEqual(token, tokens.get(c.id) ?? "")) return { scope: "private", client: c };
+  }
   return null;
 }
 
-/** The scope of a read request: the owner's cookie, or a client token that has been let in. */
-export async function readScope(req: Request): Promise<Scope | null> {
-  if (await isOwner(req)) return "owner";
-  const s = await tokenScope(new URL(req.url).searchParams.get("t") ?? "", req);
-  return s === "private" ? s : null;
+/**
+ * Who is reading, and which client's log: the owner (with ?c=<client id>,
+ * GCN without), or a client token that has been let in.
+ */
+export async function readScope(req: Request): Promise<{ scope: Scope; client: Client } | null> {
+  const url = new URL(req.url);
+  if (await isOwner(req)) {
+    const client = await getClient(url.searchParams.get("c") ?? DEFAULT_CLIENT);
+    return client ? { scope: "owner", client } : null;
+  }
+  const s = await tokenScope(url.searchParams.get("t") ?? "", req);
+  return s && s !== "locked" ? s : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -295,11 +314,177 @@ export type Entry = {
   task: string;
   notes: string;
   link: string;
+  /** The client this time is for (a Client id). */
+  client: string;
 };
 
-export type Timer = { start: number; task: string; notes: string; link: string };
+export type Timer = { start: number; task: string; notes: string; link: string; client: string };
 
+/**
+ * The invoice's view of who and how much: the owner's name, the client's
+ * name, and the rate. It is what every saved invoice carries, so it stays
+ * this shape; for a client other than GCN it is built from the Client.
+ */
 export type Settings = { name: string; client: string; rate: number; currency: string };
+
+export const DEFAULT_CLIENT = "gcn";
+
+/** A client's key, under its own prefix except for GCN, whose keys predate clients. */
+export function scoped(client: string, key: string): string {
+  return client === DEFAULT_CLIENT ? `${K}${key}` : `${K}c:${client}:${key}`;
+}
+
+export type BillTo = { name: string; lines: string[]; phone: string; email: string; web: string };
+
+export type Client = {
+  id: string;
+  /** How the log and the client's page name them: "GCN". */
+  name: string;
+  /** The tag in invoice numbers: XD-<short>-<period>. */
+  short: string;
+  rate: number;
+  currency: string;
+  billTo: BillTo;
+  /** Where the invoice email goes. Empty: invoices are made but not emailed. */
+  invoiceTo: string[];
+  /** Whether the cron sends the month's invoice the night the month ends. */
+  autoInvoice: boolean;
+  /** A logo on this site for the invoice and their page, e.g. /brand/clients/gcn.png. Empty: none. */
+  logo: string;
+  /** The easy address (/gcn). Only GCN's, from WORK_PUBLIC_SLUG; other clients use their private link. */
+  slug: string;
+  createdAt: number;
+  archived: boolean;
+};
+
+/** GCN's billing details, as they were before clients were a list. */
+export const GCN_BILL_TO: BillTo = {
+  name: "GCN Great Commission Network",
+  lines: ["Mattenstrasse 62", "3800 Matten – Switzerland"],
+  phone: "+41 79 376 87 33",
+  email: "bb@gcn.live",
+  web: "www.gcn.live",
+};
+
+/** Where GCN's monthly email goes unless the client record says otherwise. WORK_INVOICE_TO overrides. */
+export function gcnRecipients(): string[] {
+  const raw = process.env.WORK_INVOICE_TO || GCN_BILL_TO.email;
+  return raw.split(",").map((s) => s.trim()).filter(Boolean);
+}
+
+export const CLIENT_LIMITS = { name: 80, short: 12, line: 120, lines: 6, emails: 5 } as const;
+
+/** Every client, GCN first, then by name. GCN is made up from the old settings until it is saved as a client. */
+export async function getClients(): Promise<Client[]> {
+  const [flat, rawSettings] = await redis([
+    ["HGETALL", `${K}clients`],
+    ["GET", `${K}settings`],
+  ]);
+  const list = Array.isArray(flat) ? (flat as string[]) : [];
+  const out: Client[] = [];
+  for (let i = 0; i + 1 < list.length; i += 2) {
+    const c = parse<Client>(list[i + 1]);
+    if (c) out.push(normalizeClient(c));
+  }
+  if (!out.some((c) => c.id === DEFAULT_CLIENT)) {
+    const s = { ...DEFAULT_SETTINGS, ...(parse<Partial<Settings>>(rawSettings) ?? {}) };
+    out.push({
+      id: DEFAULT_CLIENT,
+      name: s.client,
+      short: "GCN",
+      rate: s.rate,
+      currency: s.currency,
+      billTo: GCN_BILL_TO,
+      invoiceTo: gcnRecipients(),
+      autoInvoice: true,
+      logo: "/brand/clients/gcn.png",
+      slug: PUBLIC_SLUG,
+      createdAt: 0,
+      archived: false,
+    });
+  }
+  return out.sort((a, b) => (a.id === DEFAULT_CLIENT ? -1 : b.id === DEFAULT_CLIENT ? 1 : a.name.localeCompare(b.name)));
+}
+
+function normalizeClient(c: Client): Client {
+  return {
+    ...c,
+    billTo: { name: c.billTo?.name ?? c.name, lines: c.billTo?.lines ?? [], phone: c.billTo?.phone ?? "", email: c.billTo?.email ?? "", web: c.billTo?.web ?? "" },
+    invoiceTo: Array.isArray(c.invoiceTo) ? c.invoiceTo : [],
+    autoInvoice: c.autoInvoice !== false,
+    logo: c.logo ?? "",
+    slug: c.id === DEFAULT_CLIENT ? PUBLIC_SLUG : "",
+    archived: c.archived === true,
+  };
+}
+
+export async function getClient(id: unknown): Promise<Client | null> {
+  const key = typeof id === "string" && id ? id : DEFAULT_CLIENT;
+  return (await getClients()).find((c) => c.id === key) ?? null;
+}
+
+/**
+ * Save a client. GCN's rate and name are mirrored into the old settings key
+ * too, so anything still reading it (and the saved-invoice shape) agrees.
+ */
+export async function saveClient(c: Client): Promise<void> {
+  const cmds: Cmd[] = [["HSET", `${K}clients`, c.id, JSON.stringify(c)]];
+  if (c.id === DEFAULT_CLIENT) {
+    const s = await getSettings();
+    cmds.push(["SET", `${K}settings`, JSON.stringify({ ...s, client: c.name, rate: c.rate, currency: c.currency })]);
+  }
+  await redis(cmds);
+}
+
+/** The invoice settings for a client: the owner's name with the client's rate. */
+export function settingsFor(owner: Settings, c: Client): Settings {
+  return { name: owner.name, client: c.name, rate: c.rate, currency: c.currency };
+}
+
+/** Validate a client as typed. Returns the clean client, or what to fix. */
+export function cleanClient(body: Record<string, unknown>, existing: Client | null): Client | string {
+  const name = String(body.name ?? existing?.name ?? "").replace(/\s+/g, " ").trim();
+  if (!name || name.length > CLIENT_LIMITS.name) return "Give the client's name, up to 80 characters.";
+  const short = String(body.short ?? existing?.short ?? name)
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "")
+    .slice(0, CLIENT_LIMITS.short);
+  if (!short) return "Give a short tag for invoice numbers, letters and digits only.";
+  const rate = Math.round(Number(body.rate ?? existing?.rate ?? 0) * 100) / 100;
+  if (!Number.isFinite(rate) || rate <= 0 || rate > 1000) return "The hourly rate has to be between 0 and 1,000.";
+  const currency = String(body.currency ?? existing?.currency ?? "USD").toUpperCase().trim();
+  if (!/^[A-Z]{3}$/.test(currency)) return "The currency is a three-letter code, like USD or CHF.";
+  const bt = (body.billTo && typeof body.billTo === "object" ? body.billTo : {}) as Record<string, unknown>;
+  const text = (v: unknown, fallback: string, max: number) => (v === undefined ? fallback : String(v)).replace(/\s+/g, " ").trim().slice(0, max);
+  const linesRaw = Array.isArray(bt.lines) ? bt.lines : typeof bt.lines === "string" ? bt.lines.split("\n") : (existing?.billTo.lines ?? []);
+  const lines = linesRaw.map((l) => String(l).replace(/\s+/g, " ").trim().slice(0, CLIENT_LIMITS.line)).filter(Boolean).slice(0, CLIENT_LIMITS.lines);
+  const email = text(bt.email, existing?.billTo.email ?? "", 200).toLowerCase();
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "The billing email doesn't look like an email address.";
+  const billTo: BillTo = {
+    name: text(bt.name, existing?.billTo.name ?? name, CLIENT_LIMITS.line) || name,
+    lines,
+    phone: text(bt.phone, existing?.billTo.phone ?? "", 40),
+    email,
+    web: text(bt.web, existing?.billTo.web ?? "", 120).replace(/^https?:\/\//i, ""),
+  };
+  const toRaw = Array.isArray(body.invoiceTo) ? body.invoiceTo : typeof body.invoiceTo === "string" ? body.invoiceTo.split(/[,;\n]/) : (existing?.invoiceTo ?? []);
+  const invoiceTo = toRaw.map((e) => String(e).trim().toLowerCase()).filter(Boolean).slice(0, CLIENT_LIMITS.emails);
+  for (const e of invoiceTo) if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return `"${e}" doesn't look like an email address.`;
+  return {
+    id: existing?.id ?? randomToken(6).toLowerCase().replace(/[^a-z0-9]/g, "x"),
+    name,
+    short,
+    rate,
+    currency,
+    billTo,
+    invoiceTo,
+    autoInvoice: typeof body.autoInvoice === "boolean" ? body.autoInvoice : (existing?.autoInvoice ?? true),
+    logo: existing?.logo ?? "",
+    slug: existing?.slug ?? "",
+    createdAt: existing?.createdAt ?? Date.now(),
+    archived: typeof body.archived === "boolean" ? body.archived : (existing?.archived ?? false),
+  };
+}
 
 const DEFAULT_SETTINGS: Settings = {
   name: "Xerxes Duane Magdaluyo",
@@ -336,24 +521,31 @@ export async function saveSettings(s: Settings): Promise<void> {
   await redis([["SET", `${K}settings`, JSON.stringify(s)]]);
 }
 
-/** The client link's token, created on first use. SET NX keeps two first loads from racing. */
-export async function getShareToken(): Promise<string> {
+/** A client's link token, created on first use. SET NX keeps two first loads from racing. */
+export async function getShareToken(client = DEFAULT_CLIENT): Promise<string> {
   const [, token] = await redis([
-    ["SET", `${K}share`, randomToken(), "NX"],
-    ["GET", `${K}share`],
+    ["SET", scoped(client, "share"), randomToken(), "NX"],
+    ["GET", scoped(client, "share")],
   ]);
   return String(token);
 }
 
-export async function rotateShareToken(): Promise<string> {
+export async function rotateShareToken(client = DEFAULT_CLIENT): Promise<string> {
   const token = randomToken();
-  await redis([["SET", `${K}share`, token]]);
+  await redis([["SET", scoped(client, "share"), token]]);
   return token;
+}
+
+/** Every client's link token at once, by client id. */
+export async function allShareTokens(clients: Client[]): Promise<Map<string, string>> {
+  const res = await redis(clients.flatMap((c) => [["SET", scoped(c.id, "share"), randomToken(), "NX"], ["GET", scoped(c.id, "share")]]));
+  return new Map(clients.map((c, i) => [c.id, String(res[i * 2 + 1])]));
 }
 
 export async function getTimer(): Promise<Timer | null> {
   const [raw] = await redis([["GET", `${K}timer`]]);
-  return parse<Timer>(raw);
+  const t = parse<Timer>(raw);
+  return t ? { ...t, client: t.client || DEFAULT_CLIENT } : null;
 }
 
 export async function setTimer(t: Timer | null): Promise<void> {
@@ -372,17 +564,23 @@ export async function allEntries(): Promise<Entry[]> {
     const flat = Array.isArray(h) ? (h as string[]) : [];
     for (let i = 1; i < flat.length; i += 2) {
       const e = parse<Entry>(flat[i]);
-      if (e) out.push(e);
+      if (e) out.push({ ...e, client: e.client || DEFAULT_CLIENT });
     }
   }
   return out.sort((a, b) => a.start - b.start);
+}
+
+/** One client's entries, oldest first. */
+export function entriesOf(entries: Entry[], client: string): Entry[] {
+  return entries.filter((e) => (e.client || DEFAULT_CLIENT) === client);
 }
 
 async function findEntry(id: string): Promise<Entry | null> {
   const month = id.slice(0, 7);
   if (!/^\d{4}-\d{2}$/.test(month)) return null;
   const [raw] = await redis([["HGET", `${K}m:${month}`, id]]);
-  return parse<Entry>(raw);
+  const e = parse<Entry>(raw);
+  return e ? { ...e, client: e.client || DEFAULT_CLIENT } : null;
 }
 
 export async function saveEntry(e: Entry, previous?: Entry | null): Promise<Entry> {
@@ -463,9 +661,9 @@ export type Payment = {
   note: string;
 };
 
-/** Every payment, by invoice period id. */
-export async function allPayments(): Promise<Record<string, Payment>> {
-  const [flat] = await redis([["HGETALL", `${K}paid`]]);
+/** Every payment of one client, by invoice period id. */
+export async function allPayments(client = DEFAULT_CLIENT): Promise<Record<string, Payment>> {
+  const [flat] = await redis([["HGETALL", scoped(client, "paid")]]);
   const list = Array.isArray(flat) ? (flat as string[]) : [];
   const out: Record<string, Payment> = {};
   for (let i = 0; i + 1 < list.length; i += 2) {
@@ -475,8 +673,8 @@ export async function allPayments(): Promise<Record<string, Payment>> {
   return out;
 }
 
-export async function setPayment(period: string, p: Payment | null): Promise<void> {
-  await redis([p ? ["HSET", `${K}paid`, period, JSON.stringify(p)] : ["HDEL", `${K}paid`, period]]);
+export async function setPayment(client: string, period: string, p: Payment | null): Promise<void> {
+  await redis([p ? ["HSET", scoped(client, "paid"), period, JSON.stringify(p)] : ["HDEL", scoped(client, "paid"), period]]);
 }
 
 // ---------------------------------------------------------------------------
@@ -495,8 +693,8 @@ export type Summary = {
 
 export const SUMMARY_LIMIT = 400;
 
-export async function allSummaries(): Promise<Record<string, Summary>> {
-  const [flat] = await redis([["HGETALL", `${K}summary`]]);
+export async function allSummaries(client = DEFAULT_CLIENT): Promise<Record<string, Summary>> {
+  const [flat] = await redis([["HGETALL", scoped(client, "summary")]]);
   const list = Array.isArray(flat) ? (flat as string[]) : [];
   const out: Record<string, Summary> = {};
   for (let i = 0; i + 1 < list.length; i += 2) {
@@ -506,8 +704,23 @@ export async function allSummaries(): Promise<Record<string, Summary>> {
   return out;
 }
 
-export async function setSummary(month: string, s: Summary | null): Promise<void> {
-  await redis([s ? ["HSET", `${K}summary`, month, JSON.stringify(s)] : ["HDEL", `${K}summary`, month]]);
+export async function setSummary(client: string, month: string, s: Summary | null): Promise<void> {
+  await redis([s ? ["HSET", scoped(client, "summary"), month, JSON.stringify(s)] : ["HDEL", scoped(client, "summary"), month]]);
+}
+
+/** Every client's summaries, by client id then month. */
+export async function allSummariesByClient(clients: Client[]): Promise<Record<string, Record<string, Summary>>> {
+  const res = await redis(clients.map((c) => ["HGETALL", scoped(c.id, "summary")]));
+  const out: Record<string, Record<string, Summary>> = {};
+  clients.forEach((c, i) => {
+    const list = Array.isArray(res[i]) ? (res[i] as string[]) : [];
+    out[c.id] = {};
+    for (let j = 0; j + 1 < list.length; j += 2) {
+      const s = parse<Summary>(list[j + 1]);
+      if (s) out[c.id][list[j]] = s;
+    }
+  });
+  return out;
 }
 
 /**
@@ -522,14 +735,15 @@ export function newId(start: number, key?: unknown): string {
 /** Take the running timer and clear it in one step, so two stops can't both win. */
 export async function takeTimer(): Promise<Timer | null> {
   const [raw] = await redis([["GETDEL", `${K}timer`]]);
-  return parse<Timer>(raw);
+  const t = parse<Timer>(raw);
+  return t ? { ...t, client: t.client || DEFAULT_CLIENT } : null;
 }
 
 /**
  * Validate the user-entered part of an entry. Returns the clean fields, or a
  * message that says what to fix.
  */
-export function cleanEntry(body: Record<string, unknown>): Omit<Entry, "id"> | string {
+export function cleanEntry(body: Record<string, unknown>, clients: Client[]): Omit<Entry, "id"> | string {
   // Whole minutes: what the editor can show is exactly what is billed, so an
   // edit that leaves the times alone never changes the duration.
   const MIN = 60 * 1000;
@@ -548,7 +762,9 @@ export function cleanEntry(body: Record<string, unknown>): Omit<Entry, "id"> | s
   if (notes.length > LIMITS.notes) return `Keep the notes under ${LIMITS.notes} characters.`;
   if (link.length > LIMITS.link) return "That link is too long.";
   if (link && !/^https?:\/\/\S+$/i.test(link)) return "The link has to start with http:// or https://.";
-  return { start: Math.round(start), end: Math.round(end), task, notes, link };
+  const client = typeof body.client === "string" && body.client ? body.client : DEFAULT_CLIENT;
+  if (!clients.some((c) => c.id === client)) return "That client isn't on the list any more. Refresh the page.";
+  return { start: Math.round(start), end: Math.round(end), task, notes, link, client };
 }
 
 export async function readJson(req: Request): Promise<Record<string, unknown>> {
