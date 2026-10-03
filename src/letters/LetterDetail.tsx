@@ -60,6 +60,7 @@ export default function LetterDetail({ id, fresh, partners, settings, onBack }: 
   const live = letter.status === "live";
   const st = statusOf(letter);
   const opened = copies.filter((c) => c.opened).length;
+  const praying = copies.filter((c) => c.praying).length;
   const daysLeft = Math.max(0, Math.ceil((letter.expiresAt - openedAt) / 864e5));
   const keys = live ? rec : null;
   const have = new Set(copies.map((c) => c.partnerId));
@@ -95,9 +96,10 @@ export default function LetterDetail({ id, fresh, partners, settings, onBack }: 
         <p className="text-sm" style={{ color: SOFT }}>
           Published {fmtShort(letter.publishedAt)} · available until {fmtDate(letter.expiresAt)} · {fmtSize(letter.size)} · download {letter.allowDownload ? "allowed" : "off"}
         </p>
-        <div className="grid grid-cols-3 gap-2 text-center">
+        <div className="grid grid-cols-4 gap-2 text-center">
           <Stat label="Copies" value={String(copies.length)} />
           <Stat label="Opened" value={`${opened}`} />
+          <Stat label="Praying" value={`${praying}`} />
           <Stat label="Days left" value={String(daysLeft)} />
         </div>
         {letter.status === "withdrawn" && (
@@ -169,7 +171,13 @@ export default function LetterDetail({ id, fresh, partners, settings, onBack }: 
                       <p className="text-sm" style={{ color: SOFT }}>
                         {c.opened ? <span style={{ color: GOOD }}>Opened {fmtTime(c.opened)}</span> : "Not opened yet"}
                         {c.mailed ? " · emailed" : ""}
+                        {c.praying ? <span style={{ color: "#8a6a2e" }}> · 🙏 praying{c.praying.at ? ` (${fmtTime(c.praying.at)})` : ""}</span> : ""}
                       </p>
+                      {c.praying?.note && (
+                        <p className="mt-1 rounded-xl bg-[#faf6ee] px-3 py-2 text-sm italic leading-relaxed" style={{ color: INK }}>
+                          “{c.praying.note}”
+                        </p>
+                      )}
                     </div>
                     {link ? (
                       <button

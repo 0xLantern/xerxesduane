@@ -9,6 +9,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import type { PDFDocumentProxy } from "pdfjs-dist";
+import { api } from "./api";
 import { PdfPages } from "./Pages";
 import { openPdf, pdfjs } from "./pdf";
 import { LINK_KEY, decrypt, fmtDate, fromB64url, importKey, type Wrapped } from "./shared";
@@ -19,6 +20,9 @@ type State =
   | { kind: "gone"; message: string; retry?: boolean }
   | { kind: "loading"; w: Wrapped; got: number; total: number }
   | { kind: "ready"; w: Wrapped; doc: PDFDocumentProxy };
+
+/** What the copy came with besides the letter: whether this partner already replied, and the prayer team's page. */
+type Extras = { praying: boolean; prayer: string | null };
 
 
 const INCOMPLETE = "This link isn't complete. Please open it straight from the message it came in, without changing it.";
@@ -37,6 +41,7 @@ async function get(url: string): Promise<Response | null> {
 
 export default function Reader({ copyId }: { copyId: string }) {
   const [state, setState] = useState<State>({ kind: "opening" });
+  const [extras, setExtras] = useState<Extras>({ praying: false, prayer: null });
   const pdfBytes = useRef<Uint8Array | null>(null);
 
   useEffect(() => {
@@ -71,7 +76,8 @@ export default function Reader({ copyId }: { copyId: string }) {
         setState(res?.status === 404 ? { kind: "gone", message: GONE } : { kind: "gone", message: OFFLINE, retry: true });
         return;
       }
-      const copy = (await res.json()) as { letterId: string; wrapped: string; size: number; chunks: number };
+      const copy = (await res.json()) as { letterId: string; wrapped: string; size: number; chunks: number; praying?: boolean; prayer?: string | null };
+      setExtras({ praying: copy.praying === true, prayer: typeof copy.prayer === "string" ? copy.prayer : null });
       let w: Wrapped;
       try {
         const bytes = await decrypt(fromB64url(copy.wrapped), await importKey(raw));
@@ -215,6 +221,8 @@ export default function Reader({ copyId }: { copyId: string }) {
             {state.kind === "ready" && <PdfPages doc={state.doc} />}
           </div>
 
+          {state.kind === "ready" && <Reply copyId={copyId} sender={w.sender} already={extras.praying} prayer={extras.prayer} />}
+
           <footer className="mx-auto mt-10 max-w-[34rem] px-6 text-center text-[0.85rem] leading-relaxed" style={{ color: SOFT }}>
             <p className="font-bold" style={{ color: INK }}>
               Private by design
@@ -227,5 +235,97 @@ export default function Reader({ copyId }: { copyId: string }) {
         </>
       )}
     </main>
+  );
+}
+
+/**
+ * A reply that takes one tap: "Praying for you", with a line if they want.
+ * It reaches the owner's desk (and their inbox); nothing of the letter goes
+ * with it. The prayer team's page is linked from here too.
+ */
+function Reply({ copyId, sender, already, prayer }: { copyId: string; sender: string; already: boolean; prayer: string | null }) {
+  const [sent, setSent] = useState(already);
+  const [open, setOpen] = useState(false);
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const first = sender.split(" ")[0] || sender;
+
+  const send = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      await api.react(copyId, note.trim());
+      setSent(true);
+      setOpen(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "That didn't go through. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="mx-auto mt-10 max-w-[34rem] px-4">
+      <div className="rounded-3xl bg-white p-6 text-center shadow-sm">
+        {sent && !open ? (
+          <>
+            <p className="text-2xl" aria-hidden="true">
+              🙏
+            </p>
+            <p className="mt-2 text-lg font-bold" style={{ color: INK, fontFamily: SERIF }}>
+              Thank you. {first} will know you're praying.
+            </p>
+            <button type="button" onClick={() => setOpen(true)} className="mt-3 min-h-11 text-sm font-semibold" style={{ color: SOFT }}>
+              Add a line
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="text-lg font-bold" style={{ color: INK, fontFamily: SERIF }}>
+              Let {first} know you're praying
+            </p>
+            <p className="mt-1 text-sm" style={{ color: SOFT }}>
+              One tap is enough. It goes to {first} only.
+            </p>
+            {open && (
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                maxLength={300}
+                rows={3}
+                placeholder="A line, if you'd like (optional)"
+                className="mt-4 w-full rounded-xl border border-[#ddd5c7] bg-[#faf8f4] px-3 py-2 text-base text-[#2b2420] placeholder:text-[#a49a8f] focus:border-[#8a6a2e] focus:outline-none focus:ring-2 focus:ring-[#8a6a2e]/20"
+              />
+            )}
+            {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => void send()}
+                disabled={busy}
+                className="inline-flex min-h-12 items-center gap-2 rounded-full px-6 text-[1rem] font-bold text-white disabled:opacity-60"
+                style={{ background: INK }}
+              >
+                <span aria-hidden="true">🙏</span> {busy ? "Sending…" : sent ? "Send the line" : "Praying for you"}
+              </button>
+              {!open && (
+                <button type="button" onClick={() => setOpen(true)} className="inline-flex min-h-12 items-center rounded-full border border-[#ddd5c7] bg-white px-5 text-[0.95rem] font-bold" style={{ color: INK }}>
+                  Add a line
+                </button>
+              )}
+            </div>
+          </>
+        )}
+        {prayer && (
+          <p className="mt-5 border-t border-[#f0ebe2] pt-4 text-sm" style={{ color: SOFT }}>
+            Praying with us this month?{" "}
+            <a href={prayer} className="font-bold underline-offset-2 hover:underline" style={{ color: ACCENT }}>
+              See the prayer requests
+            </a>
+          </p>
+        )}
+      </div>
+    </section>
   );
 }

@@ -6,6 +6,8 @@
 import {
   OWNER_EMAIL,
   allEntries,
+  allPayments,
+  allSummaries,
   errorResponse,
   getSettings,
   getTimer,
@@ -15,6 +17,7 @@ import {
   tokenScope,
   underLimit,
 } from "./_lib";
+import { listInvoices, owed } from "./_invoice";
 
 export const config = { runtime: "edge" };
 
@@ -31,15 +34,22 @@ export default handle(async (req) => {
   if (!scope) {
     return errorResponse("This link isn't valid any more. Ask for a new one.", 404);
   }
-  const [entries, settings, timer] = await Promise.all([allEntries(), getSettings(), getTimer()]);
+  const [entries, settings, timer, payments, summaries] = await Promise.all([allEntries(), getSettings(), getTimer(), allPayments(), allSummaries()]);
+  const now = Date.now();
+  const invoices = await listInvoices(entries, settings, payments, now);
   return json({
     entries,
     settings,
+    // Each month's invoice and whether it has been paid, and the owner's
+    // note for each month: the client sees both.
+    invoices,
+    owed: owed(invoices),
+    summaries,
     email: OWNER_EMAIL,
     // Only the fact and the start, so the client can see work in progress.
     // Not for a timer left running past ten hours, which is a forgotten one
     // rather than work.
-    working: timer && Date.now() - timer.start < 10 * 60 * 60 * 1000 ? { start: timer.start } : null,
-    now: Date.now(),
+    working: timer && now - timer.start < 10 * 60 * 60 * 1000 ? { start: timer.start } : null,
+    now,
   });
 });

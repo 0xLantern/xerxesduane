@@ -23,7 +23,7 @@ import { APEX_HOST, MINISTRY_HOST, MINISTRY_ORIGIN, SITE_HOST, WORK_HOST, WORK_O
  * every other route, on either host — is untouched and never reaches here.
  */
 export const config = {
-  matcher: ["/", "/ministry", "/robots.txt", "/work", "/r/:path*", "/gcn", "/letters", "/l/:path*"],
+  matcher: ["/", "/ministry", "/robots.txt", "/work", "/r/:path*", "/gcn", "/letters", "/l/:path*", "/pray/:path*"],
   // The edge runtime is deprecated for middleware; the build warns on it.
   // Nothing here needs an edge-only API — it reads a header and returns.
   runtime: "nodejs",
@@ -47,7 +47,8 @@ export default function middleware(request: Request): Response {
 
     // Partner letters: each partner's private copy is /l/<id>, read by the
     // letters page; /letters itself is the owner's desk (a static page).
-    if (url.pathname.startsWith("/l/")) return rewrite(new URL("/letters", url));
+    // The prayer team's page, /pray/<token>, is the same page too.
+    if (url.pathname.startsWith("/l/") || url.pathname.startsWith("/pray/")) return rewrite(new URL("/letters", url));
     if (url.pathname === "/letters") return next();
   }
 
@@ -68,12 +69,12 @@ export default function middleware(request: Request): Response {
   if (host === SITE_HOST || host === APEX_HOST || host === MINISTRY_HOST) {
     if (url.pathname === "/work") return Response.redirect(`${WORK_ORIGIN}/`, 308);
     // Letters live on the ministry host only.
-    if (url.pathname === "/letters" || url.pathname.startsWith("/l/")) {
+    if (url.pathname === "/letters" || url.pathname.startsWith("/l/") || url.pathname.startsWith("/pray/")) {
       return Response.redirect(`${MINISTRY_ORIGIN}${url.pathname}${url.search}`, 308);
     }
   } else if (url.pathname.startsWith("/r/") || url.pathname === "/gcn") {
     return rewrite(new URL("/work", url));
-  } else if (url.pathname.startsWith("/l/")) {
+  } else if (url.pathname.startsWith("/l/") || url.pathname.startsWith("/pray/")) {
     // Previews and localhost: the letters page, so it can be tried before release.
     return rewrite(new URL("/letters", url));
   }

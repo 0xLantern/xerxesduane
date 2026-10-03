@@ -6,8 +6,9 @@
  * looks the same however the reader's phone is set.
  */
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { ApiError, api, type Entry, type ReportData } from "./api";
+import { ApiError, api, type Entry, type InvoiceRow, type ReportData } from "./api";
 import { notePoints } from "./notes";
+import { byYear, fmtDate, invoiceState, money, yearTotals } from "./invoices";
 import {
   DAY,
   TZ_LABEL,
@@ -66,7 +67,15 @@ export default function Report({ token }: { token: string }) {
     const days = new Map<string, Entry[]>();
     for (const e of inMonth) days.set(dayKey(e.start), [...(days.get(dayKey(e.start)) ?? []), e]);
     const earliest = data.entries.length ? monthKey(Math.min(...data.entries.map((e) => e.start))) : month;
+    const invoice = data.invoices.find((r) => r.periodId === month) ?? null;
+    const summary = data.summaries[month];
+    const year = month.slice(0, 4);
+    const yearRows = byYear(data.invoices).find(([y]) => y === year)?.[1] ?? [];
     return {
+      invoice,
+      summary: summary && (summary.delivered || summary.next || summary.decide) ? summary : null,
+      year,
+      yearRows,
       monthMs: totalsFor(data.entries, from, to),
       weekMs: totalsFor(data.entries, week, week + 7 * DAY),
       allMs: totalsFor(data.entries, 0, Number.MAX_SAFE_INTEGER),
@@ -138,7 +147,23 @@ export default function Report({ token }: { token: string }) {
                 <Stat label="This week" value={`${fmtHours(view.weekMs)} h`} />
                 <Stat label="All time" value={`${fmtHours(view.allMs)} h`} />
               </dl>
+
+              {view.invoice && view.invoice.hours > 0 && <InvoiceLine row={view.invoice} token={t} />}
             </section>
+
+            {/* The month in three lines, from the owner */}
+            {view.summary && (
+              <section className="mt-6 rounded-3xl bg-white p-5 shadow-[0_1px_2px_rgba(43,26,20,.05),0_12px_32px_-18px_rgba(43,26,20,.25)] sm:p-7">
+                <p className="text-[0.8rem] font-semibold uppercase tracking-[0.18em]" style={{ color: BRONZE }}>
+                  {fmtMonth(month)} at a glance
+                </p>
+                <dl className="mt-3 space-y-3">
+                  {view.summary.delivered && <Line label="Delivered" text={view.summary.delivered} />}
+                  {view.summary.next && <Line label="Next" text={view.summary.next} />}
+                  {view.summary.decide && <Line label="Needs your decision" text={view.summary.decide} accent />}
+                </dl>
+              </section>
+            )}
 
             {/* The work, day by day */}
             <section className="mt-8">
@@ -173,6 +198,9 @@ export default function Report({ token }: { token: string }) {
                 </ol>
               )}
             </section>
+
+            {/* The year, month by month */}
+            {view.yearRows.length > 0 && <YearTable year={view.year} rows={view.yearRows} currency={data.settings.currency} token={t} />}
 
             {/* Downloads */}
             <section className="mt-10 grid gap-2 sm:grid-cols-2">
@@ -311,6 +339,98 @@ function WorkCard({ entry: e }: { entry: Entry }) {
         </a>
       )}
     </article>
+  );
+}
+
+/** The month's invoice: its number, and whether it has been paid. */
+function InvoiceLine({ row, token }: { row: InvoiceRow; token: string }) {
+  const st = invoiceState(row);
+  const color = st.tone === "paid" ? GREEN : st.tone === "due" ? "#a6410a" : "#8a7f75";
+  return (
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[#ece7dd] pt-4 text-sm">
+      <span className="text-[#6b5f55]">
+        Invoice <span className="font-semibold text-[#2b2420]">{row.number}</span> · {money(row.total, row.currency)}
+      </span>
+      <span className="flex items-center gap-2">
+        <span className="font-bold" style={{ color }}>
+          {st.tone === "paid" ? "Paid" : st.tone === "due" ? "Awaiting payment" : st.tone === "soon" ? "Coming tonight" : "In progress"}
+        </span>
+        {row.status === "sent" && (
+          <a href={`/api/work/invoice?p=${row.periodId}&t=${token}`} target="_blank" rel="noopener noreferrer" className="font-semibold underline-offset-2 hover:underline" style={{ color: GREEN }}>
+            View
+          </a>
+        )}
+      </span>
+      {row.paid && (
+        <span className="w-full text-xs text-[#8a7f75]">
+          Received {fmtDate(row.paid.paidAt)}
+          {row.paid.currency !== row.currency ? ` in ${row.paid.currency}` : ""}. Thank you.
+        </span>
+      )}
+    </div>
+  );
+}
+
+function Line({ label, text, accent }: { label: string; text: string; accent?: boolean }) {
+  return (
+    <div className="rounded-2xl px-4 py-3" style={{ background: accent ? "#fdf0dc" : "#faf8f4" }}>
+      <dt className="text-xs font-bold uppercase tracking-wider" style={{ color: accent ? "#8a5a0e" : "#8a7f75" }}>
+        {label}
+      </dt>
+      <dd className="mt-1 whitespace-pre-line text-[0.98rem] leading-relaxed text-[#2b2420]">{text}</dd>
+    </div>
+  );
+}
+
+/** Every month of the year: hours, amount, and where its invoice stands. */
+function YearTable({ year, rows, currency, token }: { year: string; rows: InvoiceRow[]; currency: string; token: string }) {
+  const t = yearTotals(rows);
+  const ordered = [...rows].sort((a, b) => (a.periodId < b.periodId ? -1 : 1));
+  return (
+    <section className="mt-10 rounded-3xl bg-white p-5 shadow-[0_1px_2px_rgba(43,26,20,.05),0_12px_32px_-18px_rgba(43,26,20,.25)] sm:p-7">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-lg font-bold" style={{ color: INK }}>
+          {year} so far
+        </h2>
+        <p className="text-sm tabular-nums text-[#6b5f55]">
+          {t.hours.toFixed(2)} h · <span className="font-semibold" style={{ color: GREEN }}>{money(t.amount, currency)}</span>
+        </p>
+      </div>
+      <ul className="mt-4 divide-y divide-[#f0ebe2]">
+        {ordered.map((r) => {
+          const st = invoiceState(r);
+          return (
+            <li key={r.periodId} className="flex items-center justify-between gap-3 py-2.5 text-[0.95rem]">
+              <div className="min-w-0">
+                <p className="font-semibold text-[#2b2420]">{r.label.split(" ")[0]}</p>
+                <p className="truncate text-xs" style={{ color: st.tone === "paid" ? GREEN : st.tone === "due" ? "#a6410a" : "#8a7f75" }}>
+                  {st.label}
+                </p>
+              </div>
+              <div className="shrink-0 text-right tabular-nums">
+                <p className="font-bold" style={{ color: INK }}>
+                  {money(r.total, currency)}
+                </p>
+                <p className="text-xs text-[#8a7f75]">{r.hours.toFixed(2)} h</p>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      <dl className="mt-4 grid grid-cols-3 divide-x divide-[#ece7dd] border-t border-[#ece7dd] pt-4 text-center">
+        <Stat label="Invoiced" value={money(t.invoiced, currency)} />
+        <Stat label="Paid" value={money(t.paid, currency)} />
+        <Stat label="Still due" value={money(t.due, currency)} />
+      </dl>
+      <a
+        href={`/api/work/pdf?kind=year&y=${year}&t=${token}`}
+        download
+        className="mt-5 flex min-h-12 items-center justify-center gap-2 rounded-full border border-[#ddd5c7] bg-white px-5 font-bold transition hover:bg-[#faf8f4]"
+        style={{ color: INK }}
+      >
+        <DownloadIcon /> {year} statement (PDF)
+      </a>
+    </section>
   );
 }
 

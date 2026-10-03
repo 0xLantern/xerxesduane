@@ -6,7 +6,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { ApiError, api, type Entry, type OwnerData, type Settings } from "./api";
 import { Button, Card, DownloadLink, ErrorNote, Field, MonthLog, Sheet, TextArea, TextInput, TotalTile } from "./ui";
-import { DAY, HOUR, TZ_LABEL, dateInput, fmtClock, fmtMonth, monthKey, monthStart, rangeFromInputs, shiftMonth, timeInput, totalsFor, weekStart } from "./time";
+import { DAY, HOUR, TZ_LABEL, dateInput, fmtClock, fmtDay, fmtMonth, fmtTime, monthKey, monthStart, rangeFromInputs, shiftMonth, timeInput, totalsFor, weekStart } from "./time";
+import { overlapIds, overlapping } from "./overlap";
+import { InvoicesSheet, SummarySheet, TrashList } from "./Sheets";
+import { money } from "./invoices";
 
 type State =
   | { kind: "loading" }
@@ -129,7 +132,11 @@ function Log({
   const [month, setMonth] = useState(() => monthKey(now()));
   const [editing, setEditing] = useState<Editing>(null);
   const [menu, setMenu] = useState(false);
+  const [invoices, setInvoices] = useState(false);
+  const [note, setNote] = useState(false);
   const [flash, setFlash] = useState("");
+  // The entry just deleted, so one tap brings it back.
+  const [undo, setUndo] = useState<Entry | null>(null);
 
   const { entries, settings } = data;
   const week = weekStart(now());
@@ -139,6 +146,8 @@ function Log({
 
   const upsert = (entry: Entry, replacing?: string) =>
     setData((d) => ({ ...d, entries: [...d.entries.filter((e) => e.id !== entry.id && e.id !== replacing), entry] }));
+  const flagged = useMemo(() => overlapIds(entries), [entries]);
+  const summary = data.summaries[month];
 
   // A 401 anywhere means the session ended (password changed, or 30 days up).
   const guard = async <T,>(p: Promise<T>): Promise<T> => {
@@ -180,12 +189,50 @@ function Log({
       {flash && (
         <p role="status" className="mt-2 text-center text-[0.95rem] font-semibold text-accent-deep">
           {flash}
+          {undo && (
+            <>
+              {" "}
+              <button
+                type="button"
+                className="underline underline-offset-2"
+                onClick={() => {
+                  const e = undo;
+                  setUndo(null);
+                  setFlash("");
+                  void guard(api.restore(e.id))
+                    .then((res) => {
+                      upsert(res.entry);
+                      setData((d) => ({ ...d, trash: res.trash }));
+                      setMonth(monthKey(res.entry.start));
+                      setFlash("Put back.");
+                    })
+                    .catch((err) => setFlash(err instanceof Error ? err.message : "Couldn't put it back."));
+                }}
+              >
+                Undo
+              </button>
+            </>
+          )}
         </p>
       )}
 
       <div className="mt-4 grid grid-cols-2 gap-2">
         <TotalTile label="This week" ms={weekMs} settings={settings} />
         <TotalTile label="This month" ms={monthMs} settings={settings} />
+      </div>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <button type="button" onClick={() => setInvoices(true)} className="min-w-0 rounded-2xl border border-line bg-panel px-4 py-3 text-left hover:bg-panel-alt">
+          <p className="text-sm font-bold text-fg-soft">Owed by {settings.client}</p>
+          <p className="mt-0.5 font-display text-2xl font-bold tabular-nums text-fg">{money(data.owed.total, settings.currency)}</p>
+          <p className="text-[0.95rem] font-semibold text-accent-deep">
+            {data.owed.count === 0 ? "All paid · Invoices" : `${data.owed.count} unpaid · Invoices`}
+          </p>
+        </button>
+        <button type="button" onClick={() => setNote(true)} className="min-w-0 rounded-2xl border border-line bg-panel px-4 py-3 text-left hover:bg-panel-alt">
+          <p className="text-sm font-bold text-fg-soft">Note for {settings.client}</p>
+          <p className="mt-0.5 truncate font-display text-lg font-bold text-fg">{fmtMonth(month).split(" ")[0]}</p>
+          <p className="truncate text-[0.95rem] font-semibold text-accent-deep">{summary ? "Written · edit" : "Delivered / next / decide"}</p>
+        </button>
       </div>
 
       <div className="mt-6 flex items-center justify-between gap-3">
@@ -201,18 +248,26 @@ function Log({
           month={month}
           setMonth={setMonth}
           current={thisMonth}
+          flagged={flagged}
           onEdit={(entry) => setEditing({ mode: "edit", entry })}
           emptyText="Nothing logged yet. Press Start when you begin, or add time by hand."
         />
       </div>
-      <div className="mt-6 flex justify-center">
+      {flagged.size > 0 && entries.some((e) => flagged.has(e.id) && monthKey(e.start) === month) && (
+        <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-center text-[0.95rem] text-red-800">
+          Some entries this month overlap each other, so the same minutes would be billed twice. Tap one marked Overlaps to fix it.
+        </p>
+      )}
+      <div className="mt-6 flex flex-wrap justify-center gap-2">
         <DownloadLink href={`/api/work/pdf?kind=log&m=${month}`}>Download {fmtMonth(month)} (PDF)</DownloadLink>
+        <DownloadLink href={`/api/work/pdf?kind=year&y=${month.slice(0, 4)}`}>Year statement {month.slice(0, 4)} (PDF)</DownloadLink>
       </div>
       <p className="mt-4 text-center text-sm text-fg-faint">Times are in {TZ_LABEL}.</p>
 
       {editing && (
         <EntryEditor
           entry={editing.mode === "edit" ? editing.entry : null}
+          entries={entries}
           now={now}
           onClose={() => setEditing(null)}
           onSave={async (fields) => {
@@ -226,12 +281,40 @@ function Log({
           onDelete={
             editing.mode === "edit"
               ? async () => {
-                  await guard(api.deleteEntry(editing.entry.id));
-                  setData((d) => ({ ...d, entries: d.entries.filter((e) => e.id !== editing.entry.id) }));
+                  const gone = editing.entry;
+                  await guard(api.deleteEntry(gone.id));
+                  setData((d) => ({
+                    ...d,
+                    entries: d.entries.filter((e) => e.id !== gone.id),
+                    trash: [{ entry: gone, deletedAt: Date.now() }, ...d.trash.filter((t) => t.entry.id !== gone.id)],
+                  }));
                   setEditing(null);
+                  setUndo(gone);
+                  setFlash("Deleted. It waits in the trash for 90 days.");
                 }
               : undefined
           }
+        />
+      )}
+
+      {invoices && (
+        <InvoicesSheet
+          invoices={data.invoices}
+          owed={data.owed}
+          guard={guard}
+          onChange={(inv, owed) => setData((d) => ({ ...d, invoices: inv, owed }))}
+          onClose={() => setInvoices(false)}
+        />
+      )}
+
+      {note && (
+        <SummarySheet
+          month={month}
+          client={settings.client}
+          summary={summary}
+          guard={guard}
+          onSaved={(summaries) => setData((d) => ({ ...d, summaries }))}
+          onClose={() => setNote(false)}
         />
       )}
 
@@ -242,6 +325,11 @@ function Log({
           guard={guard}
           onSettings={(s) => setData((d) => ({ ...d, settings: s }))}
           onToken={(t) => setData((d) => ({ ...d, shareToken: t }))}
+          onRestored={(entry) => {
+            upsert(entry);
+            setMonth(monthKey(entry.start));
+          }}
+          onTrash={(trash) => setData((d) => ({ ...d, trash }))}
           onSignOut={async () => {
             await api.logout().catch(() => undefined);
             onSignedOut();
@@ -394,6 +482,23 @@ function TimerCard({
   // "I stopped earlier": the end time typed in, or null while closed.
   const [earlier, setEarlier] = useState<string | null>(null);
 
+  // The most recent entry, to pick up where the last session left off.
+  const last = useMemo(() => (data.entries.length ? data.entries.reduce((a, b) => (b.end > a.end ? b : a)) : null), [data.entries]);
+  const continueLast = () =>
+    run(async () => {
+      if (!last) return;
+      setTask(last.task);
+      setLink(last.link);
+      try {
+        const res = await guard(api.timer("start", { task: last.task, notes: "", link: last.link }));
+        onChange(res.timer);
+        onSaved(null, "");
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 409) return void (await reload());
+        throw err;
+      }
+    });
+
   return (
     <Card className="mt-5">
       {timer ? (
@@ -474,6 +579,20 @@ function TimerCard({
             Start
           </Button>
         )}
+        {!timer && last && !task.trim() && (
+          <button
+            type="button"
+            onClick={() => void continueLast()}
+            disabled={busy}
+            className="block w-full rounded-2xl border border-line bg-canvas px-4 py-3 text-left hover:bg-panel-alt disabled:opacity-50"
+          >
+            <span className="block text-sm font-bold text-accent-deep">Continue last task</span>
+            <span className="block truncate text-[0.95rem] font-semibold text-fg">{last.task}</span>
+            <span className="block text-sm text-fg-soft">
+              last worked {fmtDay(last.start)}, {fmtTime(last.start)}–{fmtTime(last.end)}
+            </span>
+          </button>
+        )}
       </div>
     </Card>
   );
@@ -481,12 +600,14 @@ function TimerCard({
 
 function EntryEditor({
   entry,
+  entries,
   now,
   onClose,
   onSave,
   onDelete,
 }: {
   entry: Entry | null;
+  entries: Entry[];
   now: () => number;
   onClose: () => void;
   onSave: (fields: Omit<Entry, "id"> & { key?: string }) => Promise<void>;
@@ -504,6 +625,11 @@ function EntryEditor({
 
   const range = useMemo(() => (start && end ? rangeFromInputs(date, start, end) : null), [date, start, end]);
   const preview = range && typeof range !== "string" ? `${((range.end - range.start) / HOUR).toFixed(2)} h${end < start ? ", ends the next day" : ""}` : "";
+  // Other entries these times would run into: the same minutes billed twice.
+  const clashes = useMemo(
+    () => (range && typeof range !== "string" ? overlapping({ id: entry?.id ?? "", ...range }, entries) : []),
+    [range, entries, entry],
+  );
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -550,6 +676,19 @@ function EntryEditor({
           </Field>
         </div>
         {preview && <p className="text-[0.95rem] font-semibold tabular-nums text-accent-deep">{preview}</p>}
+        {clashes.length > 0 && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[0.95rem] text-red-800">
+            <p className="font-bold">Overlaps {clashes.length === 1 ? "another entry" : `${clashes.length} other entries`}:</p>
+            <ul className="mt-1 space-y-0.5">
+              {clashes.slice(0, 4).map((c) => (
+                <li key={c.id} className="truncate">
+                  {fmtDay(c.start)} {fmtTime(c.start)}–{fmtTime(c.end)} · {c.task}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1 text-sm">Change the times so the same minutes aren't billed twice, or save anyway if both are right.</p>
+          </div>
+        )}
         <Field label="What I worked on">
           <TextInput value={task} onChange={(e) => setTask(e.target.value)} maxLength={120} required placeholder="e.g. Directory page fixes" />
         </Field>
@@ -562,7 +701,7 @@ function EntryEditor({
         <ErrorNote>{error}</ErrorNote>
         <div className="flex flex-wrap gap-2 pt-1">
           <Button kind="primary" type="submit" disabled={busy} className="flex-1">
-            {busy ? "Saving…" : "Save"}
+            {busy ? "Saving…" : clashes.length ? "Save anyway" : "Save"}
           </Button>
           {onDelete && (
             <Button kind="danger" onClick={() => void remove()} disabled={busy}>
@@ -581,6 +720,8 @@ function SettingsSheet({
   guard,
   onSettings,
   onToken,
+  onRestored,
+  onTrash,
   onSignOut,
   onRefresh,
 }: {
@@ -589,6 +730,8 @@ function SettingsSheet({
   guard: <T>(p: Promise<T>) => Promise<T>;
   onSettings: (s: Settings) => void;
   onToken: (t: string) => void;
+  onRestored: (e: Entry) => void;
+  onTrash: (t: OwnerData["trash"]) => void;
   onSignOut: () => Promise<void>;
   onRefresh: () => Promise<void>;
 }) {
@@ -730,6 +873,21 @@ function SettingsSheet({
             Save details
           </Button>
         </form>
+
+        <section className="border-t border-line pt-5">
+          <h3 className="font-bold text-fg">Backups</h3>
+          <p className="mt-1 text-[0.95rem] text-fg-soft">
+            Every Monday morning you get an email with everything: hours, invoices paid, monthly notes, and the letters' partner list. Download the same any time.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <DownloadLink href="/api/work/export?format=json">Download all data (JSON)</DownloadLink>
+            <DownloadLink href="/api/work/export?format=csv">Hours (spreadsheet)</DownloadLink>
+          </div>
+          <h4 className="mt-5 font-bold text-fg">Recently deleted</h4>
+          <div className="mt-2">
+            <TrashList trash={data.trash} guard={guard} onRestored={onRestored} onTrash={onTrash} />
+          </div>
+        </section>
 
         <div className="flex flex-wrap gap-2 border-t border-line pt-5">
           <Button onClick={() => void onRefresh()}>Refresh</Button>

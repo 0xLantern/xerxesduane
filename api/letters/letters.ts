@@ -43,11 +43,22 @@ export default handle(async (req) => {
     if (!id) return json({ letters: await allLetters() });
     const letter = await getLetter(id);
     if (!letter) return errorResponse(GONE, 404);
-    const [copies, opened, mailed] = await redis([
+    const [copies, opened, mailed, reacted] = await redis([
       ["HGETALL", `${K}copies:${id}`],
       ["HGETALL", `${K}opened:${id}`],
       ["HGETALL", `${K}mailed:${id}`],
+      ["HGETALL", `${K}react:${id}`],
     ]).then((r) => r.map(pairs));
+    const reaction = (copyId: string): { at: number; note: string } | null => {
+      const raw = reacted.get(copyId);
+      if (!raw) return null;
+      try {
+        const r = JSON.parse(raw) as { at?: number; note?: string };
+        return { at: Number(r.at) || 0, note: String(r.note ?? "") };
+      } catch {
+        return null;
+      }
+    };
     const names = new Map((await allPartners()).map((p) => [p.id, p.name]));
     const rows = [...copies].map(([copyId, partnerId]) => ({
       copyId,
@@ -55,6 +66,7 @@ export default handle(async (req) => {
       name: names.get(partnerId) ?? "(removed partner)",
       opened: opened.has(copyId) ? Number(opened.get(copyId)) : null,
       mailed: mailed.has(copyId) ? Number(mailed.get(copyId)) : null,
+      praying: reaction(copyId),
     }));
     rows.sort((a, b) => a.name.localeCompare(b.name));
     return json({ letter, copies: rows });
@@ -99,6 +111,7 @@ export default handle(async (req) => {
         ["HDEL", `${K}copies:${letter.id}`, copyId],
         ["HDEL", `${K}opened:${letter.id}`, copyId],
         ["HDEL", `${K}mailed:${letter.id}`, copyId],
+        ["HDEL", `${K}react:${letter.id}`, copyId],
       ]);
       return json({ withdrawn: copyId });
     }

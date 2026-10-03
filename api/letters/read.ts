@@ -51,9 +51,21 @@ export default handle(async (req) => {
   const letter = parse<Letter>((await redis([["GET", `${K}letter:${copy.letterId}`]]))[0]);
   if (!letter || letter.status !== "live" || letter.expiresAt <= Date.now()) return errorResponse(GONE, 404);
 
-  await redis([
+  const [, , reacted, prayerToken] = await redis([
     ["HSETNX", `${K}opened:${letter.id}`, c, String(Date.now())],
     ["EXPIRE", `${K}opened:${letter.id}`, Math.max(1, Math.ceil((letter.expiresAt - Date.now()) / 1000))],
+    // Whether this partner already said they're praying, and the prayer
+    // team's page if there is one (its link is for partners anyway).
+    ["HEXISTS", `${K}react:${letter.id}`, c],
+    ["GET", `${K}prayer-token`],
   ]);
-  return json({ letterId: letter.id, wrapped: copy.wrapped, size: letter.size, chunks: letter.chunks, expiresAt: letter.expiresAt });
+  return json({
+    letterId: letter.id,
+    wrapped: copy.wrapped,
+    size: letter.size,
+    chunks: letter.chunks,
+    expiresAt: letter.expiresAt,
+    praying: Number(reacted) === 1,
+    prayer: typeof prayerToken === "string" && prayerToken.length >= 16 ? `/pray/${prayerToken}` : null,
+  });
 });

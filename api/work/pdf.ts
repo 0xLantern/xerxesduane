@@ -2,9 +2,10 @@
 //
 //   ?kind=invoice&p=YYYY-MM|last|current       the invoice for a month
 //   ?kind=log&m=YYYY-MM                        the month's work log
-import { allEntries, errorResponse, getSettings, handle, readScope, underLimit } from "./_lib";
-import { WORK_ORIGIN, buildInvoice, invoiceFor, monthPeriod, resolvePeriod } from "./_invoice";
-import { renderPdf } from "./_pdf";
+//   ?kind=year&y=YYYY                          the year statement: every month's invoice and whether it was paid
+import { allEntries, allPayments, allSummaries, errorResponse, getSettings, handle, readScope, underLimit } from "./_lib";
+import { WORK_ORIGIN, buildInvoice, invoiceFor, listInvoices, monthPeriod, resolvePeriod } from "./_invoice";
+import { renderPdf, renderYearPdf } from "./_pdf";
 
 export const config = { runtime: "edge" };
 
@@ -13,27 +14,40 @@ export default handle(async (req) => {
   if (!(await underLimit("pdf", req, 30, 60))) return errorResponse("Too many requests. Wait a minute.", 429);
   const scope = await readScope(req);
   const url = new URL(req.url);
-  const kind = url.searchParams.get("kind") === "log" ? "log" : "invoice";
+  const kindParam = url.searchParams.get("kind");
+  const kind = kindParam === "log" ? "log" : kindParam === "year" ? "year" : "invoice";
   if (!scope) {
     return errorResponse("This link isn't valid any more. Ask for a new one.", 404);
   }
+  // The logo is read from this deployment, so previews work before release.
+  const origin = url.origin.includes("localhost") ? WORK_ORIGIN : url.origin;
+  const [entries, settings] = await Promise.all([allEntries(), getSettings()]);
+  const headers = (name: string) => ({
+    "content-type": "application/pdf",
+    "content-disposition": `attachment; filename="${name.replace(/[^\w.-]+/g, "-")}"`,
+    "cache-control": "no-store",
+    "x-robots-tag": "noindex, nofollow",
+  });
+
+  if (kind === "year") {
+    const now = Date.now();
+    const thisYear = new Date(now + 4 * 3600e3).getUTCFullYear();
+    const y = Number(url.searchParams.get("y") ?? thisYear);
+    if (!Number.isInteger(y) || y < 2020 || y > thisYear + 1) return errorResponse("That isn't a year this log covers.");
+    const rows = await listInvoices(entries, settings, await allPayments(), now);
+    const pdf = await renderYearPdf(y, rows, settings, origin, now);
+    return new Response(pdf, { headers: headers(`Year-statement-${settings.client}-${y}.pdf`) });
+  }
+
   const period =
     kind === "log"
       ? // No month given: this month, in Dubai.
         (monthPeriod(url.searchParams.get("m")) ?? monthPeriod(new Date(Date.now() + 4 * 3600e3).toISOString().slice(0, 7))!)
       : resolvePeriod(url.searchParams.get("p"));
 
-  const [entries, settings] = await Promise.all([allEntries(), getSettings()]);
   const inv = kind === "invoice" ? await invoiceFor(period) : buildInvoice(entries, settings, period);
-  // The logo is read from this deployment, so previews work before release.
-  const pdf = await renderPdf(inv, kind, url.origin.includes("localhost") ? WORK_ORIGIN : url.origin);
+  const summary = kind === "log" ? ((await allSummaries())[period.id] ?? null) : null;
+  const pdf = await renderPdf(inv, kind, origin, summary);
   const name = kind === "log" ? `Work-log-${settings.client}-${period.id}.pdf` : `Invoice-${inv.number}.pdf`;
-  return new Response(pdf, {
-    headers: {
-      "content-type": "application/pdf",
-      "content-disposition": `attachment; filename="${name.replace(/[^\w.-]+/g, "-")}"`,
-      "cache-control": "no-store",
-      "x-robots-tag": "noindex, nofollow",
-    },
-  });
+  return new Response(pdf, { headers: headers(name) });
 });

@@ -8,6 +8,7 @@
  *
  *   Letters    publish, see who opened, send to more partners, withdraw
  *   Partners   names, email, WhatsApp, greeting
+ *   Prayer     the month's prayer requests, and the prayer team's link
  *   Settings   sender, reply-to, the WhatsApp message, the download default
  */
 import { useCallback, useEffect, useState, type FormEvent } from "react";
@@ -15,12 +16,13 @@ import { api, type LetterSummary, type Partner, type Settings } from "./api";
 import LetterDetail, { type Fresh } from "./LetterDetail";
 import { fmtShort, local, msg, statusOf } from "./local";
 import Partners from "./Partners";
+import PrayerTab from "./PrayerTab";
 import Publish from "./Publish";
 import SettingsTab from "./SettingsTab";
 import { ACCENT, Box, Btn, Err, INK, PAPER, Pill, SERIF, SOFT, inputCls } from "./ui";
 import { LIFESPAN_DAYS } from "./shared";
 
-type Tab = "letters" | "partners" | "settings";
+type Tab = "letters" | "partners" | "prayer" | "settings";
 type View = { kind: "list" } | { kind: "publish" } | { kind: "letter"; id: string; fresh?: Fresh };
 
 export default function Desk() {
@@ -143,7 +145,7 @@ function Workspace({ onOut }: { onOut: () => void }) {
         <Btn onClick={() => void api.logout().finally(onOut)}>Sign out</Btn>
       </header>
       <nav className="mt-5 flex gap-1 rounded-full bg-white p-1 shadow-sm">
-        {(["letters", "partners", "settings"] as Tab[]).map((t) => (
+        {(["letters", "partners", "prayer", "settings"] as Tab[]).map((t) => (
           <button
             key={t}
             type="button"
@@ -170,6 +172,7 @@ function Workspace({ onOut }: { onOut: () => void }) {
               <LetterDetail key={view.id} id={view.id} fresh={view.fresh} partners={partners} settings={settings} onBack={() => show({ kind: "list" })} />
             )}
             {tab === "partners" && <Partners partners={partners} reload={loadPartners} />}
+            {tab === "prayer" && <PrayerTab />}
             {tab === "settings" && <SettingsTab settings={settings} defaults={defaults} onSaved={setSettings} />}
           </>
         )}
@@ -228,6 +231,7 @@ function Letters({ onPublish, onOpen }: { onPublish: () => void; onOpen: (id: st
                   {l.status !== "uploading" && (
                     <p className="mt-0.5 text-sm font-semibold" style={{ color: INK }}>
                       Opened by {l.opened} of {l.copies}
+                      {l.praying > 0 && <span style={{ color: "#8a6a2e" }}> · 🙏 {l.praying} praying</span>}
                       {l.here && l.status === "live" && <span className="font-normal" style={{ color: SOFT }}> · links on this device</span>}
                     </p>
                   )}
