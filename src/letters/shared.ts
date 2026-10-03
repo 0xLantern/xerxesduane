@@ -109,6 +109,19 @@ export async function decrypt(data: Uint8Array, key: Key): Promise<Uint8Array<Ar
   return new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: data.subarray(0, 12) as Bytes }, key, data.subarray(12) as Bytes));
 }
 
+/**
+ * The sender as named mid-sentence ("Let … know you're praying"): the first
+ * name, and both first names for a couple. "Xerxes Duane" -> "Xerxes",
+ * "Xerxes & Loraine Duane" -> "Xerxes & Loraine". "The Duane family" stays whole.
+ */
+export function shortName(sender: string): string {
+  const s = sender.replace(/\s+/g, " ").trim();
+  if (/^the\s/i.test(s)) return s;
+  const couple = /^(\S+)(?:\s.*?)?\s(&|and|\+)\s(\S+)/i.exec(s);
+  if (couple) return `${couple[1]} ${couple[2]} ${couple[3]}`;
+  return s.split(" ")[0] || s;
+}
+
 /** The one date format for letters (desk, reader, WhatsApp, email): "1 November 2026", Dubai time. */
 export function fmtDate(ms: number): string {
   return new Date(ms).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Dubai" });

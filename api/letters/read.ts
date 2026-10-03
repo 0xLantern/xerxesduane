@@ -2,7 +2,9 @@
 // the key in the link's fragment (which browsers never send) opens it in the
 // partner's browser.
 //   ?c=<copyId>                     the wrapped copy, and the file's size and
-//                                   piece count; notes the first open
+//                                   piece count; notes the first open, unless
+//                                   &peek=1 (the owner checking a link on the
+//                                   device they publish from)
 //   ?c=<copyId>&f=<letterId>&n=<n>  piece n of the encrypted PDF, as bytes,
 //                                   for as long as that copy exists
 // A withdrawn copy is deleted and an expired one is gone, so both are a 404.
@@ -51,13 +53,20 @@ export default handle(async (req) => {
   const letter = parse<Letter>((await redis([["GET", `${K}letter:${copy.letterId}`]]))[0]);
   if (!letter || letter.status !== "live" || letter.expiresAt <= Date.now()) return errorResponse(GONE, 404);
 
-  const [, , reacted, prayerToken] = await redis([
-    ["HSETNX", `${K}opened:${letter.id}`, c, String(Date.now())],
-    ["EXPIRE", `${K}opened:${letter.id}`, Math.max(1, Math.ceil((letter.expiresAt - Date.now()) / 1000))],
+  const peek = u.searchParams.get("peek") === "1";
+  const [reacted, prayerToken, requests] = await redis([
     // Whether this partner already said they're praying, and the prayer
-    // team's page if there is one (its link is for partners anyway).
+    // team's page if there is one (its link is for partners anyway) and it
+    // has something on it.
     ["HEXISTS", `${K}react:${letter.id}`, c],
     ["GET", `${K}prayer-token`],
+    ["HLEN", `${K}prayer`],
+    ...(peek
+      ? []
+      : [
+          ["HSETNX", `${K}opened:${letter.id}`, c, String(Date.now())],
+          ["EXPIRE", `${K}opened:${letter.id}`, Math.max(1, Math.ceil((letter.expiresAt - Date.now()) / 1000))],
+        ]),
   ]);
   return json({
     letterId: letter.id,
@@ -66,6 +75,6 @@ export default handle(async (req) => {
     chunks: letter.chunks,
     expiresAt: letter.expiresAt,
     praying: Number(reacted) === 1,
-    prayer: typeof prayerToken === "string" && prayerToken.length >= 16 ? `/pray/${prayerToken}` : null,
+    prayer: typeof prayerToken === "string" && prayerToken.length >= 16 && Number(requests) > 0 ? `/pray/${prayerToken}` : null,
   });
 });

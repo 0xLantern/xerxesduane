@@ -107,6 +107,37 @@ export const local = {
   },
 };
 
+/**
+ * A backup of a letter's links as a file, so losing this browser's storage
+ * (or changing device) doesn't mean losing the way to send them. It holds
+ * every partner's key: whoever has the file can read the letter, so it
+ * belongs somewhere private, and it's useless once the letter expires.
+ */
+export function saveBackup(rec: LocalLetter) {
+  const blob = new Blob([JSON.stringify({ kind: "partner-letter-links", ...rec }, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${rec.title.replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim() || "Letter"} - links (private).json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
+/** Read a backup file back for this letter, or say why it can't be used. */
+export function readBackup(text: string, letterId: string): LocalLetter | string {
+  let r: Partial<LocalLetter> & { kind?: string };
+  try {
+    r = JSON.parse(text) as typeof r;
+  } catch {
+    return "That isn't a links backup file.";
+  }
+  if (r.kind !== "partner-letter-links" || r.v !== 1 || typeof r.fileKey !== "string" || !r.links || typeof r.links !== "object") return "That isn't a links backup file.";
+  if (r.letterId !== letterId) return `That backup is for another letter${r.title ? ` (“${r.title}”)` : ""}.`;
+  return { v: 1, letterId, fileKey: r.fileKey, title: String(r.title ?? ""), sender: String(r.sender ?? ""), expiresAt: Number(r.expiresAt) || 0, allowDownload: r.allowDownload === true, links: r.links };
+}
+
 /** A partner's link. Always the ministry host: the server checks it, and it's what partners should see. */
 export function linkFor(copyId: string, linkKey: string): string {
   return `${MINISTRY_ORIGIN}/l/${copyId}#${linkKey}`;

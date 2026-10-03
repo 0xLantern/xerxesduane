@@ -2,27 +2,36 @@
  * The prayer team's page, at /pray/<token>. Open requests first, then the
  * ones answered in the last two weeks (with thanks), and nothing after
  * that: a request leaves the page once it's answered. "I prayed" is a
- * count, so the owner knows the page is more than a list.
+ * count, so the owner knows the page is more than a list; it can be tapped
+ * once a day on each device, since a request can be prayed for many days.
  */
 import { useCallback, useEffect, useState } from "react";
 import { api, type PrayerRequest } from "./api";
 import { fmtShort, msg } from "./local";
+import { shortName } from "./shared";
 import { ACCENT, GOOD, INK, PAPER, SERIF, SOFT } from "./ui";
 
-const PRAYED = "prayer:prayed";
+/** Request id -> the day "I prayed" was last tapped here. */
+const PRAYED = "prayer:prayed-on";
 
-function readPrayed(): Set<string> {
+/** Today on this device, as YYYY-MM-DD. */
+const today = () => new Date().toLocaleDateString("en-CA");
+
+function readPrayed(): Record<string, string> {
   try {
-    return new Set(JSON.parse(localStorage.getItem(PRAYED) ?? "[]") as string[]);
+    const r = JSON.parse(localStorage.getItem(PRAYED) ?? "{}") as unknown;
+    return r && typeof r === "object" && !Array.isArray(r) ? (r as Record<string, string>) : {};
   } catch {
-    return new Set();
+    return {};
   }
 }
 
 export default function Prayer({ token }: { token: string }) {
   const [data, setData] = useState<{ requests: PrayerRequest[]; sender: string } | null>(null);
   const [error, setError] = useState("");
-  const [mine, setMine] = useState<Set<string>>(() => readPrayed());
+  const [mine, setMine] = useState<Record<string, string>>(() => readPrayed());
+  // The day this page opened: a pure value for render.
+  const [day] = useState(today);
 
   const load = useCallback(() => api.teamPrayer(token).then(setData, (e) => setError(msg(e))), [token]);
   useEffect(() => {
@@ -30,11 +39,14 @@ export default function Prayer({ token }: { token: string }) {
   }, [load]);
 
   const prayed = async (r: PrayerRequest) => {
-    if (mine.has(r.id)) return;
-    const next = new Set(mine).add(r.id);
+    if (mine[r.id] === day) return;
+    // Only today's taps matter, so earlier days' are let go.
+    const next: Record<string, string> = { [r.id]: day };
+    for (const [id, d] of Object.entries(mine)) if (d === day) next[id] = d;
     setMine(next);
     try {
-      localStorage.setItem(PRAYED, JSON.stringify([...next]));
+      localStorage.setItem(PRAYED, JSON.stringify(next));
+      localStorage.removeItem("prayer:prayed");
     } catch {
       /* fine */
     }
@@ -48,7 +60,7 @@ export default function Prayer({ token }: { token: string }) {
 
   const open = data?.requests.filter((r) => !r.answeredAt) ?? [];
   const answered = data?.requests.filter((r) => r.answeredAt) ?? [];
-  const first = data?.sender.split(" ")[0] ?? "";
+  const first = data ? shortName(data.sender) : "";
 
   return (
     <main className="min-h-screen pb-16 pt-[max(2rem,env(safe-area-inset-top))]" style={{ background: PAPER, color: "#2b2420" }}>
@@ -61,7 +73,7 @@ export default function Prayer({ token }: { token: string }) {
             {data ? `Praying with ${first}` : "Prayer requests"}
           </h1>
           <p className="mt-2 text-[0.95rem]" style={{ color: SOFT }}>
-            Thank you for standing with us. Tap <strong>I prayed</strong> when you have: it's a quiet encouragement on this side.
+            Thank you for standing with us. Tap <strong>I prayed</strong> when you have, any day you do: it's a quiet encouragement on this side.
           </p>
         </header>
 
@@ -81,7 +93,7 @@ export default function Prayer({ token }: { token: string }) {
         {open.length > 0 && (
           <ol className="mt-8 space-y-3">
             {open.map((r) => {
-              const did = mine.has(r.id);
+              const did = mine[r.id] === day;
               return (
                 <li key={r.id} className="rounded-3xl bg-white p-5 shadow-sm">
                   <p className="whitespace-pre-line text-[1.02rem] leading-relaxed" style={{ color: "#2b2420" }}>
@@ -99,7 +111,7 @@ export default function Prayer({ token }: { token: string }) {
                       className="inline-flex min-h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-bold transition"
                       style={did ? { borderColor: "#bcd6b5", background: "#e3eedf", color: GOOD } : { borderColor: "#ddd5c7", background: "#fff", color: INK }}
                     >
-                      <span aria-hidden="true">🙏</span> {did ? "Prayed" : "I prayed"}
+                      <span aria-hidden="true">🙏</span> {did ? "Prayed today" : "I prayed"}
                     </button>
                   </div>
                 </li>
