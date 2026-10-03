@@ -4,8 +4,12 @@
  * needs no other tool. The result goes through the same publish flow as an
  * uploaded PDF.
  *
- * The standard fonts cover Latin-1 only, so anything else becomes "?"; the
- * editor warns when it sees such characters. Photos are resized to at most
+ * Set in the site's own type: Noto Serif for the letter's body (Latin,
+ * Vietnamese, Greek and Cyrillic) and Plus Jakarta Sans for headings and
+ * labels, both embedded and subset, so a letter carries only the letters it
+ * uses. The fonts are served from /fonts/letter and fetched only when a PDF
+ * is made. Emoji and scripts neither font has (Korean, Arabic…) are left
+ * out, and the editor says which. Photos are resized to at most
  * PHOTO_PX wide and saved as JPEG, which keeps a letter with eight photos
  * under a few megabytes.
  */
@@ -49,14 +53,26 @@ export function emptyDraft(sender: string): Draft {
   };
 }
 
-const EXTRA = new Set("–—‘’“”•…€×");
+/** What the letter fonts can set: Latin (with Vietnamese), Greek, Cyrillic and common punctuation. */
+function settable(c: number): boolean {
+  return (
+    (c >= 0x20 && c <= 0x24f) ||
+    (c >= 0x370 && c <= 0x3ff) ||
+    (c >= 0x400 && c <= 0x4ff) ||
+    (c >= 0x1e00 && c <= 0x1eff) ||
+    (c >= 0x2000 && c <= 0x206f && c !== 0x200d) ||
+    (c >= 0x20a0 && c <= 0x20cf) ||
+    c === 0x2122 ||
+    c === 0x2116
+  );
+}
 
-/** Characters the standard fonts can't set. */
+/** Characters the letter can't set (emoji, Korean, Arabic…): they're left out of the PDF. */
 export function unsupported(text: string): string[] {
   const out = new Set<string>();
   for (const ch of text.normalize("NFC")) {
     const c = ch.codePointAt(0)!;
-    if (ch === "\n" || ch === "\t" || (c >= 32 && c < 127) || (c >= 160 && c < 256) || EXTRA.has(ch)) continue;
+    if (ch === "\n" || ch === "\t" || settable(c) || c === 0xfe0f || (c >= 0x1f3fb && c <= 0x1f3ff)) continue;
     out.add(ch);
   }
   return [...out];
@@ -64,17 +80,47 @@ export function unsupported(text: string): string[] {
 
 function clean(s: string): string {
   let out = "";
+  let dropped = false;
   for (const ch of s.normalize("NFC")) {
     const c = ch.codePointAt(0)!;
-    if (ch === "\n" || (c >= 32 && c < 127) || (c >= 160 && c < 256) || EXTRA.has(ch)) out += ch;
+    if (ch === "\n" || settable(c)) out += ch;
     else if (ch === "\t") out += " ";
-    else out += "?";
+    else dropped = true;
   }
-  return out;
+  if (!dropped) return out;
+  // Leaving out an emoji can leave a space where it stood: "Sharjah ." or two spaces.
+  return out.replace(/ {2,}/g, " ").replace(/ +\n/g, "\n").replace(/ +([.,;:!?)])/g, "$1").trim();
+}
+
+const FONT_FILES = {
+  serif: "NotoSerif_400Regular.ttf",
+  serifBold: "NotoSerif_700Bold.ttf",
+  serifItalic: "NotoSerif_400Regular_Italic.ttf",
+  sans: "PlusJakartaSans_400Regular.ttf",
+  sansBold: "PlusJakartaSans_700Bold.ttf",
+} as const;
+
+let fontBytes: Promise<Record<keyof typeof FONT_FILES, ArrayBuffer>> | null = null;
+
+/** The five font files, fetched once per visit. */
+function loadFonts() {
+  fontBytes ??= Promise.all(
+    Object.entries(FONT_FILES).map(async ([k, f]) => {
+      const res = await fetch(`/fonts/letter/${f}`);
+      if (!res.ok) throw new Error("The letter's fonts couldn't be loaded. Check your connection and try again.");
+      return [k, await res.arrayBuffer()] as const;
+    }),
+  )
+    .then((pairs) => Object.fromEntries(pairs) as Record<keyof typeof FONT_FILES, ArrayBuffer>)
+    .catch((e) => {
+      fontBytes = null;
+      throw e;
+    });
+  return fontBytes;
 }
 
 /** Shrink an image file to a JPEG data URL at most PHOTO_PX wide. */
-export async function shrinkPhoto(file: File): Promise<string> {
+export async function shrinkPhoto(file: File, maxPx = PHOTO_PX): Promise<string> {
   const url = URL.createObjectURL(file);
   try {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
@@ -83,7 +129,7 @@ export async function shrinkPhoto(file: File): Promise<string> {
       i.onerror = () => reject(new Error("That image couldn't be opened."));
       i.src = url;
     });
-    const scale = Math.min(1, PHOTO_PX / img.naturalWidth);
+    const scale = Math.min(1, maxPx / Math.max(img.naturalWidth, img.naturalHeight));
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(img.naturalWidth * scale);
     canvas.height = Math.round(img.naturalHeight * scale);
@@ -106,15 +152,19 @@ function bytesOf(dataUrl: string): Uint8Array {
 
 /** Lay the draft out as a PDF. */
 export async function composePdf(d: Draft, sender: string): Promise<Uint8Array> {
-  const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
+  const [{ PDFDocument, rgb }, { default: fontkit }, bytes] = await Promise.all([import("pdf-lib"), import("@pdf-lib/fontkit"), loadFonts()]);
   const doc = await PDFDocument.create();
+  doc.registerFontkit(fontkit);
   doc.setTitle(clean(d.title || "Letter"));
   doc.setAuthor(clean(sender));
-  const serif = await doc.embedFont(StandardFonts.TimesRoman);
-  const serifBold = await doc.embedFont(StandardFonts.TimesRomanBold);
-  const serifItalic = await doc.embedFont(StandardFonts.TimesRomanItalic);
-  const sans = await doc.embedFont(StandardFonts.Helvetica);
-  const sansBold = await doc.embedFont(StandardFonts.HelveticaBold);
+  // Plus Jakarta is subset (only the letters used go in). Noto Serif is embedded
+  // whole: pdf-lib's subsetter drops most of its glyphs. It adds about 1.5 MB.
+  const embed = (k: keyof typeof FONT_FILES) => doc.embedFont(bytes[k], { subset: k === "sans" || k === "sansBold" });
+  const [serif, serifBold, serifItalic, sansOnly, sansBoldOnly] = await Promise.all([embed("serif"), embed("serifBold"), embed("serifItalic"), embed("sans"), embed("sansBold")]);
+  // Plus Jakarta has no Greek or Cyrillic: a heading in either is set in the serif instead.
+  const latinOnly = (t: string) => !/[\u0370-\u04ff]/.test(t);
+  const sansFor = (t: string) => (latinOnly(t) ? sansOnly : serif);
+  const sansBoldFor = (t: string) => (latinOnly(t) ? sansBoldOnly : serifBold);
   const INK = rgb(0.17, 0.1, 0.08);
   const SOFT = rgb(0.42, 0.37, 0.33);
   const ACCENT = rgb(0.54, 0.42, 0.18);
@@ -151,9 +201,9 @@ export async function composePdf(d: Draft, sender: string): Promise<Uint8Array> 
   let pageNo = 1;
   const footer = () => {
     const t = clean(`${d.title || "Letter"} · ${sender}`);
-    page.drawText(t, { x: M, y: 30, size: 8, font: sans, color: SOFT });
+    page.drawText(t, { x: M, y: 30, size: 8, font: sansFor(t), color: SOFT });
     const n = String(pageNo);
-    page.drawText(n, { x: W - M - sans.widthOfTextAtSize(n, 8), y: 30, size: 8, font: sans, color: SOFT });
+    page.drawText(n, { x: W - M - sansOnly.widthOfTextAtSize(n, 8), y: 30, size: 8, font: sansOnly, color: SOFT });
   };
   const newPage = () => {
     footer();
@@ -173,12 +223,13 @@ export async function composePdf(d: Draft, sender: string): Promise<Uint8Array> 
   };
 
   // Title block.
-  page.drawText(clean(`A LETTER FROM ${sender.toUpperCase()}`), { x: M, y: y - 8, size: 8, font: sansBold, color: ACCENT });
+  const kicker = clean(`A LETTER FROM ${sender.toUpperCase()}`);
+  page.drawText(kicker, { x: M, y: y - 8, size: 8, font: sansBoldFor(kicker), color: ACCENT });
   y -= 24;
   lines(d.title || "Untitled", serifBold, 26, 30);
   if (d.dateLine.trim()) {
-    y -= 2;
-    lines(d.dateLine, sans, 9.5, 14, SOFT);
+    y -= 8;
+    lines(d.dateLine, sansFor(d.dateLine), 9.5, 14, SOFT);
   }
   y -= 14;
   page.drawLine({ start: { x: M, y }, end: { x: M + 60, y }, thickness: 1.2, color: ACCENT });
@@ -198,7 +249,7 @@ export async function composePdf(d: Draft, sender: string): Promise<Uint8Array> 
       if (!b.text.trim()) continue;
       need(40);
       y -= 6;
-      lines(b.text, sansBold, 12.5, 17);
+      lines(b.text, sansBoldFor(b.text), 12.5, 17);
       y -= 4;
     } else if (b.kind === "quote") {
       if (!b.text.trim()) continue;

@@ -12,6 +12,7 @@ import {
   K,
   PRAYER_LIMIT,
   allPrayer,
+  cleanPhoto,
   errorResponse,
   existingPrayerToken,
   getSettings,
@@ -72,7 +73,9 @@ export default handle(async (req) => {
     }
     const text = String(body.text ?? "").replace(/\r/g, "").trim().slice(0, PRAYER_LIMIT);
     if (!text) return errorResponse("Write the request first.");
-    const r: PrayerRequest = { id: randomToken(8), text, createdAt: Date.now(), answeredAt: null, answer: "" };
+    const photo = cleanPhoto(body.photo ?? "");
+    if (photo === null) return errorResponse("That photo is too large or isn't a JPEG or PNG. Try a smaller one.");
+    const r: PrayerRequest = { id: randomToken(8), text, createdAt: Date.now(), answeredAt: null, answer: "", photo };
     await savePrayer(r);
     return json({ request: r, requests: await allPrayer() });
   }
@@ -83,7 +86,12 @@ export default handle(async (req) => {
   if (!current) return errorResponse("That request isn't on the list any more.", 404);
 
   if (req.method === "PATCH") {
-    const next: PrayerRequest = { id: current.id, text: current.text, createdAt: current.createdAt, answeredAt: current.answeredAt, answer: current.answer };
+    const next: PrayerRequest = { id: current.id, text: current.text, createdAt: current.createdAt, answeredAt: current.answeredAt, answer: current.answer, photo: current.photo };
+    if (body.photo !== undefined) {
+      const photo = cleanPhoto(body.photo);
+      if (photo === null) return errorResponse("That photo is too large or isn't a JPEG or PNG. Try a smaller one.");
+      next.photo = photo;
+    }
     if (body.text !== undefined) {
       next.text = String(body.text).replace(/\r/g, "").trim().slice(0, PRAYER_LIMIT);
       if (!next.text) return errorResponse("The request can't be empty. Remove it instead.");

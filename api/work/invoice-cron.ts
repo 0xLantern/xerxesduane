@@ -16,6 +16,13 @@
 import { OWNER_EMAIL, getClients, getSettings, getShareToken, getTimer, handle, json, redis, safeEqual, type Client } from "./_lib";
 import { EmptyInvoice, MailMissing, NoRecipient, fmtDate, invoiceList, notifyOwner, periodContaining, previousPeriod, savedInvoice, sendInvoice, sentByHand } from "./_invoice";
 import { buildExport, entriesCsv, today } from "./_export";
+import { weeklyMessage } from "../../src/letters/weekly";
+
+/** The prayer team's page, if its link has been made. */
+async function teamLink(): Promise<string | null> {
+  const [t] = await redis([["GET", "letters:v1:prayer-token"]]);
+  return typeof t === "string" && t.length >= 16 ? `https://ministry.xerxesduane.com/pray/${t}` : null;
+}
 
 export const config = { runtime: "edge" };
 
@@ -138,13 +145,19 @@ async function remindUnpaid(client: Client): Promise<number> {
 }
 
 /** The open prayer requests and how often "I prayed" was tapped, for the Monday email. */
-function prayerSummary(list: unknown[]): string {
+function prayerSummary(list: unknown[], teamLink: string | null): string {
+  const open = list.map((r) => r as { text?: string; answeredAt?: number | null }).filter((r) => r.text && !r.answeredAt);
+  const message = open.length && teamLink ? weeklyMessage(open.map((r) => String(r.text)), teamLink) : "";
   const rows = list
     .map((r) => r as { text?: string; answeredAt?: number | null; prayed?: number })
     .filter((r) => r.text && !r.answeredAt)
     .map((r) => `<li>${escapeHtml(String(r.text))} <span style="color:#8a7f75;">· prayed ${Number(r.prayed) || 0} ${Number(r.prayed) === 1 ? "time" : "times"}</span></li>`);
   if (!rows.length) return "";
-  return `<p><strong>🙏 The prayer team this week</strong></p><ul>${rows.join("")}</ul>`;
+  return `<p><strong>🙏 The prayer team this week</strong></p><ul>${rows.join("")}</ul>${
+    message
+      ? `<p>Ready for WhatsApp (also on the desk's Prayer tab, with a Share button):</p><pre style="white-space:pre-wrap;font:14px/1.5 -apple-system,Segoe UI,Helvetica,Arial,sans-serif;background:#faf6ee;padding:12px;border-radius:8px;">${escapeHtml(message)}</pre>`
+      : ""
+  }`;
 }
 
 /** The weekly backup email: the full export as JSON, the hours as CSV. */
@@ -174,7 +187,7 @@ async function sendBackup(day: string): Promise<string> {
 <li><strong>${Object.keys(data.payments).length}</strong> invoices marked paid · <strong>${Object.keys(data.summaries).length}</strong> monthly notes</li>
 <li><strong>${data.trash.length}</strong> in the trash · <strong>${data.letters.partners.length}</strong> partners · <strong>${data.letters.prayer.length}</strong> prayer requests</li>
 </ul>
-${prayerSummary(data.letters.prayer)}
+${prayerSummary(data.letters.prayer, await teamLink())}
 <p style="color:#8a7f75;font-size:13px;">Keep a few of these. The JSON is the complete backup; the CSV opens in a spreadsheet. work.xerxesduane.com</p>
 </div>`,
       attachments: [

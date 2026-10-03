@@ -30,7 +30,7 @@ export type LetterSummary = Letter & { copies: number; opened: number; praying: 
 /** A partner's "Praying for you" from inside the letter, with their line if they wrote one. */
 export type Praying = { at: number; note: string };
 export type CopyRow = { copyId: string; partnerId: string; name: string; opened: number | null; mailed: number | null; praying: Praying | null };
-export type PrayerRequest = { id: string; text: string; createdAt: number; answeredAt: number | null; answer: string; prayed: number };
+export type PrayerRequest = { id: string; text: string; createdAt: number; answeredAt: number | null; answer: string; photo: string; prayed: number };
 export type NewCopy = { copyId: string; partnerId: string; wrapped: string };
 export type EmailSend = { partnerId: string; copyId: string; link: string };
 
@@ -86,8 +86,8 @@ export const api = {
   react: (copyId: string, note: string) => call<{ ok: true; at: number }>(`${L}react`, "POST", { c: copyId, note }),
 
   prayer: () => call<{ requests: PrayerRequest[]; token: string }>(`${L}prayer`),
-  addPrayer: (text: string) => call<{ request: PrayerRequest; requests: PrayerRequest[] }>(`${L}prayer`, "POST", { text }),
-  editPrayer: (id: string, patch: { text?: string; answered?: boolean; answer?: string }) => call<{ requests: PrayerRequest[] }>(`${L}prayer`, "PATCH", { id, ...patch }),
+  addPrayer: (text: string, photo = "") => call<{ request: PrayerRequest; requests: PrayerRequest[] }>(`${L}prayer`, "POST", { text, photo }),
+  editPrayer: (id: string, patch: { text?: string; answered?: boolean; answer?: string; photo?: string }) => call<{ requests: PrayerRequest[] }>(`${L}prayer`, "PATCH", { id, ...patch }),
   deletePrayer: (id: string) => call<{ requests: PrayerRequest[] }>(`${L}prayer`, "DELETE", { id }),
   rotatePrayer: () => call<{ token: string }>(`${L}prayer`, "POST", { rotate: true }),
   /** The prayer team, through their link. */

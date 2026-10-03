@@ -38,6 +38,7 @@ export function InvoicesSheet({
 }) {
   const c = `&c=${encodeURIComponent(client.id)}`;
   const [marking, setMarking] = useState<string | null>(null);
+  const [sending, setSending] = useState<InvoiceRow | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const years = useMemo(() => byYear(invoices), [invoices]);
@@ -59,7 +60,20 @@ export function InvoicesSheet({
 
   return (
     <Sheet title={`Invoices · ${client.name}`} onClose={onClose} locked={busy}>
-      <div className="space-y-5">
+      {sending && (
+        <SendPanel
+          client={client}
+          row={sending}
+          guard={guard}
+          onCancel={() => setSending(null)}
+          onSent={async () => {
+            setSending(null);
+            const res = await guard(api.invoices(client.id));
+            onChange(res.invoices, res.owed);
+          }}
+        />
+      )}
+      <div className={`space-y-5 ${sending ? "hidden" : ""}`}>
         <div className="rounded-2xl border border-line bg-canvas px-4 py-3">
           <p className="text-sm font-bold text-fg-soft">Still owed</p>
           <p className="mt-0.5 font-display text-2xl font-bold tabular-nums text-fg">{money(owed.total, currency)}</p>
@@ -117,7 +131,12 @@ export function InvoicesSheet({
                       />
                     ) : (
                       <div className="mt-3 flex flex-wrap gap-2">
-                        {r.hours > 0 && r.status !== "open" && !r.paid && (
+                        {r.hours > 0 && r.status !== "sent" && (
+                          <Button kind={r.status === "pending" ? "primary" : "ghost"} onClick={() => setSending(r)} disabled={busy}>
+                            Send now…
+                          </Button>
+                        )}
+                        {r.hours > 0 && r.status === "sent" && !r.paid && (
                           <Button kind="primary" onClick={() => setMarking(r.periodId)} disabled={busy}>
                             Mark paid
                           </Button>
@@ -505,5 +524,85 @@ export function ClientSheet({
         </div>
       </form>
     </Sheet>
+  );
+}
+
+/**
+ * Send one invoice now, after a look at it: who it goes to, what's on it,
+ * and the invoice itself in a new tab. For a client whose month shouldn't
+ * wait for the cron, or one that doesn't send automatically.
+ */
+function SendPanel({ client, row, guard, onCancel, onSent }: { client: Client; row: InvoiceRow; guard: Guard; onCancel: () => void; onSent: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [done, setDone] = useState("");
+  const to = client.invoiceTo.length ? client.invoiceTo : client.id === "gcn" ? ["bb@gcn.live"] : [];
+  const open = row.status === "open";
+  const send = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const res = await guard(api.emailInvoice(client.id, row.periodId));
+      setDone(`Sent ${res.sent} to ${res.to.join(", ")}.`);
+      window.setTimeout(() => void onSent(), 1200);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't send it.");
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="space-y-4">
+      <Button onClick={onCancel} disabled={busy}>
+        ‹ All invoices
+      </Button>
+      <div className="rounded-2xl border border-line bg-canvas p-4">
+        <p className="text-sm font-bold text-fg-soft">Invoice {row.number}</p>
+        <p className="mt-1 font-display text-2xl font-bold tabular-nums text-fg">{money(row.total, row.currency)}</p>
+        <p className="text-[0.95rem] tabular-nums text-fg-soft">
+          {row.label} · {row.hours.toFixed(2)} h at {money(client.rate, client.currency)}/h
+        </p>
+        <dl className="mt-3 space-y-1 text-[0.95rem]">
+          <div className="flex gap-2">
+            <dt className="w-16 shrink-0 font-bold text-fg-soft">To</dt>
+            <dd className="min-w-0 break-words text-fg">{to.length ? to.join(", ") : "No invoice email: add one under the client's details first."}</dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="w-16 shrink-0 font-bold text-fg-soft">Copy</dt>
+            <dd className="text-fg">you, with replies coming to you</dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="w-16 shrink-0 font-bold text-fg-soft">With</dt>
+            <dd className="text-fg">the invoice as the email and as a PDF</dd>
+          </div>
+        </dl>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <a
+          href={`/api/work/invoice?p=${row.periodId}&c=${encodeURIComponent(client.id)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-[0.95rem] font-bold text-fg hover:bg-panel-alt"
+        >
+          Preview the invoice
+        </a>
+        <DownloadLink href={`/api/work/pdf?kind=invoice&p=${row.periodId}&c=${encodeURIComponent(client.id)}`}>Preview PDF</DownloadLink>
+      </div>
+      {open && (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[0.95rem] text-amber-900">
+          {row.label} isn't over yet. Sending now closes this invoice with the hours logged so far; anything logged later this month won't be billed on it.
+        </p>
+      )}
+      <p className="text-[0.95rem] text-fg-soft">Once sent it's saved as sent and never changes, and the automatic send skips it.</p>
+      <ErrorNote>{error}</ErrorNote>
+      {done && <p className="text-[0.95rem] font-semibold text-accent-deep">{done}</p>}
+      <div className="flex gap-2">
+        <Button kind="primary" onClick={() => void send()} disabled={busy || !to.length || !!done} className="flex-1">
+          {busy ? "Sending…" : `Send ${row.number}`}
+        </Button>
+        <Button onClick={onCancel} disabled={busy}>
+          Cancel
+        </Button>
+      </div>
+    </div>
   );
 }

@@ -8,6 +8,7 @@ import { ApiError, api, type Client, type Entry, type OwnerData, type Settings }
 import { Button, Card, DownloadLink, ErrorNote, Field, MonthLog, Sheet, TextArea, TextInput, TotalTile } from "./ui";
 import { DAY, HOUR, TZ_LABEL, dateInput, fmtClock, fmtDay, fmtMonth, fmtTime, monthKey, monthStart, rangeFromInputs, shiftMonth, timeInput, totalsFor, weekStart } from "./time";
 import { overlapIds, overlapping } from "./overlap";
+import NumbersSheet from "./Numbers";
 import { ClientSheet, InvoicesSheet, SummarySheet, TrashList } from "./Sheets";
 import { money, owedOf } from "./invoices";
 
@@ -145,6 +146,7 @@ function Log({
   const [menu, setMenu] = useState(false);
   const [invoices, setInvoices] = useState(false);
   const [note, setNote] = useState(false);
+  const [numbers, setNumbers] = useState(false);
   const [flash, setFlash] = useState("");
   // The entry just deleted, so one tap brings it back.
   const [undo, setUndo] = useState<Entry | null>(null);
@@ -283,6 +285,15 @@ function Log({
         </button>
       </div>
 
+      <button
+        type="button"
+        onClick={() => setNumbers(true)}
+        className="mt-2 flex min-h-11 w-full items-center justify-between rounded-2xl border border-line bg-panel px-4 text-left hover:bg-panel-alt"
+      >
+        <span className="font-bold text-fg">Your numbers</span>
+        <span className="text-[0.95rem] font-semibold text-accent-deep">Hours and income by month, every client ›</span>
+      </button>
+
       <div className="mt-6 flex items-center justify-between gap-3">
         <h2 className="text-sm font-bold uppercase tracking-wide text-fg-soft">Your log</h2>
         <Button kind="ghost" onClick={() => setEditing({ mode: "new" })}>
@@ -357,6 +368,8 @@ function Log({
           onClose={() => setInvoices(false)}
         />
       )}
+
+      {numbers && <NumbersSheet clients={data.clients} invoices={data.invoices} now={now()} onClose={() => setNumbers(false)} />}
 
       {note && (
         <SummarySheet

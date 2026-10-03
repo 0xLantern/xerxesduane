@@ -193,8 +193,8 @@ export default function Editor({ sender, onCancel, onPdf }: { sender: string; on
         </div>
         {odd.length > 0 && (
           <p className="rounded-xl bg-[#fdf0dc] px-3 py-2 text-sm" style={{ color: "#8a5a0e" }}>
-            These characters can't be set in the letter's font and will show as "?": {odd.slice(0, 12).join(" ")}
-            {odd.length > 12 ? " …" : ""}. Emoji and non-Latin scripts aren't supported yet.
+            These will be left out of the PDF, because the letter's fonts don't have them: {odd.slice(0, 12).join(" ")}
+            {odd.length > 12 ? " …" : ""}. Emoji and scripts like Korean or Arabic can't be set; Latin, Vietnamese, Greek and Cyrillic can.
           </p>
         )}
         <Err>{error}</Err>

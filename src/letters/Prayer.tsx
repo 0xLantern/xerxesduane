@@ -95,7 +95,9 @@ export default function Prayer({ token }: { token: string }) {
             {open.map((r) => {
               const did = mine[r.id] === day;
               return (
-                <li key={r.id} className="rounded-3xl bg-white p-5 shadow-sm">
+                <li key={r.id} className="overflow-hidden rounded-3xl bg-white shadow-sm">
+                  {r.photo && <img src={r.photo} alt="" className="max-h-80 w-full object-cover" loading="lazy" />}
+                  <div className="p-5">
                   <p className="whitespace-pre-line text-[1.02rem] leading-relaxed" style={{ color: "#2b2420" }}>
                     {r.text}
                   </p>
@@ -114,6 +116,7 @@ export default function Prayer({ token }: { token: string }) {
                       <span aria-hidden="true">🙏</span> {did ? "Prayed today" : "I prayed"}
                     </button>
                   </div>
+                  </div>
                 </li>
               );
             })}
@@ -128,6 +131,7 @@ export default function Prayer({ token }: { token: string }) {
             <ol className="mt-4 space-y-3">
               {answered.map((r) => (
                 <li key={r.id} className="rounded-3xl border border-[#dfe9dc] bg-[#f3f8f1] p-5">
+                  {r.photo && <img src={r.photo} alt="" className="mb-3 max-h-48 w-full rounded-2xl object-cover opacity-90" loading="lazy" />}
                   <p className="whitespace-pre-line leading-relaxed line-through decoration-[#9fbf97]" style={{ color: SOFT }}>
                     {r.text}
                   </p>
