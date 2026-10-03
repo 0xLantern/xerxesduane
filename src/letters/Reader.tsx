@@ -34,6 +34,30 @@ const OFFLINE = "The letter couldn't be loaded. Please check your connection and
  * this site's storage, local.ts). Opening a partner's link there is the
  * owner checking it, so it isn't counted as that partner's open.
  */
+/** This browser's reader id: random, kept on the device, the thing a copy is locked to. */
+function deviceId(): string {
+  const KEY = "letter-device";
+  try {
+    const have = localStorage.getItem(KEY);
+    if (have && /^[A-Za-z0-9_-]{16,64}$/.test(have)) return have;
+    const made = Array.from(crypto.getRandomValues(new Uint8Array(18)), (b) => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"[b & 63]).join("");
+    localStorage.setItem(KEY, made);
+    return made;
+  } catch {
+    // Storage blocked (private mode): one id for this tab, so a reload in it still works.
+    try {
+      const s = sessionStorage.getItem(KEY) ?? Array.from(crypto.getRandomValues(new Uint8Array(18)), (b) => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"[b & 63]).join("");
+      sessionStorage.setItem(KEY, s);
+      return s;
+    } catch {
+      return "";
+    }
+  }
+}
+
+const LOCKED =
+  "This letter is already open on two other devices, so it can't open here. If this is your new phone or computer, just reply to the message your link came in and ask for this device to be let in.";
+
 function ownDevice(): boolean {
   try {
     for (let i = 0; i < localStorage.length; i++) if (localStorage.key(i)?.startsWith("letters-desk:")) return true;
@@ -47,7 +71,7 @@ function ownDevice(): boolean {
 async function get(url: string): Promise<Response | null> {
   for (let i = 0; i < 3; i++) {
     const res = await fetch(url, { credentials: "omit", cache: "no-store" }).catch(() => null);
-    if (res && (res.ok || res.status === 404)) return res;
+    if (res && (res.ok || res.status === 404 || res.status === 403)) return res;
     await new Promise((r) => setTimeout(r, 800 * (i + 1)));
   }
   return null;
@@ -83,10 +107,13 @@ export default function Reader({ copyId }: { copyId: string }) {
         setState({ kind: "gone", message: INCOMPLETE });
         return;
       }
-      const res = await get(`/api/letters/read?c=${copyId}${ownDevice() ? "&peek=1" : ""}`);
+      const dev = deviceId();
+      const res = await get(`/api/letters/read?c=${copyId}&d=${encodeURIComponent(dev)}${ownDevice() ? "&peek=1" : ""}`);
       if (cancelled) return;
       if (!res || !res.ok) {
-        setState(res?.status === 404 ? { kind: "gone", message: GONE } : { kind: "gone", message: OFFLINE, retry: true });
+        setState(
+          res?.status === 404 ? { kind: "gone", message: GONE } : res?.status === 403 ? { kind: "gone", message: LOCKED } : { kind: "gone", message: OFFLINE, retry: true },
+        );
         return;
       }
       const copy = (await res.json()) as { letterId: string; wrapped: string; size: number; chunks: number; praying?: boolean; prayer?: string | null };
@@ -112,9 +139,9 @@ export default function Reader({ copyId }: { copyId: string }) {
         Array.from({ length: Math.min(3, copy.chunks) }, async () => {
           while (next < copy.chunks && !fail.why && !cancelled) {
             const n = next++;
-            const r = await get(`/api/letters/read?c=${copyId}&f=${copy.letterId}&n=${n}`);
+            const r = await get(`/api/letters/read?c=${copyId}&d=${encodeURIComponent(dev)}&f=${copy.letterId}&n=${n}`);
             if (!r || !r.ok) {
-              fail.why = r?.status === 404 ? "gone" : "offline";
+              fail.why = r?.status === 404 || r?.status === 403 ? "gone" : "offline";
               return;
             }
             parts[n] = new Uint8Array(await r.arrayBuffer());
@@ -191,7 +218,7 @@ export default function Reader({ copyId }: { copyId: string }) {
             {state.message}
           </p>
           <p className="mt-3 text-sm" style={{ color: SOFT }}>
-            Letters are private and are removed after 30 days. If you'd like a copy, just reply to the message it came in.
+            Letters are private: each one opens only on its reader's own devices, and is removed after a few weeks. If you'd like a copy, just reply to the message it came in.
           </p>
           {state.retry && (
             <button type="button" onClick={() => window.location.reload()} className="mt-5 inline-flex min-h-11 items-center rounded-full px-6 font-bold text-white" style={{ background: INK }}>

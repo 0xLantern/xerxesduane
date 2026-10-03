@@ -15,6 +15,15 @@ import { Bar, Box, Btn, Check, Err, GOOD, INK, Note, Pill, Reach, SERIF, SOFT } 
 /** What the publish step hands over: the links, in case this browser wouldn't keep them, and how it went. */
 export type Fresh = { rec: LocalLetter; result: SendResult };
 
+/** "AE" to "United Arab Emirates". */
+function countryName(code: string): string {
+  try {
+    return new Intl.DisplayNames(["en"], { type: "region" }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
 export default function LetterDetail({ id, fresh, partners, settings, onBack }: { id: string; fresh?: Fresh; partners: Partner[]; settings: Settings; onBack: () => void }) {
   const [data, setData] = useState<{ letter: Letter; copies: CopyRow[] } | null>(null);
   const [rec, setRec] = useState<LocalLetter | null>(() => local.get(id) ?? fresh?.rec ?? null);
@@ -197,6 +206,36 @@ export default function LetterDetail({ id, fresh, partners, settings, onBack }: 
                     {c.mailed ? " · emailed" : ""}
                     {c.praying ? <span style={{ color: "#8a6a2e" }}> · 🙏 praying{c.praying.at ? ` (${fmtTime(c.praying.at)})` : ""}</span> : ""}
                   </p>
+                  {(c.devices > 0 || c.blocked > 0) && (
+                    <p className="text-sm" style={{ color: SOFT }}>
+                      On {c.devices} of 2 devices
+                      {c.countries.length > 0 && ` · ${c.countries.map(countryName).join(", ")}`}
+                      {c.blocked > 0 && (
+                        <span className="font-semibold" style={{ color: "#9b3a2e" }}>
+                          {" "}
+                          · turned away {c.blocked}× on another device
+                        </span>
+                      )}
+                    </p>
+                  )}
+                  {live && c.devices > 0 && (
+                    <button
+                      type="button"
+                      disabled={!!busy}
+                      className="mt-1 min-h-9 rounded-full border border-[#ddd5c7] px-3 text-sm font-semibold disabled:opacity-50"
+                      style={{ color: INK }}
+                      onClick={() => {
+                        if (!window.confirm(`Let a new device in for ${c.name}? Their copy forgets the devices it was opened on, and the next two to open it get in.`)) return;
+                        void act("reset", async () => {
+                          await api.resetDevices(letter.id, c.copyId);
+                          setNote(`${c.name} can open their letter on a new device now.`);
+                          await load();
+                        });
+                      }}
+                    >
+                      Let a new device in
+                    </button>
+                  )}
                   {c.praying?.note && (
                     <p className="mt-1 rounded-xl bg-[#faf6ee] px-3 py-2 text-sm italic leading-relaxed" style={{ color: INK }}>
                       “{c.praying.note}”
