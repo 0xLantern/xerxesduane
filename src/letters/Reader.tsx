@@ -259,7 +259,7 @@ export default function Reader({ copyId }: { copyId: string }) {
               </div>
             )}
             {state.kind === "ready" && (
-              <Guarded name={w.who || w.hello || "you"} spotlight={w.spotlight !== false}>
+              <Guarded name={w.who || w.hello || "you"} spotlight={w.spotlight !== false} holdToRead={w.holdToRead === true}>
                 <PdfPages doc={state.doc} />
               </Guarded>
             )}
@@ -393,12 +393,17 @@ function Reply({ copyId, sender, already, prayer }: { copyId: string; sender: st
  * own name, faintly, across every page, so a picture that gets passed on says
  * whose copy it was.
  */
-function Guarded({ name, spotlight, children }: { name: string; spotlight: boolean; children: ReactNode }) {
+function Guarded({ name, spotlight, holdToRead, children }: { name: string; spotlight: boolean; holdToRead: boolean; children: ReactNode }) {
   const [hidden, setHidden] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   const pages = useRef<HTMLDivElement>(null);
-  // Spotlight only where there is a mouse: a computer. Phones and tablets read normally.
-  const [lens] = useState(() => spotlight && typeof window !== "undefined" && !!window.matchMedia?.("(hover: hover) and (pointer: fine)").matches);
+  // A computer has a mouse; a phone or tablet doesn't.
+  const [computer] = useState(() => typeof window !== "undefined" && !!window.matchMedia?.("(hover: hover) and (pointer: fine)").matches);
+  // Spotlight on computers.
+  const lens = spotlight && computer;
+  // Hold-to-read on phones and tablets: shown only while a finger is on the screen.
+  const hold = holdToRead && !computer;
+  const [touching, setTouching] = useState(false);
   const [moved, setMoved] = useState(false);
   // The day this copy is being read, for the watermark.
   const [today] = useState(() => new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }));
@@ -444,6 +449,33 @@ function Guarded({ name, spotlight, children }: { name: string; spotlight: boole
       window.removeEventListener("scroll", place);
     };
   }, [lens]);
+
+  // Hold-to-read: any finger on the screen shows the letter; the last one
+  // lifted (or the phone switching away) blanks it at once. A screenshot
+  // taken with the phone's buttons usually has no finger on the screen.
+  useEffect(() => {
+    if (!hold) return;
+    const down = () => setTouching(true);
+    const up = (e: TouchEvent) => {
+      if (e.touches.length === 0) setTouching(false);
+    };
+    const off = () => setTouching(false);
+    document.addEventListener("touchstart", down, { passive: true });
+    document.addEventListener("touchend", up, { passive: true });
+    document.addEventListener("touchcancel", up, { passive: true });
+    window.addEventListener("blur", off);
+    document.addEventListener("visibilitychange", off);
+    window.addEventListener("pagehide", off);
+    return () => {
+      document.removeEventListener("touchstart", down);
+      document.removeEventListener("touchend", up);
+      document.removeEventListener("touchcancel", up);
+      window.removeEventListener("blur", off);
+      document.removeEventListener("visibilitychange", off);
+      window.removeEventListener("pagehide", off);
+    };
+  }, [hold]);
+  const blank = hold && !touching;
 
   useEffect(() => {
     const hide = () => setHidden(true);
@@ -509,8 +541,17 @@ function Guarded({ name, spotlight, children }: { name: string; spotlight: boole
           Move your mouse down the letter to read it, or keep it still and scroll. Only the lines under the pointer are clear, so the page can't be screenshotted.
         </p>
       )}
-      <div className={lens ? "rounded-sm bg-white shadow-[0_1px_3px_rgba(0,0,0,.08)]" : ""}>
-        <div ref={pages} className={lens ? "letter-lens" : ""} style={{ filter: hidden ? "blur(28px)" : "none", transition: "filter .15s" }}>
+      {hold && (
+        <p className="mb-3 px-2 text-center text-sm" style={{ color: SOFT }}>
+          Keep a finger on the screen while you read, and scroll as usual. The letter goes blank when you let go, so it can't be screenshotted.
+        </p>
+      )}
+      <div className={lens || hold ? "rounded-sm bg-white shadow-[0_1px_3px_rgba(0,0,0,.08)]" : ""}>
+        <div
+          ref={pages}
+          className={lens ? "letter-lens" : ""}
+          style={{ filter: hidden ? "blur(28px)" : "none", opacity: blank ? 0 : 1, transition: blank ? "filter .15s" : "filter .15s, opacity .08s" }}
+        >
           {children}
         </div>
       </div>
@@ -522,6 +563,13 @@ function Guarded({ name, spotlight, children }: { name: string; spotlight: boole
         </div>
       )}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-[25]" style={{ backgroundImage: tile, backgroundRepeat: "repeat" }} />
+      {blank && !hidden && (
+        <div className="pointer-events-none fixed inset-x-0 top-1/2 z-30 flex justify-center px-4">
+          <p className="rounded-full bg-white/95 px-5 py-3 text-center text-[0.95rem] font-semibold shadow" style={{ color: INK }}>
+            Hold your finger on the screen to read
+          </p>
+        </div>
+      )}
       {hidden && (
         <div className="pointer-events-none fixed inset-0 z-40 grid place-items-center">
           <p className="rounded-full bg-white/90 px-5 py-3 text-[0.95rem] font-semibold shadow" style={{ color: INK }}>
