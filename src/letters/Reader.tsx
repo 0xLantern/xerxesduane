@@ -7,7 +7,7 @@
  * it; it is also kept for this tab, so a reload without it works. With it the page opens the copy, which holds the file key, fetches
  * the encrypted PDF piece by piece, decrypts it here, and shows its pages.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import { api } from "./api";
 import { PdfPages } from "./Pages";
@@ -231,7 +231,11 @@ export default function Reader({ copyId }: { copyId: string }) {
                 <Bar done={state.got} total={state.total} label={state.got >= state.total ? "Unlocking your letter…" : "Opening your letter…"} />
               </div>
             )}
-            {state.kind === "ready" && <PdfPages doc={state.doc} />}
+            {state.kind === "ready" && (
+              <Guarded name={w.hello || "you"}>
+                <PdfPages doc={state.doc} />
+              </Guarded>
+            )}
           </div>
 
           {state.kind === "ready" && <Reply copyId={copyId} sender={w.sender} already={extras.praying} prayer={extras.prayer} />}
@@ -349,5 +353,82 @@ function Reply({ copyId, sender, already, prayer }: { copyId: string; sender: st
         )}
       </div>
     </section>
+  );
+}
+
+/**
+ * Keeps the letter on the page. No website can stop a screenshot taken by the
+ * phone or the computer itself, so this does what a page can: no right-click
+ * "Save image" or "Copy image", no long-press save on a phone, no dragging a
+ * page out, no selecting, no Save / Print / Copy shortcuts, a blank page when
+ * printed, and the letter blurred whenever the window isn't in front (which is
+ * when most screenshot tools are open). Each copy also carries the partner's
+ * own name, faintly, across every page, so a picture that gets passed on says
+ * whose copy it was.
+ */
+function Guarded({ name, children }: { name: string; children: ReactNode }) {
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    const hide = () => setHidden(true);
+    const show = () => setHidden(false);
+    const onVis = () => (document.hidden ? hide() : show());
+    const onKey = (e: KeyboardEvent) => {
+      const k = e.key.toLowerCase();
+      if ((e.ctrlKey || e.metaKey) && ["s", "p", "c", "a"].includes(k)) e.preventDefault();
+      // Mac screenshot shortcuts (Cmd+Shift+3/4/5) and PrintScreen: hide at once; the tool may still win the race.
+      if ((e.metaKey && e.shiftKey && ["3", "4", "5"].includes(k)) || k === "printscreen") {
+        hide();
+        window.setTimeout(show, 1500);
+      }
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      // Windows copies a PrintScreen to the clipboard: clear it where the browser allows.
+      if (e.key.toLowerCase() === "printscreen") void navigator.clipboard?.writeText("").catch(() => undefined);
+    };
+    const block = (e: Event) => e.preventDefault();
+    window.addEventListener("blur", hide);
+    window.addEventListener("focus", show);
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("keydown", onKey, true);
+    window.addEventListener("keyup", onKeyUp, true);
+    document.addEventListener("copy", block);
+    window.addEventListener("beforeprint", hide);
+    window.addEventListener("afterprint", show);
+    return () => {
+      window.removeEventListener("blur", hide);
+      window.removeEventListener("focus", show);
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("keyup", onKeyUp, true);
+      document.removeEventListener("copy", block);
+      window.removeEventListener("beforeprint", hide);
+      window.removeEventListener("afterprint", show);
+    };
+  }, []);
+
+  // The name, repeated diagonally: an SVG tile, so it scales with every page.
+  const label = `${name} · private copy`.replace(/[<>&"']/g, "");
+  const tile = `url("data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='340' height='220'><text x='20' y='130' transform='rotate(-24 170 110)' font-family='Georgia,serif' font-size='20' fill='rgba(43,26,20,0.07)'>${label}</text></svg>`,
+  )}")`;
+
+  return (
+    <div
+      className="letter-guard relative select-none"
+      style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none" }}
+      onContextMenu={(e) => e.preventDefault()}
+      onDragStart={(e) => e.preventDefault()}
+    >
+      <style>{`@media print { body * { visibility: hidden !important; } body::after { content: "This letter is private and can't be printed."; visibility: visible; display: block; padding: 4rem; font: 18px Georgia, serif; text-align: center; } } .letter-guard canvas, .letter-guard img { -webkit-user-drag: none; pointer-events: none; }`}</style>
+      <div style={{ filter: hidden ? "blur(28px)" : "none", transition: "filter .15s" }}>{children}</div>
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ backgroundImage: tile, backgroundRepeat: "repeat" }} />
+      {hidden && (
+        <div className="pointer-events-none fixed inset-0 z-40 grid place-items-center">
+          <p className="rounded-full bg-white/90 px-5 py-3 text-[0.95rem] font-semibold shadow" style={{ color: INK }}>
+            Tap the letter to keep reading
+          </p>
+        </div>
+      )}
+    </div>
   );
 }
