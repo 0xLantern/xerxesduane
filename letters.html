@@ -3,14 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <!-- Private letters: never indexed, never shown in link previews, never
-         leaking the link (and its key) to another site through a referrer. -->
+    <!-- Private letters: never indexed, never leaking the link (and its key)
+         to another site through a referrer. The preview card below is the same
+         for every link and says nothing about any letter: WhatsApp and mail
+         apps fetch it without the # key, so it can't. A recognisable card
+         makes a partner likelier to trust and tap a link of random letters. -->
     <meta name="robots" content="noindex, nofollow, noarchive" />
     <meta name="referrer" content="no-referrer" />
     <meta name="theme-color" content="#f6f3ee" />
     <link rel="icon" type="image/svg+xml" href="/brand/icon/icon.svg" />
     <link rel="preload" href="/fonts/plus-jakarta-sans-var.woff2" as="font" type="font/woff2" crossorigin />
     <title>A letter from Xerxes Duane</title>
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Xerxes Duane" />
+    <meta property="og:title" content="A letter from Xerxes Duane" />
+    <meta property="og:description" content="Private, and just for you. Tap to open it." />
+    <meta property="og:image" content="https://ministry.xerxesduane.com/ministry/share.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body class="antialiased" style="background:#f6f3ee">
     <div id="letters-root"></div>
