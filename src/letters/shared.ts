@@ -52,6 +52,10 @@ export type Wrapped = {
   sender: string;
   expiresAt: number;
   allowDownload: boolean;
+  /** The partner's full name, for the watermark. Letters made before it was added lack it. */
+  who?: string;
+  /** Spotlight reading on computers: only the band under the mouse is sharp. Missing means on. */
+  spotlight?: boolean;
 };
 
 /** The base64url length (no padding) of `bytes` bytes. */

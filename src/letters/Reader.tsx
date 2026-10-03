@@ -259,7 +259,7 @@ export default function Reader({ copyId }: { copyId: string }) {
               </div>
             )}
             {state.kind === "ready" && (
-              <Guarded name={w.hello || "you"}>
+              <Guarded name={w.who || w.hello || "you"} spotlight={w.spotlight !== false}>
                 <PdfPages doc={state.doc} />
               </Guarded>
             )}
@@ -393,8 +393,58 @@ function Reply({ copyId, sender, already, prayer }: { copyId: string; sender: st
  * own name, faintly, across every page, so a picture that gets passed on says
  * whose copy it was.
  */
-function Guarded({ name, children }: { name: string; children: ReactNode }) {
+function Guarded({ name, spotlight, children }: { name: string; spotlight: boolean; children: ReactNode }) {
   const [hidden, setHidden] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  const pages = useRef<HTMLDivElement>(null);
+  // Spotlight only where there is a mouse: a computer. Phones and tablets read normally.
+  const [lens] = useState(() => spotlight && typeof window !== "undefined" && !!window.matchMedia?.("(hover: hover) and (pointer: fine)").matches);
+  const [moved, setMoved] = useState(false);
+  // The day this copy is being read, for the watermark.
+  const [today] = useState(() => new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }));
+
+  // Spotlight: a mask shows the letter only in a band at the mouse's height;
+  // everywhere else is blank paper, so a screenshot has nothing to recover.
+  // (A blur was tried first: browsers leave lines readable near the window's
+  // edges.) The band is set straight on the element, without a re-render,
+  // and kept under the mouse as the page scrolls.
+  useEffect(() => {
+    if (!lens) return;
+    let lastY: number | null = null;
+    const place = () => {
+      const el = pages.current;
+      if (!el) return;
+      el.style.setProperty("--y", lastY === null ? "-99999px" : `${lastY - el.getBoundingClientRect().top}px`);
+    };
+    const move = (e: PointerEvent) => {
+      if (e.pointerType && e.pointerType !== "mouse") return;
+      lastY = e.clientY;
+      setMoved(true);
+      place();
+    };
+    const away = () => {
+      lastY = null;
+      place();
+    };
+    window.addEventListener("pointermove", move, { passive: true });
+    document.documentElement.addEventListener("mouseleave", away);
+    window.addEventListener("blur", away);
+    window.addEventListener("scroll", place, { passive: true });
+    window.addEventListener("resize", place);
+    // The pages load and grow after this runs: follow their size too.
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(place) : null;
+    if (pages.current) ro?.observe(pages.current);
+    place();
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener("resize", place);
+      window.removeEventListener("pointermove", move);
+      document.documentElement.removeEventListener("mouseleave", away);
+      window.removeEventListener("blur", away);
+      window.removeEventListener("scroll", place);
+    };
+  }, [lens]);
+
   useEffect(() => {
     const hide = () => setHidden(true);
     const show = () => setHidden(false);
@@ -410,7 +460,12 @@ function Guarded({ name, children }: { name: string; children: ReactNode }) {
     };
     const onKeyUp = (e: KeyboardEvent) => {
       // Windows copies a PrintScreen to the clipboard: clear it where the browser allows.
-      if (e.key.toLowerCase() === "printscreen") void navigator.clipboard?.writeText("").catch(() => undefined);
+      if (e.key.toLowerCase() === "printscreen") {
+        void navigator.clipboard?.writeText("").catch(() => undefined);
+        // Windows 11 opens the Snipping Tool on PrintScreen: keep the letter hidden while it's up.
+        hide();
+        window.setTimeout(show, 4000);
+      }
     };
     const block = (e: Event) => e.preventDefault();
     window.addEventListener("blur", hide);
@@ -433,22 +488,40 @@ function Guarded({ name, children }: { name: string; children: ReactNode }) {
     };
   }, []);
 
-  // The name, repeated diagonally: an SVG tile, so it scales with every page.
-  const label = `${name} · private copy`.replace(/[<>&"']/g, "");
+  // The name and today's date, repeated diagonally on two offset rows: an SVG
+  // tile, so it scales with every page and no part of a page goes without it.
+  const label = `${name} · private copy · ${today}`.replace(/[<>&"']/g, "");
   const tile = `url("data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns='http://www.w3.org/2000/svg' width='340' height='220'><text x='20' y='130' transform='rotate(-24 170 110)' font-family='Georgia,serif' font-size='20' fill='rgba(43,26,20,0.07)'>${label}</text></svg>`,
+    `<svg xmlns='http://www.w3.org/2000/svg' width='420' height='260'><g transform='rotate(-24 210 130)' font-family='Georgia,serif' font-size='17' fill='rgba(43,26,20,0.12)'><text x='0' y='90'>${label}</text><text x='150' y='210'>${label}</text></g></svg>`,
   )}")`;
 
   return (
     <div
+      ref={box}
       className="letter-guard relative select-none"
       style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none" }}
       onContextMenu={(e) => e.preventDefault()}
       onDragStart={(e) => e.preventDefault()}
     >
-      <style>{`@media print { body * { visibility: hidden !important; } body::after { content: "This letter is private and can't be printed."; visibility: visible; display: block; padding: 4rem; font: 18px Georgia, serif; text-align: center; } } .letter-guard canvas, .letter-guard img { -webkit-user-drag: none; pointer-events: none; }`}</style>
-      <div style={{ filter: hidden ? "blur(28px)" : "none", transition: "filter .15s" }}>{children}</div>
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ backgroundImage: tile, backgroundRepeat: "repeat" }} />
+      <style>{`@media print { body * { visibility: hidden !important; } body::after { content: "This letter is private and can't be printed."; visibility: visible; display: block; padding: 4rem; font: 18px Georgia, serif; text-align: center; } } .letter-guard canvas, .letter-guard img { -webkit-user-drag: none; pointer-events: none; } .letter-lens { --y: -99999px; --band: max(80px, 11vh); --fade: max(36px, 4vh); -webkit-mask-image: linear-gradient(to bottom, transparent calc(var(--y) - var(--band) - var(--fade)), #000 calc(var(--y) - var(--band)), #000 calc(var(--y) + var(--band)), transparent calc(var(--y) + var(--band) + var(--fade))); mask-image: linear-gradient(to bottom, transparent calc(var(--y) - var(--band) - var(--fade)), #000 calc(var(--y) - var(--band)), #000 calc(var(--y) + var(--band)), transparent calc(var(--y) + var(--band) + var(--fade))); }`}</style>
+      {lens && (
+        <p className="mb-3 text-center text-sm" style={{ color: SOFT }}>
+          Move your mouse down the letter to read it, or keep it still and scroll. Only the lines under the pointer are clear, so the page can't be screenshotted.
+        </p>
+      )}
+      <div className={lens ? "rounded-sm bg-white shadow-[0_1px_3px_rgba(0,0,0,.08)]" : ""}>
+        <div ref={pages} className={lens ? "letter-lens" : ""} style={{ filter: hidden ? "blur(28px)" : "none", transition: "filter .15s" }}>
+          {children}
+        </div>
+      </div>
+      {lens && !moved && !hidden && (
+        <div className="pointer-events-none fixed inset-x-0 top-1/2 z-30 flex justify-center">
+          <p className="rounded-full bg-white/95 px-5 py-3 text-[0.95rem] font-semibold shadow" style={{ color: INK }}>
+            Move your mouse over the letter to read
+          </p>
+        </div>
+      )}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-[25]" style={{ backgroundImage: tile, backgroundRepeat: "repeat" }} />
       {hidden && (
         <div className="pointer-events-none fixed inset-0 z-40 grid place-items-center">
           <p className="rounded-full bg-white/90 px-5 py-3 text-[0.95rem] font-semibold shadow" style={{ color: INK }}>

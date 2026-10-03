@@ -37,7 +37,7 @@ async function pool(n: number, width: number, fn: (i: number) => Promise<void>) 
 
 export async function publish(
   pdf: Uint8Array,
-  opts: { title: string; allowDownload: boolean; days: number; sender: string; partners: Partner[] },
+  opts: { title: string; allowDownload: boolean; spotlight: boolean; days: number; sender: string; partners: Partner[] },
   onStep: OnStep,
 ): Promise<{ letter: Letter; rec: LocalLetter; result: SendResult }> {
   onStep({ label: "Encrypting the PDF", done: 0, total: 1 });
@@ -71,6 +71,7 @@ export async function publish(
     sender: opts.sender,
     expiresAt: live.expiresAt,
     allowDownload: live.allowDownload,
+    spotlight: opts.spotlight,
     links: {},
   };
   const kept = local.save(rec);
@@ -97,7 +98,16 @@ export async function sendCopies(rec: LocalLetter, partners: Partner[], onStep: 
   for (const p of partners) {
     const copyId = randomId(16);
     const key = await newKey();
-    const w: Wrapped = { fileKey: rec.fileKey, title: rec.title, hello: p.hello || p.name, sender: rec.sender, expiresAt: rec.expiresAt, allowDownload: rec.allowDownload };
+    const w: Wrapped = {
+      fileKey: rec.fileKey,
+      title: rec.title,
+      hello: p.hello || p.name,
+      sender: rec.sender,
+      expiresAt: rec.expiresAt,
+      allowDownload: rec.allowDownload,
+      who: p.name,
+      spotlight: rec.spotlight !== false,
+    };
     all.push({ copyId, partnerId: p.id, wrapped: toB64url(await encrypt(enc.encode(JSON.stringify(w)), key.key)) });
     byCopy.set(copyId, { partner: p, link: linkFor(copyId, key.raw) });
   }
