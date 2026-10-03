@@ -25,6 +25,8 @@ export type LocalLetter = {
   allowDownload: boolean;
   /** Spotlight reading on computers (see Wrapped). Missing means on. */
   spotlight?: boolean;
+  /** Hold-to-read on phones (see Wrapped). Missing means off. */
+  holdToRead?: boolean;
   /** copy id -> that partner's link */
   links: Record<string, LocalLink>;
 };
@@ -137,7 +139,7 @@ export function readBackup(text: string, letterId: string): LocalLetter | string
   }
   if (r.kind !== "partner-letter-links" || r.v !== 1 || typeof r.fileKey !== "string" || !r.links || typeof r.links !== "object") return "That isn't a links backup file.";
   if (r.letterId !== letterId) return `That backup is for another letter${r.title ? ` (“${r.title}”)` : ""}.`;
-  return { v: 1, letterId, fileKey: r.fileKey, title: String(r.title ?? ""), sender: String(r.sender ?? ""), expiresAt: Number(r.expiresAt) || 0, allowDownload: r.allowDownload === true, spotlight: r.spotlight !== false, links: r.links };
+  return { v: 1, letterId, fileKey: r.fileKey, title: String(r.title ?? ""), sender: String(r.sender ?? ""), expiresAt: Number(r.expiresAt) || 0, allowDownload: r.allowDownload === true, spotlight: r.spotlight !== false, holdToRead: r.holdToRead === true, links: r.links };
 }
 
 /** A partner's link. Always the ministry host: the server checks it, and it's what partners should see. */

@@ -39,6 +39,7 @@ export default function Publish({ partners, settings, onCancel, onDone }: { part
   const [chosen, setChosen] = useState<Set<string>>(() => new Set(active.map((p) => p.id)));
   const [allow, setAllow] = useState(settings.allowDownload);
   const [spotlight, setSpotlight] = useState(true);
+  const [holdToRead, setHoldToRead] = useState(false);
   const [step, setStep] = useState<Step | null>(null);
   const [reading, setReading] = useState(false);
   const [error, setError] = useState("");
@@ -106,7 +107,7 @@ export default function Publish({ partners, settings, onCancel, onDone }: { part
     setError("");
     setStep({ label: "Encrypting the PDF", done: 0, total: 1 });
     try {
-      const r = await publish(file.bytes, { title: title.trim(), allowDownload: allow, spotlight, days, sender: settings.sender, partners: recipients }, setStep);
+      const r = await publish(file.bytes, { title: title.trim(), allowDownload: allow, spotlight, holdToRead, days, sender: settings.sender, partners: recipients }, setStep);
       if (file.written) clearDraft();
       onDone(r.letter.id, { rec: r.rec, result: r.result });
     } catch (e) {
@@ -271,7 +272,15 @@ export default function Publish({ partners, settings, onCancel, onDone }: { part
                 Spotlight reading on computers
               </span>
               <span className="block text-sm" style={{ color: SOFT }}>
-                On a computer, only the lines under the mouse are sharp and the rest stays blurred, so a PrintScreen catches a few lines, not the page. Phones read normally.
+                On a computer, only the lines under the mouse show and the rest of the page stays blank, so a PrintScreen catches a few lines, not the page.
+              </span>
+            </Check>
+            <Check checked={holdToRead} onChange={setHoldToRead}>
+              <span className="font-semibold" style={{ color: INK }}>
+                Hold-to-read on phones, for a sensitive letter
+              </span>
+              <span className="block text-sm" style={{ color: SOFT }}>
+                On a phone or tablet the letter shows only while a finger is on the screen, and goes blank when it's lifted, so a screenshot with the phone's buttons usually catches a blank page. Less comfortable to read: leave it off for ordinary letters.
               </span>
             </Check>
             <div>

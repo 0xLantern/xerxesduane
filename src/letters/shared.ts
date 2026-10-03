@@ -56,6 +56,8 @@ export type Wrapped = {
   who?: string;
   /** Spotlight reading on computers: only the band under the mouse is sharp. Missing means on. */
   spotlight?: boolean;
+  /** Hold-to-read on phones: the letter shows only while a finger is on the screen. Missing means off. */
+  holdToRead?: boolean;
 };
 
 /** The base64url length (no padding) of `bytes` bytes. */
