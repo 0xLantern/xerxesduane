@@ -112,7 +112,7 @@ export const api = {
   addClient: (c: ClientFields) => call<{ client: Client; clients: Client[] }>("settings", "POST", { add: c }),
   saveClient: (clientId: string, c: ClientFields) => call<{ client: Client; clients: Client[]; settings: Settings }>("settings", "PATCH", { clientId, ...c }),
   rotateLink: (client: string) => call<{ client: string; shareToken: string }>("settings", "POST", { rotate: true, client }),
-  emailInvoice: (client: string, period: "last" | "current", resend = false) =>
+  emailInvoice: (client: string, period: string, resend = false) =>
     call<{ sent: string; to: string[] }>("invoice", "POST", { client, period, resend }),
   invoices: (client: string) => call<{ invoices: InvoiceRow[]; owed: Owed }>(`invoices?c=${encodeURIComponent(client)}`),
   markPaid: (client: string, period: string, p: { currency: "USD" | "CHF"; amount: number | null; paidAt: string; note: string }) =>

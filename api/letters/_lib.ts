@@ -289,9 +289,20 @@ export type PrayerRequest = {
   answeredAt: number | null;
   /** How it was answered, in a line. */
   answer: string;
+  /** A photo, as a small JPEG data URL (resized in the owner's browser), or "" for none. */
+  photo: string;
 };
 
 export const ANSWERED_DAYS = 14;
+/** A photo's data URL can be this long at most: about 220 KB of JPEG. */
+export const PHOTO_LIMIT = 300_000;
+
+/** A photo as sent by the desk: a JPEG or PNG data URL under the limit, "" to clear, null when it isn't one. */
+export function cleanPhoto(v: unknown): string | null {
+  if (v === "" || v === null) return "";
+  if (typeof v !== "string" || v.length > PHOTO_LIMIT) return null;
+  return /^data:image\/(jpeg|png);base64,[A-Za-z0-9+/]+=*$/.test(v) ? v : null;
+}
 export const PRAYER_LIMIT = 600;
 
 /** Every request, newest first; answered ones that have had their ANSWERED_DAYS are dropped on the way. */
@@ -307,7 +318,7 @@ export async function allPrayer(now = Date.now()): Promise<(PrayerRequest & { pr
     const r = parse<PrayerRequest>(raw);
     if (!r) gone.push(id);
     else if (r.answeredAt && now - r.answeredAt > ANSWERED_DAYS * DAY) gone.push(id);
-    else out.push({ ...r, prayed: Number(prayed.get(id)) || 0 });
+    else out.push({ ...r, photo: r.photo ?? "", prayed: Number(prayed.get(id)) || 0 });
   }
   if (gone.length) await redis([["HDEL", `${K}prayer`, ...gone], ["HDEL", `${K}prayed`, ...gone]]);
   // Open ones first, newest first; then the answered, most recently answered first.
