@@ -4,10 +4,46 @@ export type Entry = { id: string; start: number; end: number; task: string; note
 export type Timer = { start: number; task: string; notes: string; link: string };
 export type Settings = { name: string; client: string; rate: number; currency: string };
 
-export type OwnerData = { entries: Entry[]; timer: Timer | null; settings: Settings; shareToken: string; now: number };
+/** A payment the owner recorded against an invoice. */
+export type Payment = { paidAt: number; currency: "USD" | "CHF"; amount: number | null; note: string };
+
+/** One month's invoice: what it came to, whether it went out, whether it was paid. */
+export type InvoiceRow = {
+  periodId: string;
+  label: string;
+  number: string;
+  hours: number;
+  total: number;
+  currency: string;
+  /** open: the month still running · pending: closed, invoice not sent yet · sent */
+  status: "open" | "pending" | "sent";
+  sentAt: number | null;
+  paid: Payment | null;
+};
+export type Owed = { total: number; count: number };
+
+/** The owner's three lines for a month, for the client. */
+export type Summary = { delivered: string; next: string; decide: string; updatedAt: number };
+
+export type Trashed = { entry: Entry; deletedAt: number };
+
+export type OwnerData = {
+  entries: Entry[];
+  timer: Timer | null;
+  settings: Settings;
+  shareToken: string;
+  invoices: InvoiceRow[];
+  owed: Owed;
+  summaries: Record<string, Summary>;
+  trash: Trashed[];
+  now: number;
+};
 export type ReportData = {
   entries: Entry[];
   settings: Settings;
+  invoices: InvoiceRow[];
+  owed: Owed;
+  summaries: Record<string, Summary>;
   email: string;
   working: { start: number } | null;
   now: number;
@@ -52,6 +88,14 @@ export const api = {
   rotateLink: () => call<{ shareToken: string }>("settings", "POST", { rotate: true }),
   emailInvoice: (period: "last" | "current", resend = false) =>
     call<{ sent: string; to: string[] }>("invoice", "POST", { period, resend }),
+  invoices: () => call<{ invoices: InvoiceRow[]; owed: Owed }>("invoices"),
+  markPaid: (period: string, p: { currency: "USD" | "CHF"; amount: number | null; paidAt: string; note: string }) =>
+    call<{ invoices: InvoiceRow[]; owed: Owed }>("invoices", "POST", { period, paid: true, ...p }),
+  unmarkPaid: (period: string) => call<{ invoices: InvoiceRow[]; owed: Owed }>("invoices", "POST", { period, paid: false }),
+  saveSummary: (month: string, s: Pick<Summary, "delivered" | "next" | "decide">) =>
+    call<{ summaries: Record<string, Summary> }>("summary", "PATCH", { month, ...s }),
+  restore: (id: string) => call<{ entry: Entry; trash: Trashed[] }>("trash", "POST", { id, action: "restore" }),
+  purge: (id: string) => call<{ trash: Trashed[] }>("trash", "POST", { id, action: "purge" }),
   clientLogin: (password: string) => call<{ ok: true }>("client-login", "POST", { password }),
   report: (token: string) => call<ReportData>(`report?t=${encodeURIComponent(token)}`),
 };

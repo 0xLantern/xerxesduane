@@ -7,7 +7,8 @@
 // than failing the whole file.
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import { OWNER_EMAIL } from "./_lib";
-import { BILL_TO, FROM_ADDRESS, PAYMENT, type Invoice } from "./_invoice";
+import { BILL_TO, FROM_ADDRESS, PAYMENT, fmtDate, type Invoice, type InvoiceRow } from "./_invoice";
+import type { Settings, Summary } from "./_lib";
 
 const INK = rgb(0.17, 0.14, 0.13);
 const SOFT = rgb(0.42, 0.37, 0.33);
@@ -81,12 +82,12 @@ function money(amount: number, currency: string): string {
  * One document, two shapes. "invoice" carries the bill-to block and the
  * amount due; "log" is the client's record of the month's work.
  */
-export async function renderPdf(inv: Invoice, kind: "invoice" | "log", origin: string): Promise<Uint8Array> {
-  return kind === "invoice" ? renderInvoicePdf(inv, origin) : renderLogPdf(inv, "log", origin);
+export async function renderPdf(inv: Invoice, kind: "invoice" | "log", origin: string, summary?: Summary | null): Promise<Uint8Array> {
+  return kind === "invoice" ? renderInvoicePdf(inv, origin) : renderLogPdf(inv, "log", origin, summary ?? null);
 }
 
 /** The month's work log, with every session's notes. (It began as the invoice layout too.) */
-async function renderLogPdf(inv: Invoice, kind: "invoice" | "log", origin: string): Promise<Uint8Array> {
+async function renderLogPdf(inv: Invoice, kind: "invoice" | "log", origin: string, summary: Summary | null): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const title = kind === "invoice" ? `Invoice ${inv.number}` : `Work log · ${inv.period}`;
   doc.setTitle(clean(title));
@@ -147,6 +148,24 @@ async function renderLogPdf(inv: Invoice, kind: "invoice" | "log", origin: strin
     y -= 14;
   }
   y -= 18;
+
+  // The month in three lines, when the owner wrote them.
+  if (kind === "log" && summary && (summary.delivered || summary.next || summary.decide)) {
+    const items: [string, string][] = [
+      ["DELIVERED", summary.delivered],
+      ["NEXT", summary.next],
+      ["NEEDS YOUR DECISION", summary.decide],
+    ].filter((i): i is [string, string] => !!i[1]);
+    const lines = items.map(([k, v]) => [k, wrap(v, font, 9.5, W - 2 * M - 120)] as const);
+    const boxH = 12 + lines.reduce((n, [, l]) => n + Math.max(1, l.length) * 12 + 6, 0);
+    page.drawRectangle({ x: M, y: y - boxH + 14, width: W - 2 * M, height: boxH, color: rgb(0.975, 0.968, 0.952) });
+    for (const [k, l] of lines) {
+      text(k, M + 12, 7, bold, FAINT);
+      l.forEach((t, i) => page.drawText(clean(t), { x: M + 120, y: y - i * 12, size: 9.5, font, color: INK }));
+      y -= Math.max(1, l.length) * 12 + 6;
+    }
+    y -= 20;
+  }
 
   // Table.
   const cDate = M;
@@ -393,6 +412,120 @@ async function renderInvoicePdf(inv: Invoice, origin: string): Promise<Uint8Arra
     page.drawImage(ownLogo, { x: R - w + 12, y: y - h / 2 + 3, width: w, height: h });
   }
 
+  return doc.save();
+}
+
+/**
+ * The year statement: one page, one row per month, with each invoice's
+ * hours, amount, and whether it was sent and paid. For the client's own
+ * reporting, and the owner's.
+ */
+export async function renderYearPdf(year: number, rows: InvoiceRow[], settings: Settings, origin: string, now = Date.now()): Promise<Uint8Array> {
+  const doc = await PDFDocument.create();
+  doc.setTitle(clean(`Year statement ${year} · ${BILL_TO.name}`));
+  doc.setAuthor(clean(settings.name));
+  doc.setSubject(clean(`${BILL_TO.name} · ${year}`));
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const [logo, ownLogo] = await Promise.all([
+    loadLogo(doc, origin, "/brand/clients/gcn.png"),
+    loadLogo(doc, origin, "/brand/mono/logo-black@2x.png"),
+  ]);
+  const page = doc.addPage([W, H]);
+  const L = 56;
+  const R = W - 56;
+  let y = H - 56;
+  const text = (t: string, x: number, size: number, f = font, color = INK) => page.drawText(clean(t), { x, y, size, font: f, color });
+  const right = (t: string, xr: number, size: number, f = font, color = INK) =>
+    page.drawText(clean(t), { x: xr - f.widthOfTextAtSize(clean(t), size), y, size, font: f, color });
+  const rule = (yy: number, x1 = L, x2 = R, t = 0.6, color = RULE) =>
+    page.drawLine({ start: { x: x1, y: yy }, end: { x: x2, y: yy }, thickness: t, color });
+
+  if (logo) {
+    const w = 130;
+    const h = (logo.height / logo.width) * w;
+    page.drawImage(logo, { x: L - 6, y: y - h + 10, width: w, height: h });
+  }
+  right("Year statement", R, 24, bold);
+  y -= 20;
+  right(`${year} · as of ${fmtDate(now)}`, R, 9.5, font, SOFT);
+  y -= 46;
+  rule(y + 10);
+
+  const inYear = rows.filter((r) => r.periodId.startsWith(`${year}-`));
+  const hours = Math.round(inYear.reduce((n, r) => n + r.hours, 0) * 100) / 100;
+  const billed = Math.round(inYear.filter((r) => r.status === "sent").reduce((n, r) => n + r.total, 0) * 100) / 100;
+  const paid = Math.round(inYear.filter((r) => r.paid).reduce((n, r) => n + r.total, 0) * 100) / 100;
+  const due = Math.round((billed - paid) * 100) / 100;
+  const cur = settings.currency;
+
+  const cols = [L, L + 120, L + 240, L + 360];
+  const meta: [string, string][] = [
+    ["Hours", `${hours.toFixed(2)} h`],
+    ["Invoiced", money(billed, cur)],
+    ["Paid", money(paid, cur)],
+    ["Still due", money(due, cur)],
+  ];
+  meta.forEach(([k], i) => page.drawText(k.toUpperCase(), { x: cols[i], y: y - 8, size: 7, font: bold, color: FAINT }));
+  y -= 22;
+  meta.forEach(([, v], i) => page.drawText(clean(v), { x: cols[i], y, size: 12, font: bold, color: i === 3 && due > 0 ? rgb(0.65, 0.25, 0.04) : INK }));
+  y -= 30;
+
+  const colB = L + 260;
+  page.drawText("CLIENT", { x: L, y, size: 7, font: bold, color: FAINT });
+  page.drawText("FROM", { x: colB, y, size: 7, font: bold, color: FAINT });
+  y -= 14;
+  const client = [BILL_TO.name, ...BILL_TO.lines, BILL_TO.email];
+  const from = [settings.name, ...FROM_ADDRESS, OWNER_EMAIL];
+  const top = y;
+  client.forEach((t, i) => page.drawText(clean(t), { x: L, y: top - i * 12.5, size: 9, font: i === 0 ? bold : font, color: i === 0 ? INK : SOFT }));
+  from.forEach((t, i) => page.drawText(clean(t), { x: colB, y: top - i * 12.5, size: 9, font: i === 0 ? bold : font, color: i === 0 ? INK : SOFT }));
+  y = top - Math.max(client.length, from.length) * 12.5 - 22;
+
+  // One row per month.
+  const cInv = L + 110;
+  const cStatus = L + 230;
+  const cHours = R - 90;
+  page.drawText("MONTH", { x: L, y, size: 7, font: bold, color: FAINT });
+  page.drawText("INVOICE", { x: cInv, y, size: 7, font: bold, color: FAINT });
+  page.drawText("STATUS", { x: cStatus, y, size: 7, font: bold, color: FAINT });
+  right("HOURS", cHours, 7, bold, FAINT);
+  right("AMOUNT", R, 7, bold, FAINT);
+  y -= 7;
+  rule(y, L, R, 0.9, INK);
+  y -= 16;
+  if (!inYear.length) {
+    text(`No hours logged in ${year}.`, cInv, 9.5, font, FAINT);
+    y -= 20;
+  }
+  for (const r of inYear) {
+    const status =
+      r.paid ? `Paid ${fmtDate(r.paid.paidAt)}${r.paid.currency !== cur ? ` in ${r.paid.currency}` : ""}`
+      : r.status === "sent" ? `Sent${r.sentAt ? ` ${fmtDate(r.sentAt)}` : ""} · awaiting payment`
+      : r.status === "pending" ? "Invoice to be sent"
+      : "Month in progress";
+    text(r.label, L, 9.5, bold);
+    text(r.hours > 0 ? r.number : "—", cInv, 9, font, SOFT);
+    text(fit(r.hours > 0 ? status : "No hours", font, 9, cHours - 60 - cStatus), cStatus, 9, font, r.paid ? GREEN : r.status === "sent" ? rgb(0.65, 0.25, 0.04) : SOFT);
+    right(r.hours.toFixed(2), cHours, 9.5);
+    right(money(r.total, cur), R, 9.5);
+    rule(y - 6);
+    y -= 20;
+  }
+  y -= 4;
+  const lx = R - 250;
+  text(`${hours.toFixed(2)} h × ${money(settings.rate, cur)} / h`, lx, 9.5, font, SOFT);
+  right(money(Math.round(inYear.reduce((n, r) => n + r.total, 0) * 100) / 100, cur), R, 13, bold);
+  y -= 8;
+  rule(y, lx, R, 0.9, INK);
+
+  y = 56;
+  page.drawText(clean("Times in Dubai time (UTC+4). Amount = hours × rate. Each month's detail is on its invoice and work log PDF."), { x: L, y, size: 7.5, font, color: FAINT });
+  if (ownLogo) {
+    const w = 96;
+    const h = (ownLogo.height / ownLogo.width) * w;
+    page.drawImage(ownLogo, { x: R - w + 12, y: y - h / 2 + 3, width: w, height: h });
+  }
   return doc.save();
 }
 

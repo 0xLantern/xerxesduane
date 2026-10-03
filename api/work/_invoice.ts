@@ -5,7 +5,7 @@
 // The client is fixed, so the bill-to block is too. Totals follow the log's
 // own rule (src/work/time.ts fmtMoney): hours rounded to two decimals, times
 // the rate, rounded to the cent once at the end.
-import { OWNER_EMAIL, allEntries, getSettings, redis, type Entry, type Settings } from "./_lib";
+import { OWNER_EMAIL, allEntries, allPayments, getSettings, redis, type Entry, type Payment, type Settings } from "./_lib";
 import { renderPdf, toBase64 } from "./_pdf";
 
 export const BILL_TO = {
@@ -198,6 +198,73 @@ export async function invoiceFor(period: Period): Promise<Invoice> {
   if (saved) return saved;
   const [entries, settings] = await Promise.all([allEntries(), getSettings()]);
   return buildInvoice(entries, settings, period);
+}
+
+/**
+ * One row of the invoice list: a month, what it came to, whether it has gone
+ * out and whether it has been paid. "open" is the month still running,
+ * "pending" a closed month whose invoice hasn't been sent yet (the cron sends
+ * it the night the month ends), "sent" one that has.
+ */
+export type InvoiceRow = {
+  periodId: string;
+  label: string;
+  number: string;
+  hours: number;
+  total: number;
+  currency: string;
+  status: "open" | "pending" | "sent";
+  sentAt: number | null;
+  paid: Payment | null;
+};
+
+/**
+ * Every month from the first logged hour to now, with its invoice. Sent
+ * invoices come from their saved copies; the rest are built from the log.
+ * `payments` is what the owner has marked paid, by period id.
+ */
+export async function listInvoices(entries: Entry[], settings: Settings, payments: Record<string, Payment>, now = Date.now()): Promise<InvoiceRow[]> {
+  if (!entries.length) return [];
+  const current = periodContaining(now);
+  const first = periodContaining(Math.min(...entries.map((e) => e.start)));
+  const months: Period[] = [];
+  for (let p = first; p.id <= current.id && months.length < 240; p = periodContaining(p.to)) months.push(p);
+  const saved = await redis(months.map((p) => ["GET", SNAP(p.id)]));
+  return months.map((p, i) => {
+    let inv: Invoice | null = null;
+    if (typeof saved[i] === "string") {
+      try {
+        inv = JSON.parse(saved[i] as string) as Invoice;
+      } catch {
+        inv = null;
+      }
+    }
+    const live = inv ?? buildInvoice(entries, settings, p, now);
+    const sent = !!inv || p.id < FIRST_SAVED;
+    return {
+      periodId: p.id,
+      label: p.label,
+      number: live.number,
+      hours: live.hours,
+      total: live.total,
+      currency: live.settings.currency,
+      status: sent ? "sent" : p.id === current.id ? "open" : "pending",
+      sentAt: inv?.sentAt ?? null,
+      paid: payments[p.id] ?? null,
+    };
+  });
+}
+
+/** The invoice list with everything it needs read. */
+export async function invoiceList(now = Date.now()): Promise<InvoiceRow[]> {
+  const [entries, settings, payments] = await Promise.all([allEntries(), getSettings(), allPayments()]);
+  return listInvoices(entries, settings, payments, now);
+}
+
+/** What is still owed: every sent invoice not yet marked paid. */
+export function owed(rows: InvoiceRow[]): { total: number; count: number } {
+  const due = rows.filter((r) => r.status === "sent" && !r.paid && r.total > 0);
+  return { total: Math.round(due.reduce((n, r) => n + r.total, 0) * 100) / 100, count: due.length };
 }
 
 export class AlreadySent extends Error {

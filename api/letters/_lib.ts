@@ -16,6 +16,10 @@
 //   copy:<copyId>        {letterId, wrapped}: one partner's copy         (expires)
 //   opened:<id>          hash, copy id -> first-opened time              (expires)
 //   mailed:<id>          hash, copy id -> when its email went            (expires)
+//   react:<id>           hash, copy id -> {at, note}: "praying for you"  (expires)
+//   prayer               hash, request id -> prayer request JSON
+//   prayed               hash, request id -> how many times "I prayed" was tapped
+//   prayer-token         the token in the prayer team's link
 //
 // Everything a letter has expires at the same moment, LIFESPAN_DAYS after it
 // was published; a copy made later for a new partner expires with the rest.
@@ -187,17 +191,17 @@ export function newLetter(title: string, size: number, chunks: number, allowDown
   return { id: randomToken(12), title, publishedAt: now, expiresAt: now + LIFESPAN_DAYS * DAY, size, chunks, allowDownload, status: "uploading" };
 }
 
-/** Every letter that hasn't expired, newest first, with how many copies and opens it has. */
-export async function allLetters(): Promise<(Letter & { copies: number; opened: number })[]> {
+/** Every letter that hasn't expired, newest first, with how many copies, opens and "praying" replies it has. */
+export async function allLetters(): Promise<(Letter & { copies: number; opened: number; praying: number })[]> {
   const [ids] = await redis([["SMEMBERS", `${K}letters`]]);
   const list = Array.isArray(ids) ? (ids as string[]) : [];
   if (!list.length) return [];
-  const raws = await redis(list.flatMap((id) => [["GET", `${K}letter:${id}`], ["HLEN", `${K}copies:${id}`], ["HLEN", `${K}opened:${id}`]]));
-  const out: (Letter & { copies: number; opened: number })[] = [];
+  const raws = await redis(list.flatMap((id) => [["GET", `${K}letter:${id}`], ["HLEN", `${K}copies:${id}`], ["HLEN", `${K}opened:${id}`], ["HLEN", `${K}react:${id}`]]));
+  const out: (Letter & { copies: number; opened: number; praying: number })[] = [];
   const gone: string[] = [];
   list.forEach((id, i) => {
-    const l = parse<Letter>(raws[i * 3]);
-    if (l && alive(l)) out.push({ ...l, copies: Number(raws[i * 3 + 1]) || 0, opened: Number(raws[i * 3 + 2]) || 0 });
+    const l = parse<Letter>(raws[i * 4]);
+    if (l && alive(l)) out.push({ ...l, copies: Number(raws[i * 4 + 1]) || 0, opened: Number(raws[i * 4 + 2]) || 0, praying: Number(raws[i * 4 + 3]) || 0 });
     else gone.push(id);
   });
   if (gone.length) await redis([["SREM", `${K}letters`, ...gone]]);
@@ -228,9 +232,65 @@ export async function withdrawAll(l: Letter): Promise<number> {
 export async function removeLetter(l: Letter) {
   await withdrawAll(l);
   await redis([
-    ["DEL", `${K}letter:${l.id}`, `${K}copies:${l.id}`, `${K}opened:${l.id}`, `${K}mailed:${l.id}`],
+    ["DEL", `${K}letter:${l.id}`, `${K}copies:${l.id}`, `${K}opened:${l.id}`, `${K}mailed:${l.id}`, `${K}react:${l.id}`],
     ["SREM", `${K}letters`, l.id],
   ]);
+}
+
+// ---------------------------------------------------------------------------
+// Prayer requests, for the prayer team page (/pray/<token>)
+// ---------------------------------------------------------------------------
+
+export type PrayerRequest = {
+  id: string;
+  text: string;
+  createdAt: number;
+  /** Set when answered. The request then stays on the page ANSWERED_DAYS more, with thanks, and is gone after. */
+  answeredAt: number | null;
+  /** How it was answered, in a line. */
+  answer: string;
+};
+
+export const ANSWERED_DAYS = 14;
+export const PRAYER_LIMIT = 600;
+
+/** Every request, newest first; answered ones that have had their ANSWERED_DAYS are dropped on the way. */
+export async function allPrayer(now = Date.now()): Promise<(PrayerRequest & { prayed: number })[]> {
+  const [flat, counts] = await redis([
+    ["HGETALL", `${K}prayer`],
+    ["HGETALL", `${K}prayed`],
+  ]);
+  const prayed = pairs(counts);
+  const out: (PrayerRequest & { prayed: number })[] = [];
+  const gone: string[] = [];
+  for (const [id, raw] of pairs(flat)) {
+    const r = parse<PrayerRequest>(raw);
+    if (!r) gone.push(id);
+    else if (r.answeredAt && now - r.answeredAt > ANSWERED_DAYS * DAY) gone.push(id);
+    else out.push({ ...r, prayed: Number(prayed.get(id)) || 0 });
+  }
+  if (gone.length) await redis([["HDEL", `${K}prayer`, ...gone], ["HDEL", `${K}prayed`, ...gone]]);
+  // Open ones first, newest first; then the answered, most recently answered first.
+  return out.sort((a, b) => Number(!!a.answeredAt) - Number(!!b.answeredAt) || (b.answeredAt ?? b.createdAt) - (a.answeredAt ?? a.createdAt));
+}
+
+export async function savePrayer(r: PrayerRequest) {
+  await redis([["HSET", `${K}prayer`, r.id, JSON.stringify(r)]]);
+}
+
+/** The prayer team's link token, made on first use. */
+export async function prayerToken(): Promise<string> {
+  const [, t] = await redis([
+    ["SET", `${K}prayer-token`, randomToken(16), "NX"],
+    ["GET", `${K}prayer-token`],
+  ]);
+  return String(t);
+}
+
+/** The token if one has been made, else null; never makes one (for public reads). */
+export async function existingPrayerToken(): Promise<string | null> {
+  const [t] = await redis([["GET", `${K}prayer-token`]]);
+  return typeof t === "string" && t.length >= 16 ? t : null;
 }
 
 // ---------------------------------------------------------------------------

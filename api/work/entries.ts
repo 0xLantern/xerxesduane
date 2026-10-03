@@ -36,7 +36,8 @@ export default handle(async (req) => {
   }
 
   if (req.method === "DELETE") {
-    await deleteEntry(existing.id);
+    // Into the trash (restorable for 90 days), not gone.
+    await deleteEntry(existing);
     return json({ deleted: existing.id });
   }
 

@@ -13,6 +13,10 @@
 //   work:v1:timer       the running timer, if any
 //   work:v1:settings    name, client and hourly rate
 //   work:v1:share       the token in the client's read-only link
+//   work:v1:inv:<id>    the saved copy of a sent invoice (see _invoice.ts)
+//   work:v1:paid        hash, invoice period id -> payment JSON
+//   work:v1:summary     hash, YYYY-MM -> the month's note for the client
+//   work:v1:trash       hash, entry id -> deleted entry JSON, kept 90 days
 //
 // Auth is one email and one password, both from the environment. The session
 // cookie is an expiry signed with HMAC under the password itself, so changing
@@ -395,14 +399,116 @@ export async function saveEntry(e: Entry, previous?: Entry | null): Promise<Entr
   return e;
 }
 
-export async function deleteEntry(id: string): Promise<boolean> {
-  const month = id.slice(0, 7);
-  if (!/^\d{4}-\d{2}$/.test(month)) return false;
-  const [n] = await redis([["HDEL", `${K}m:${month}`, id]]);
-  return Number(n) > 0;
+/**
+ * Deleting moves the entry to the trash rather than losing it: one slip of
+ * the thumb on a phone would otherwise cost real, billable work. The trash
+ * keeps it for TRASH_DAYS, and Restore puts it back exactly as it was.
+ */
+export type Trashed = { entry: Entry; deletedAt: number };
+
+export const TRASH_DAYS = 90;
+
+export async function deleteEntry(e: Entry): Promise<void> {
+  const month = e.id.slice(0, 7);
+  const t: Trashed = { entry: e, deletedAt: Date.now() };
+  await redis([
+    ["HSET", `${K}trash`, e.id, JSON.stringify(t)],
+    ["HDEL", `${K}m:${month}`, e.id],
+  ]);
+}
+
+/** Everything in the trash, newest first. Anything older than TRASH_DAYS is dropped on the way. */
+export async function trashList(): Promise<Trashed[]> {
+  const [flat] = await redis([["HGETALL", `${K}trash`]]);
+  const list = Array.isArray(flat) ? (flat as string[]) : [];
+  const out: Trashed[] = [];
+  const stale: string[] = [];
+  const cutoff = Date.now() - TRASH_DAYS * 24 * 60 * 60 * 1000;
+  for (let i = 0; i + 1 < list.length; i += 2) {
+    const t = parse<Trashed>(list[i + 1]);
+    if (t && t.entry && t.deletedAt > cutoff) out.push(t);
+    else stale.push(list[i]);
+  }
+  if (stale.length) await redis([["HDEL", `${K}trash`, ...stale]]);
+  return out.sort((a, b) => b.deletedAt - a.deletedAt);
+}
+
+/** Put a trashed entry back in the log. Returns null when it isn't in the trash. */
+export async function restoreEntry(id: string): Promise<Entry | null> {
+  const [raw] = await redis([["HGET", `${K}trash`, id]]);
+  const t = parse<Trashed>(raw);
+  if (!t?.entry) return null;
+  const entry = await saveEntry(t.entry);
+  await redis([["HDEL", `${K}trash`, id]]);
+  return entry;
+}
+
+export async function purgeTrashed(id: string): Promise<void> {
+  await redis([["HDEL", `${K}trash`, id]]);
 }
 
 export { findEntry };
+
+// ---------------------------------------------------------------------------
+// Payments: whether each invoice has been paid
+// ---------------------------------------------------------------------------
+
+export type Payment = {
+  /** When it was marked paid (the day the money arrived), epoch ms. */
+  paidAt: number;
+  /** The currency the transfer came in. The invoice itself is always in USD. */
+  currency: "USD" | "CHF";
+  /** The amount received in that currency, if known. */
+  amount: number | null;
+  note: string;
+};
+
+/** Every payment, by invoice period id. */
+export async function allPayments(): Promise<Record<string, Payment>> {
+  const [flat] = await redis([["HGETALL", `${K}paid`]]);
+  const list = Array.isArray(flat) ? (flat as string[]) : [];
+  const out: Record<string, Payment> = {};
+  for (let i = 0; i + 1 < list.length; i += 2) {
+    const p = parse<Payment>(list[i + 1]);
+    if (p) out[list[i]] = p;
+  }
+  return out;
+}
+
+export async function setPayment(period: string, p: Payment | null): Promise<void> {
+  await redis([p ? ["HSET", `${K}paid`, period, JSON.stringify(p)] : ["HDEL", `${K}paid`, period]]);
+}
+
+// ---------------------------------------------------------------------------
+// Monthly summary: three short lines for the client, per month
+// ---------------------------------------------------------------------------
+
+export type Summary = {
+  /** What was delivered this month. */
+  delivered: string;
+  /** What comes next. */
+  next: string;
+  /** What needs the client's decision. */
+  decide: string;
+  updatedAt: number;
+};
+
+export const SUMMARY_LIMIT = 400;
+
+export async function allSummaries(): Promise<Record<string, Summary>> {
+  const [flat] = await redis([["HGETALL", `${K}summary`]]);
+  const list = Array.isArray(flat) ? (flat as string[]) : [];
+  const out: Record<string, Summary> = {};
+  for (let i = 0; i + 1 < list.length; i += 2) {
+    const s = parse<Summary>(list[i + 1]);
+    if (s) out[list[i]] = s;
+  }
+  return out;
+}
+
+export async function setSummary(month: string, s: Summary | null): Promise<void> {
+  await redis([s ? ["HSET", `${K}summary`, month, JSON.stringify(s)] : ["HDEL", `${K}summary`, month]]);
+}
 
 /**
  * A new entry's id. The page sends a key made when the editor opened, so a

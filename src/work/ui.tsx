@@ -161,6 +161,7 @@ export function MonthLog({
   onEdit,
   emptyText,
   current,
+  flagged,
 }: {
   entries: Entry[];
   settings: Settings;
@@ -170,6 +171,8 @@ export function MonthLog({
   setMonth: (m: string) => void;
   onEdit?: (e: Entry) => void;
   emptyText: string;
+  /** Ids of entries that overlap another: marked, so they get fixed before the invoice goes. */
+  flagged?: Set<string>;
 }) {
   const inMonth = useMemo(() => entries.filter((e) => monthKey(e.start) === month), [entries, month]);
   const days = useMemo(() => {
@@ -228,7 +231,7 @@ export function MonthLog({
               <ul className="space-y-2">
                 {list.map((e) => (
                   <li key={e.id}>
-                    <EntryCard entry={e} onEdit={onEdit} />
+                    <EntryCard entry={e} onEdit={onEdit} flagged={flagged?.has(e.id)} />
                   </li>
                 ))}
               </ul>
@@ -243,7 +246,7 @@ export function MonthLog({
 /** How many points show before "Show all". */
 const FOLD = 3;
 
-function EntryCard({ entry: e, onEdit }: { entry: Entry; onEdit?: (e: Entry) => void }) {
+function EntryCard({ entry: e, onEdit, flagged }: { entry: Entry; onEdit?: (e: Entry) => void; flagged?: boolean }) {
   const [open, setOpen] = useState(false);
   const overnight = dayKey(e.start) !== dayKey(e.end);
   const points = useMemo(() => notePoints(e.notes), [e.notes]);
@@ -257,6 +260,11 @@ function EntryCard({ entry: e, onEdit }: { entry: Entry; onEdit?: (e: Entry) => 
       <p className="mt-0.5 text-sm tabular-nums text-fg-soft">
         {fmtTime(e.start)}–{fmtTime(e.end)}
         {overnight && " (next day)"}
+        {flagged && (
+          <span className="ml-2 rounded-full bg-red-50 px-2 py-0.5 text-xs font-bold text-red-700" title="This entry overlaps another one">
+            Overlaps
+          </span>
+        )}
         {onEdit && <span className="ml-2 font-semibold text-accent-deep">Edit</span>}
       </p>
     </>
