@@ -2,9 +2,9 @@
  * A partner's private copy, at /l/<copyId>#<linkKey>.
  *
  * The key arrives in the link's # fragment, which the browser never sends to
- * the server. It is taken out of the address bar at once (so it isn't left on
- * screen or in a copied URL) and kept for this tab only, so a reload still
- * works. With it the page opens the copy, which holds the file key, fetches
+ * the server. It stays in the address bar, so "Open in Safari/Chrome" from
+ * the in-app browsers of Gmail, Outlook, Facebook and the like still carries
+ * it; it is also kept for this tab, so a reload without it works. With it the page opens the copy, which holds the file key, fetches
  * the encrypted PDF piece by piece, decrypts it here, and shows its pages.
  */
 import { useEffect, useRef, useState } from "react";
@@ -68,7 +68,6 @@ export default function Reader({ copyId }: { copyId: string }) {
       } catch {
         /* private mode: the key just won't survive a reload */
       }
-      history.replaceState(null, "", window.location.pathname);
     } else {
       try {
         raw = sessionStorage.getItem(store) ?? "";
