@@ -8,8 +8,10 @@ import { api, type Partner } from "./api";
 import { fmtShort, msg } from "./local";
 import { ACCENT, Box, Btn, Err, INK, Note, Pill, SOFT, inputCls } from "./ui";
 
-type Draft = { name: string; email: string; whatsapp: string; hello: string; giving: string; birthday: string; notes: string };
-const empty: Draft = { name: "", email: "", whatsapp: "", hello: "", giving: "", birthday: "", notes: "" };
+type Draft = { name: string; email: string; whatsapp: string; messenger: string; hello: string; giving: string; birthday: string; notes: string };
+const empty: Draft = { name: "", email: "", whatsapp: "", messenger: "", hello: "", giving: "", birthday: "", notes: "" };
+
+const looksLikeMessenger = (s: string) => /(facebook\.com|fb\.com|fb\.me|m\.me|messenger\.com)\//i.test(s);
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -49,7 +51,8 @@ function parseBulk(text: string): Draft[] {
       const d: Draft = { ...empty, name };
       for (const c of rest) {
         if (!c) continue;
-        if (c.includes("@") && !d.email) d.email = c;
+        if (looksLikeMessenger(c) && !d.messenger) d.messenger = c;
+        else if (c.includes("@") && !d.email) d.email = c;
         else if (looksLikeNumber(c) && !d.whatsapp) d.whatsapp = c;
         else if (!d.hello) d.hello = c;
       }
@@ -97,7 +100,7 @@ export default function Partners({ partners, reload }: { partners: Partner[]; re
         </p>
         <Fields value={draft} onChange={setDraft} />
         <p className="text-sm" style={{ color: SOFT }}>
-          An email address, a WhatsApp number, or both. WhatsApp numbers need the country code.
+          An email address, a WhatsApp number, a Messenger profile, or any mix. WhatsApp numbers need the country code.
         </p>
         <Btn
           kind="primary"
@@ -117,11 +120,11 @@ export default function Partners({ partners, reload }: { partners: Partner[]; re
             className={`${inputCls} mt-2 min-h-[8rem] font-mono text-sm`}
             value={bulk}
             onChange={(e) => setBulk(e.target.value)}
-            placeholder={"One per line: Name, email, WhatsApp, greeting\nBeat Baumann, bb@gcn.live, +41 79 376 87 33, Beat\nAnna Meier, , +41 79 123 45 67\nPastor Ramon Cruz, ramon@example.ph, , Pastor Ramon"}
+            placeholder={"One per line: Name, email, WhatsApp, Messenger link, greeting\nBeat Baumann, bb@gcn.live, +41 79 376 87 33, Beat\nAnna Meier, , +41 79 123 45 67\nPastor Ramon Cruz, ramon@example.ph, , Pastor Ramon"}
           />
           {preview.length > 0 && (
             <p className="mt-1 text-sm" style={{ color: SOFT }}>
-              {preview.length} line{preview.length === 1 ? "" : "s"}: {preview.filter((d) => d.email).length} with email, {preview.filter((d) => d.whatsapp).length} with WhatsApp.
+              {preview.length} line{preview.length === 1 ? "" : "s"}: {preview.filter((d) => d.email).length} with email, {preview.filter((d) => d.whatsapp).length} with WhatsApp, {preview.filter((d) => d.messenger).length} with Messenger.
             </p>
           )}
           <Btn className="mt-2" disabled={!preview.length} onClick={() => void add(preview).then((ok) => ok && setBulk(""))}>
@@ -174,6 +177,7 @@ function Fields({ value, onChange }: { value: Draft; onChange: (d: Draft) => voi
       <input className={inputCls} placeholder="Greeting, e.g. Beat (optional)" aria-label="Greeting" value={value.hello} onChange={set("hello")} autoComplete="off" />
       <input className={inputCls} type="email" placeholder="Email (optional)" aria-label="Email" value={value.email} onChange={set("email")} autoComplete="off" />
       <input className={inputCls} type="tel" inputMode="tel" placeholder="WhatsApp, e.g. +971 50 123 4567" aria-label="WhatsApp number" value={value.whatsapp} onChange={set("whatsapp")} autoComplete="off" />
+      <input className={`${inputCls} sm:col-span-2`} inputMode="url" placeholder="Messenger: their Facebook profile link, e.g. facebook.com/ramon.cruz (optional)" aria-label="Messenger" value={value.messenger} onChange={set("messenger")} autoComplete="off" />
       <input className={inputCls} placeholder="How they give, e.g. Monthly through GCN (optional)" aria-label="How they give" value={value.giving} onChange={set("giving")} autoComplete="off" />
       <input className={inputCls} placeholder="Birthday, e.g. 14 March (optional)" aria-label="Birthday" value={value.birthday} onChange={set("birthday")} autoComplete="off" />
       <textarea className={`${inputCls} sm:col-span-2`} rows={2} placeholder="Notes: family, church, how you met… (optional)" aria-label="Notes" value={value.notes} onChange={set("notes")} />
@@ -181,7 +185,7 @@ function Fields({ value, onChange }: { value: Draft; onChange: (d: Draft) => voi
   );
 }
 
-const toDraft = (p: Partner): Draft => ({ name: p.name, email: p.email, whatsapp: p.whatsapp ? `+${p.whatsapp}` : "", hello: p.hello, giving: p.giving, birthday: p.birthday, notes: p.notes });
+const toDraft = (p: Partner): Draft => ({ name: p.name, email: p.email, whatsapp: p.whatsapp ? `+${p.whatsapp}` : "", messenger: p.messenger, hello: p.hello, giving: p.giving, birthday: p.birthday, notes: p.notes });
 
 function Row({ p, reload }: { p: Partner; reload: () => Promise<void> }) {
   const [edit, setEdit] = useState<Draft | null>(null);
@@ -221,7 +225,7 @@ function Row({ p, reload }: { p: Partner; reload: () => Promise<void> }) {
             {p.name} <span className="font-normal" style={{ color: SOFT }}>· “Dear {p.hello}”</span> {!p.active && <Pill>Paused</Pill>}
           </p>
           <p className="break-words text-sm" style={{ color: SOFT }}>
-            {[p.email, p.whatsapp && `+${p.whatsapp}`].filter(Boolean).join(" · ")}
+            {[p.email, p.whatsapp && `+${p.whatsapp}`, p.messenger && `Messenger: ${p.messenger}`].filter(Boolean).join(" · ")}
           </p>
           {(p.giving || p.birthday || p.lastLetterAt) && (
             <p className="break-words text-sm" style={{ color: SOFT }}>

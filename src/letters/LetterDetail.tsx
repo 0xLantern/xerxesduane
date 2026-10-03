@@ -172,7 +172,7 @@ export default function LetterDetail({ id, fresh, partners, settings, onBack }: 
               const link = keys?.links[c.copyId]?.link;
               const done = !!sent[c.copyId];
               // Emailed and not on WhatsApp: nothing left to send by hand.
-              const tickable = !!link && !(c.mailed && !p?.whatsapp);
+              const tickable = !!link && !(c.mailed && !p?.whatsapp && !p?.messenger);
               const withdraw = live ? (
                 <button
                   type="button"
@@ -246,6 +246,22 @@ export default function LetterDetail({ id, fresh, partners, settings, onBack }: 
                       {link && p?.whatsapp && (
                         <Btn kind="whatsapp" href={waUrl(p.whatsapp, message(p, link))} onClick={() => tick(c.copyId, true)}>
                           Send on WhatsApp
+                        </Btn>
+                      )}
+                      {link && p?.messenger && (
+                        <Btn
+                          kind="messenger"
+                          href={`https://m.me/${encodeURIComponent(p.messenger)}`}
+                          onClick={() => {
+                            // Messenger can't be handed the text, so it goes on the clipboard to paste.
+                            void navigator.clipboard.writeText(message(p, link)).then(
+                              () => setNote(`${c.name}'s message is copied. Paste it in the Messenger chat that opened.`),
+                              () => setNote("Couldn't copy the message: use Copy link instead."),
+                            );
+                            tick(c.copyId, true);
+                          }}
+                        >
+                          Copy message &amp; open Messenger
                         </Btn>
                       )}
                       {link && <Btn onClick={() => void copy(c.copyId, link)}>{copied === c.copyId ? "Copied" : "Copy link"}</Btn>}
@@ -460,7 +476,7 @@ function MorePartners({ rec, candidates, onDone }: { rec: LocalLetter; candidate
                   <span className="font-semibold" style={{ color: INK }}>
                     {p.name}
                   </span>
-                  <Reach email={p.email} whatsapp={p.whatsapp} />
+                  <Reach email={p.email} whatsapp={p.whatsapp} messenger={p.messenger} />
                 </span>
               </Check>
             ))}

@@ -5,6 +5,8 @@ export type Partner = {
   name: string;
   email: string;
   whatsapp: string;
+  /** Facebook username or profile number; their chat is m.me/<messenger>. */
+  messenger: string;
   hello: string;
   active: boolean;
   /** How they give, in a line. */

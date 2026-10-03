@@ -97,6 +97,7 @@ export default function Publish({ partners, settings, onCancel, onDone }: { part
   const recipients = active.filter((p) => chosen.has(p.id));
   const emails = recipients.filter((p) => p.email).length;
   const whatsapps = recipients.filter((p) => p.whatsapp).length;
+  const messengers = recipients.filter((p) => p.messenger).length;
 
   const go = async () => {
     if (!file) return;
@@ -244,13 +245,13 @@ export default function Publish({ partners, settings, onCancel, onDone }: { part
                     <span className="font-semibold" style={{ color: INK }}>
                       {p.name}
                     </span>
-                    <Reach email={p.email} whatsapp={p.whatsapp} />
+                    <Reach email={p.email} whatsapp={p.whatsapp} messenger={p.messenger} />
                   </span>
                 </Check>
               ))}
             </div>
             <p className="text-sm" style={{ color: SOFT }}>
-              {recipients.length} chosen: {emails} by email, {whatsapps} on WhatsApp.
+              {recipients.length} chosen: {emails} by email, {whatsapps} on WhatsApp{messengers ? `, ${messengers} on Messenger` : ""}.
               {paused > 0 && ` ${paused} paused partner${paused === 1 ? " isn't" : "s aren't"} listed.`}
             </p>
           </Box>
