@@ -38,6 +38,7 @@ export default function Publish({ partners, settings, onCancel, onDone }: { part
   const [title, setTitle] = useState("");
   const [chosen, setChosen] = useState<Set<string>>(() => new Set(active.map((p) => p.id)));
   const [allow, setAllow] = useState(settings.allowDownload);
+  const [spotlight, setSpotlight] = useState(true);
   const [step, setStep] = useState<Step | null>(null);
   const [reading, setReading] = useState(false);
   const [error, setError] = useState("");
@@ -105,7 +106,7 @@ export default function Publish({ partners, settings, onCancel, onDone }: { part
     setError("");
     setStep({ label: "Encrypting the PDF", done: 0, total: 1 });
     try {
-      const r = await publish(file.bytes, { title: title.trim(), allowDownload: allow, days, sender: settings.sender, partners: recipients }, setStep);
+      const r = await publish(file.bytes, { title: title.trim(), allowDownload: allow, spotlight, days, sender: settings.sender, partners: recipients }, setStep);
       if (file.written) clearDraft();
       onDone(r.letter.id, { rec: r.rec, result: r.result });
     } catch (e) {
@@ -263,6 +264,14 @@ export default function Publish({ partners, settings, onCancel, onDone }: { part
               </span>
               <span className="block text-sm" style={{ color: SOFT }}>
                 When it's off, they read it on the page only. (Nothing can stop someone saving what's on their screen.)
+              </span>
+            </Check>
+            <Check checked={spotlight} onChange={setSpotlight}>
+              <span className="font-semibold" style={{ color: INK }}>
+                Spotlight reading on computers
+              </span>
+              <span className="block text-sm" style={{ color: SOFT }}>
+                On a computer, only the lines under the mouse are sharp and the rest stays blurred, so a PrintScreen catches a few lines, not the page. Phones read normally.
               </span>
             </Check>
             <div>
