@@ -226,9 +226,9 @@ export async function saveLetter(l: Letter) {
   ]);
 }
 
-export function newLetter(title: string, size: number, chunks: number, allowDownload: boolean): Letter {
+export function newLetter(title: string, size: number, chunks: number, allowDownload: boolean, days = LIFESPAN_DAYS): Letter {
   const now = Date.now();
-  return { id: randomToken(12), title, publishedAt: now, expiresAt: now + LIFESPAN_DAYS * DAY, size, chunks, allowDownload, status: "uploading" };
+  return { id: randomToken(12), title, publishedAt: now, expiresAt: now + days * DAY, size, chunks, allowDownload, status: "uploading" };
 }
 
 /** Every letter that hasn't expired, newest first, with how many copies, opens and "praying" replies it has. */
@@ -272,7 +272,7 @@ export async function withdrawAll(l: Letter): Promise<number> {
 export async function removeLetter(l: Letter) {
   await withdrawAll(l);
   await redis([
-    ["DEL", `${K}letter:${l.id}`, `${K}copies:${l.id}`, `${K}opened:${l.id}`, `${K}mailed:${l.id}`, `${K}react:${l.id}`],
+    ["DEL", `${K}letter:${l.id}`, `${K}copies:${l.id}`, `${K}opened:${l.id}`, `${K}mailed:${l.id}`, `${K}react:${l.id}`, `${K}devices:${l.id}`, `${K}blocked:${l.id}`],
     ["SREM", `${K}letters`, l.id],
   ]);
 }

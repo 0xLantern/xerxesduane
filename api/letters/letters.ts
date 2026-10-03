@@ -27,7 +27,7 @@ import {
   saveLetter,
   withdrawAll,
 } from "./_lib";
-import { COPY_ID, MAX_PDF_BYTES, SEAL_OVERHEAD, chunkCount } from "../../src/letters/shared";
+import { COPY_ID, LIFESPAN_CHOICES, LIFESPAN_DAYS, MAX_PDF_BYTES, SEAL_OVERHEAD, chunkCount } from "../../src/letters/shared";
 
 export const config = { runtime: "edge" };
 
@@ -43,12 +43,22 @@ export default handle(async (req) => {
     if (!id) return json({ letters: await allLetters() });
     const letter = await getLetter(id);
     if (!letter) return errorResponse(GONE, 404);
-    const [copies, opened, mailed, reacted] = await redis([
+    const [copies, opened, mailed, reacted, devices, blocked] = await redis([
       ["HGETALL", `${K}copies:${id}`],
       ["HGETALL", `${K}opened:${id}`],
       ["HGETALL", `${K}mailed:${id}`],
       ["HGETALL", `${K}react:${id}`],
+      ["HGETALL", `${K}devices:${id}`],
+      ["HGETALL", `${K}blocked:${id}`],
     ]).then((r) => r.map(pairs));
+    const seenOf = (copyId: string) => {
+      try {
+        const v = JSON.parse(devices.get(copyId) ?? "null") as { devices?: unknown[]; countries?: string[] } | null;
+        return { devices: v?.devices?.length ?? 0, countries: v?.countries ?? [] };
+      } catch {
+        return { devices: 0, countries: [] as string[] };
+      }
+    };
     const reaction = (copyId: string): { at: number; note: string } | null => {
       const raw = reacted.get(copyId);
       if (!raw) return null;
@@ -67,6 +77,8 @@ export default handle(async (req) => {
       opened: opened.has(copyId) ? Number(opened.get(copyId)) : null,
       mailed: mailed.has(copyId) ? Number(mailed.get(copyId)) : null,
       praying: reaction(copyId),
+      ...seenOf(copyId),
+      blocked: Number(blocked.get(copyId)) || 0,
     }));
     rows.sort((a, b) => a.name.localeCompare(b.name));
     return json({ letter, copies: rows });
@@ -82,13 +94,25 @@ export default handle(async (req) => {
     if (!Number.isInteger(size) || size <= SEAL_OVERHEAD) return errorResponse("That file is empty.");
     if (size > MAX_PDF_BYTES + SEAL_OVERHEAD) return errorResponse("That PDF is larger than 25 MB.");
     if (chunks !== chunkCount(size)) return errorResponse("The upload doesn't add up. Reload the page and try again.");
-    const letter = newLetter(title, size, chunks, body.allowDownload === true);
+    const days = LIFESPAN_CHOICES.includes(Number(body.days)) ? Number(body.days) : LIFESPAN_DAYS;
+    const letter = newLetter(title, size, chunks, body.allowDownload === true, days);
     await saveLetter(letter);
     return json({ letter });
   }
 
   const letter = await getLetter(body.id);
   if (!letter) return errorResponse(GONE, 404);
+
+  if (req.method === "PATCH" && body.resetDevices === true) {
+    // Let a new device in: forget the devices this copy was opened on.
+    const copyId = String(body.copyId ?? "");
+    if (!COPY_ID.test(copyId) || !(await copiesOf(letter.id)).has(copyId)) return errorResponse("That copy isn't part of this letter.", 404);
+    await redis([
+      ["HDEL", `${K}devices:${letter.id}`, copyId],
+      ["HDEL", `${K}blocked:${letter.id}`, copyId],
+    ]);
+    return json({ reset: copyId });
+  }
 
   if (req.method === "PATCH") {
     if (body.done !== true) return errorResponse("Nothing to change.");
@@ -112,6 +136,8 @@ export default handle(async (req) => {
         ["HDEL", `${K}opened:${letter.id}`, copyId],
         ["HDEL", `${K}mailed:${letter.id}`, copyId],
         ["HDEL", `${K}react:${letter.id}`, copyId],
+        ["HDEL", `${K}devices:${letter.id}`, copyId],
+        ["HDEL", `${K}blocked:${letter.id}`, copyId],
       ]);
       return json({ withdrawn: copyId });
     }

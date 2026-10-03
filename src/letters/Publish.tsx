@@ -13,7 +13,15 @@ import { fmtSize, msg } from "./local";
 import { PdfPage } from "./Pages";
 import { openPdf, pdfTitle } from "./pdf";
 import { publish, type Step } from "./publish";
-import { LIFESPAN_DAYS, MAX_PDF_BYTES } from "./shared";
+import { LIFESPAN_CHOICES, LIFESPAN_DAYS, MAX_PDF_BYTES } from "./shared";
+
+/** What's checked before a letter goes out: what would hurt if it leaked. */
+const CHECKS = [
+  "No names of local believers or seekers, only first names or initials where it matters",
+  "No church, meeting or home locations",
+  "No photos where faces of local believers can be recognised",
+  "Nothing I'd mind a stranger or an official reading",
+];
 import { ACCENT, Bar, Box, Btn, Check, Err, INK, Label, Reach, SERIF, SOFT, inputCls } from "./ui";
 
 type Picked = { name: string; bytes: Uint8Array; doc: PDFDocumentProxy; written?: boolean };
@@ -35,6 +43,9 @@ export default function Publish({ partners, settings, onCancel, onDone }: { part
   const [error, setError] = useState("");
   const [drag, setDrag] = useState(false);
   const [writing, setWriting] = useState(false);
+  const [days, setDays] = useState(LIFESPAN_DAYS);
+  const [checked, setChecked] = useState<boolean[]>(() => CHECKS.map(() => false));
+  const allChecked = checked.every(Boolean);
   const input = useRef<HTMLInputElement>(null);
 
   // Let go of the old document when a new one is picked, or on leaving.
@@ -94,7 +105,7 @@ export default function Publish({ partners, settings, onCancel, onDone }: { part
     setError("");
     setStep({ label: "Encrypting the PDF", done: 0, total: 1 });
     try {
-      const r = await publish(file.bytes, { title: title.trim(), allowDownload: allow, sender: settings.sender, partners: recipients }, setStep);
+      const r = await publish(file.bytes, { title: title.trim(), allowDownload: allow, days, sender: settings.sender, partners: recipients }, setStep);
       if (file.written) clearDraft();
       onDone(r.letter.id, { rec: r.rec, result: r.result });
     } catch (e) {
@@ -254,11 +265,50 @@ export default function Publish({ partners, settings, onCancel, onDone }: { part
                 When it's off, they read it on the page only. (Nothing can stop someone saving what's on their screen.)
               </span>
             </Check>
+            <div>
+              <p className="text-sm font-bold" style={{ color: INK }}>
+                Open for
+              </p>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {LIFESPAN_CHOICES.map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setDays(d)}
+                    aria-pressed={days === d}
+                    className="min-h-11 rounded-full border px-4 text-[0.95rem] font-bold"
+                    style={days === d ? { background: INK, borderColor: INK, color: "#fff" } : { borderColor: "#ddd5c7", color: INK }}
+                  >
+                    {d === 7 ? "1 week" : d === 14 ? "2 weeks" : `${d} days`}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1 text-sm" style={{ color: SOFT }}>
+                A week for a letter with anything sensitive in it. After that every copy and the file are deleted.
+              </p>
+            </div>
+            <div className="rounded-2xl bg-[#faf6ee] p-3">
+              <p className="text-sm font-bold" style={{ color: INK }}>
+                Before it goes: would it be safe if it leaked?
+              </p>
+              <p className="mt-0.5 text-sm" style={{ color: SOFT }}>
+                Each copy is locked to two devices and carries the partner's name, but a phone camera can still photograph a screen.
+              </p>
+              <div className="mt-1">
+                {CHECKS.map((c, i) => (
+                  <Check key={c} checked={checked[i]} onChange={(on) => setChecked((x) => x.map((v, j) => (j === i ? on : v)))}>
+                    <span className="text-[0.95rem]" style={{ color: INK }}>
+                      {c}
+                    </span>
+                  </Check>
+                ))}
+              </div>
+            </div>
             <p className="text-sm" style={{ color: SOFT }}>
-              Emails go out as soon as you publish. Then you'll get a list to send each WhatsApp message yourself. Each link works for {LIFESPAN_DAYS} days, or until you withdraw it.
+              Emails go out as soon as you publish. Then you'll get a list to send each WhatsApp message yourself. Each link opens on up to two of the partner's devices, for {days} days or until you withdraw it.
             </p>
             <Err>{error}</Err>
-            <Btn kind="primary" className="w-full" onClick={() => void go()} disabled={!recipients.length || !title.trim()}>
+            <Btn kind="primary" className="w-full" onClick={() => void go()} disabled={!recipients.length || !title.trim() || !allChecked}>
               Encrypt &amp; publish
             </Btn>
           </Box>

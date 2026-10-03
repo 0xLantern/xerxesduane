@@ -202,7 +202,7 @@ function Letters({ onPublish, onOpen }: { onPublish: () => void; onOpen: (id: st
     <div className="space-y-3">
       <Box className="space-y-3">
         <p className="text-[0.95rem]" style={{ color: SOFT }}>
-          Publish the month's PDF letter. Each partner gets their own private, encrypted copy, open for {LIFESPAN_DAYS} days.
+          Publish the month's PDF letter. Each partner gets their own private, encrypted copy that opens on up to two of their devices, for up to {LIFESPAN_DAYS} days.
         </p>
         <Btn kind="primary" onClick={onPublish} className="w-full sm:w-auto">
           Publish a letter

@@ -29,7 +29,20 @@ export type Letter = {
 export type LetterSummary = Letter & { copies: number; opened: number; praying: number };
 /** A partner's "Praying for you" from inside the letter, with their line if they wrote one. */
 export type Praying = { at: number; note: string };
-export type CopyRow = { copyId: string; partnerId: string; name: string; opened: number | null; mailed: number | null; praying: Praying | null };
+export type CopyRow = {
+  copyId: string;
+  partnerId: string;
+  name: string;
+  opened: number | null;
+  mailed: number | null;
+  praying: Praying | null;
+  /** How many devices have opened it (at most 2). */
+  devices: number;
+  /** Countries it was opened from, as two-letter codes. */
+  countries: string[];
+  /** Tries from another device that were turned away. */
+  blocked: number;
+};
 export type PrayerRequest = { id: string; text: string; createdAt: number; answeredAt: number | null; answer: string; photo: string; prayed: number };
 export type NewCopy = { copyId: string; partnerId: string; wrapped: string };
 export type EmailSend = { partnerId: string; copyId: string; link: string };
@@ -67,8 +80,9 @@ export const api = {
 
   letters: () => call<{ letters: LetterSummary[] }>(`${L}letters`),
   letter: (id: string) => call<{ letter: Letter; copies: CopyRow[] }>(`${L}letters?id=${encodeURIComponent(id)}`),
-  createLetter: (b: { title: string; size: number; chunks: number; allowDownload: boolean }) => call<{ letter: Letter }>(`${L}letters`, "POST", b),
+  createLetter: (b: { title: string; size: number; chunks: number; allowDownload: boolean; days: number }) => call<{ letter: Letter }>(`${L}letters`, "POST", b),
   finishLetter: (id: string) => call<{ letter: Letter }>(`${L}letters`, "PATCH", { id, done: true }),
+  resetDevices: (id: string, copyId: string) => call(`${L}letters`, "PATCH", { id, copyId, resetDevices: true }),
   withdrawCopy: (id: string, copyId: string) => call(`${L}letters`, "DELETE", { id, copyId }),
   withdrawAll: (id: string) => call<{ withdrawn: number }>(`${L}letters`, "DELETE", { id }),
   removeLetter: (id: string) => call(`${L}letters`, "DELETE", { id, remove: true }),

@@ -23,6 +23,9 @@
 
 export const LIFESPAN_DAYS = 30;
 
+/** How long a letter can stay open, chosen when publishing: a week for a sensitive one. */
+export const LIFESPAN_CHOICES = [7, 14, 30];
+
 /** Binary bytes per uploaded piece of the encrypted PDF (base64url on the wire). */
 export const CHUNK_BYTES = 512 * 1024;
 

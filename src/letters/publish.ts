@@ -37,14 +37,14 @@ async function pool(n: number, width: number, fn: (i: number) => Promise<void>) 
 
 export async function publish(
   pdf: Uint8Array,
-  opts: { title: string; allowDownload: boolean; sender: string; partners: Partner[] },
+  opts: { title: string; allowDownload: boolean; days: number; sender: string; partners: Partner[] },
   onStep: OnStep,
 ): Promise<{ letter: Letter; rec: LocalLetter; result: SendResult }> {
   onStep({ label: "Encrypting the PDF", done: 0, total: 1 });
   const file = await newKey();
   const sealed = await encrypt(pdf, file.key);
   const chunks = chunkCount(sealed.length);
-  const { letter } = await api.createLetter({ title: opts.title, size: sealed.length, chunks, allowDownload: opts.allowDownload });
+  const { letter } = await api.createLetter({ title: opts.title, size: sealed.length, chunks, allowDownload: opts.allowDownload, days: opts.days });
 
   let live: Letter;
   try {
