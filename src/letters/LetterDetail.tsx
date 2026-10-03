@@ -8,7 +8,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, type CopyRow, type Letter, type Partner, type Settings } from "./api";
-import { fillTemplate, fmtDate, fmtShort, fmtSize, fmtTime, local, msg, statusOf, waUrl, type LocalLetter } from "./local";
+import { fillTemplate, fmtDate, fmtShort, fmtSize, fmtTime, local, msg, readBackup, saveBackup, statusOf, waUrl, type LocalLetter } from "./local";
 import { emailOne, sendCopies, type SendResult, type Step } from "./publish";
 import { Bar, Box, Btn, Check, Err, GOOD, INK, Note, Pill, Reach, SERIF, SOFT } from "./ui";
 
@@ -117,8 +117,32 @@ export default function LetterDetail({ id, fresh, partners, settings, onBack }: 
             <p className="font-bold">The links aren't on this device.</p>
             <p className="mt-1" style={{ color: SOFT }}>
               Each partner's link holds the key to their copy, and the links are kept only on the device that published the letter. Here you can see who opened it and withdraw
-              copies, but to send links or make copies for more partners, use that device.
+              copies, but to send links or make copies for more partners, use that device, or restore the links from a backup file saved there.
             </p>
+            <label className="mt-3 inline-flex min-h-11 cursor-pointer items-center rounded-full border border-[#ddd5c7] bg-white px-5 font-bold">
+              Restore links from a backup
+              <input
+                type="file"
+                accept="application/json,.json"
+                className="sr-only"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!f) return;
+                  void f.text().then((t) => {
+                    const r = readBackup(t, id);
+                    if (typeof r === "string") return setError(r);
+                    // Copies withdrawn since the backup no longer open anything.
+                    const have = new Set(copies.map((c) => c.copyId));
+                    const restored = { ...r, links: Object.fromEntries(Object.entries(r.links).filter(([c]) => have.has(c))) };
+                    local.save(restored);
+                    setRec(restored);
+                    setError("");
+                    setNote(`Restored ${Object.keys(restored.links).length} link${Object.keys(restored.links).length === 1 ? "" : "s"}.`);
+                  });
+                }}
+              />
+            </label>
           </div>
         )}
       </Box>
@@ -267,9 +291,14 @@ export default function LetterDetail({ id, fresh, partners, settings, onBack }: 
           <div className="pt-1">
             <p className="text-sm" style={{ color: SOFT }}>
               {live
-                ? "This device keeps every partner's link so you can send them. Forgetting them leaves the letter open for partners; you just can't send links from here any more."
+                ? "This device keeps every partner's link so you can send them, and nowhere else does. Save a backup file to keep them safe if this browser is cleared, or to use another device; keep it private, as it opens the letter. Forgetting them leaves the letter open for partners; you just can't send links from here any more."
                 : "This device still has the old links. They no longer open anything."}
             </p>
+            {live && (
+              <Btn className="mr-2 mt-2" onClick={() => saveBackup(rec)}>
+                Save a backup of the links
+              </Btn>
+            )}
             <Btn
               className="mt-2"
               onClick={() => {
@@ -316,6 +345,11 @@ function Outcome({ result }: { result: SendResult }) {
         </p>
       )}
       {result.emailed === 0 && !result.emailError && <p className="text-sm" style={{ color: INK }}>Now send the WhatsApp messages below.</p>}
+      {result.kept && result.made > 0 && (
+        <p className="text-sm" style={{ color: SOFT }}>
+          The links are kept only in this browser. Use Save a backup of the links, at the bottom, to keep a copy somewhere private.
+        </p>
+      )}
       {result.emailError && (
         <Err>{`The emails didn't go out: ${result.emailError} Send those partners their link on WhatsApp or with Copy link, or try Send email on each.`}</Err>
       )}
