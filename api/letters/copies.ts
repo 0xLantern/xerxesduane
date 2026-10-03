@@ -25,7 +25,8 @@ export default handle(async (req) => {
 
   const list = Array.isArray(b.copies) ? (b.copies as Record<string, unknown>[]) : [];
   if (!list.length || list.length > MAX) return errorResponse(`Send between 1 and ${MAX} copies at a time.`);
-  const partners = new Set((await allPartners()).map((p) => p.id));
+  const partnerList = await allPartners();
+  const partners = new Set(partnerList.map((p) => p.id));
   const existing = await copiesOf(letter.id);
   const hasCopy = new Map([...existing].map(([c, p]) => [p, c]));
   const seen = new Set<string>();
@@ -69,6 +70,10 @@ export default handle(async (req) => {
       ["EXPIRE", `${K}copies:${letter.id}`, life],
     ]);
     created.push(...ok.map((it) => it.copyId));
+    // Remember when each of them was last given a letter.
+    const now = Date.now();
+    const stamped = partnerList.filter((p) => ok.some((it) => it.partnerId === p.id)).map((p) => ({ ...p, lastLetterAt: now }));
+    if (stamped.length) await redis([["HSET", `${K}partners`, ...stamped.flatMap((p) => [p.id, JSON.stringify(p)])]]).catch(() => undefined);
   }
   return json({ created, failed });
 });

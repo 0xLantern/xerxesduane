@@ -35,8 +35,9 @@ export default handle(async (req) => {
 
   if (req.method === "PATCH") {
     const id = String(body.id ?? "");
-    if (!id || !(await allPartners()).some((p) => p.id === id)) return errorResponse("That partner isn't on the list any more.", 404);
-    const p = cleanPartner(body, id);
+    const current = (await allPartners()).find((p) => p.id === id);
+    if (!id || !current) return errorResponse("That partner isn't on the list any more.", 404);
+    const p = cleanPartner(body, id, current);
     if (typeof p === "string") return errorResponse(p);
     await savePartners([p]);
     return json({ partner: p });

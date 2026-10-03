@@ -12,7 +12,7 @@ export default handle(async (req) => {
   if (denied) return denied;
   const data = await buildExport();
   const csv = new URL(req.url).searchParams.get("format") === "csv";
-  const body = csv ? entriesCsv(data.entries, data.settings.rate, data.settings.currency) : JSON.stringify(data, null, 2);
+  const body = csv ? entriesCsv(data.entries, data.clients) : JSON.stringify(data, null, 2);
   const name = csv ? `hours-${today()}.csv` : `work-backup-${today()}.json`;
   return new Response(body, {
     headers: {

@@ -3,13 +3,35 @@
  * email address or a WhatsApp number, or both; the greeting is the name the
  * letter and messages use ("Dear Beat").
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { api, type Partner } from "./api";
-import { msg } from "./local";
+import { fmtShort, msg } from "./local";
 import { ACCENT, Box, Btn, Err, INK, Note, Pill, SOFT, inputCls } from "./ui";
 
-type Draft = { name: string; email: string; whatsapp: string; hello: string };
-const empty: Draft = { name: "", email: "", whatsapp: "", hello: "" };
+type Draft = { name: string; email: string; whatsapp: string; hello: string; giving: string; birthday: string; notes: string };
+const empty: Draft = { name: "", email: "", whatsapp: "", hello: "", giving: "", birthday: "", notes: "" };
+
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+/** "14 March" (and the age, when the year is known) from MM-DD or YYYY-MM-DD. */
+function fmtBirthday(b: string, now = new Date()): string {
+  const m = /^(?:(\d{4})-)?(\d{2})-(\d{2})$/.exec(b);
+  if (!m) return b;
+  const text = `${Number(m[3])} ${MONTHS[Number(m[2]) - 1]}`;
+  if (!m[1]) return text;
+  const age = now.getFullYear() - Number(m[1]) - (now.getMonth() + 1 < Number(m[2]) || (now.getMonth() + 1 === Number(m[2]) && now.getDate() < Number(m[3])) ? 1 : 0);
+  return `${text} (${age})`;
+}
+
+/** Days until the next birthday, 0 for today; null without one. */
+function daysToBirthday(b: string, now = new Date()): number | null {
+  const m = /^(?:\d{4}-)?(\d{2})-(\d{2})$/.exec(b);
+  if (!m) return null;
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  let next = Date.UTC(now.getFullYear(), Number(m[1]) - 1, Number(m[2]));
+  if (next < today) next = Date.UTC(now.getFullYear() + 1, Number(m[1]) - 1, Number(m[2]));
+  return Math.round((next - today) / 864e5);
+}
 
 const looksLikeNumber = (s: string) => /^[+\d\s().-]+$/.test(s) && s.replace(/\D/g, "").length >= 7;
 
@@ -58,6 +80,15 @@ export default function Partners({ partners, reload }: { partners: Partner[]; re
 
   const active = partners.filter((p) => p.active).length;
   const preview = parseBulk(bulk);
+  // Birthdays in the next month, soonest first: a line in the letter, or a message on the day.
+  const soon = useMemo(
+    () =>
+      partners
+        .map((p) => ({ p, days: daysToBirthday(p.birthday) }))
+        .filter((x): x is { p: Partner; days: number } => x.days !== null && x.days <= 30)
+        .sort((a, b) => a.days - b.days),
+    [partners],
+  );
   return (
     <div className="space-y-4">
       <Box className="space-y-3">
@@ -101,6 +132,26 @@ export default function Partners({ partners, reload }: { partners: Partner[]; re
         <Note>{note}</Note>
       </Box>
 
+      {soon.length > 0 && (
+        <Box>
+          <p className="font-bold" style={{ color: INK }}>
+            Birthdays coming up
+          </p>
+          <ul className="mt-2 space-y-1 text-[0.95rem]">
+            {soon.map(({ p, days }) => (
+              <li key={p.id} className="flex justify-between gap-3">
+                <span style={{ color: INK }}>
+                  {p.name} <span style={{ color: SOFT }}>· {fmtBirthday(p.birthday)}</span>
+                </span>
+                <span className="shrink-0 font-semibold" style={{ color: days === 0 ? ACCENT : SOFT }}>
+                  {days === 0 ? "Today" : days === 1 ? "Tomorrow" : `in ${days} days`}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Box>
+      )}
+
       <Box>
         <p className="font-bold" style={{ color: INK }}>
           {partners.length} partner{partners.length === 1 ? "" : "s"} · {active} receive letters
@@ -123,9 +174,14 @@ function Fields({ value, onChange }: { value: Draft; onChange: (d: Draft) => voi
       <input className={inputCls} placeholder="Greeting, e.g. Beat (optional)" aria-label="Greeting" value={value.hello} onChange={set("hello")} autoComplete="off" />
       <input className={inputCls} type="email" placeholder="Email (optional)" aria-label="Email" value={value.email} onChange={set("email")} autoComplete="off" />
       <input className={inputCls} type="tel" inputMode="tel" placeholder="WhatsApp, e.g. +971 50 123 4567" aria-label="WhatsApp number" value={value.whatsapp} onChange={set("whatsapp")} autoComplete="off" />
+      <input className={inputCls} placeholder="How they give, e.g. Monthly through GCN (optional)" aria-label="How they give" value={value.giving} onChange={set("giving")} autoComplete="off" />
+      <input className={inputCls} placeholder="Birthday, e.g. 14 March (optional)" aria-label="Birthday" value={value.birthday} onChange={set("birthday")} autoComplete="off" />
+      <textarea className={`${inputCls} sm:col-span-2`} rows={2} placeholder="Notes: family, church, how you met… (optional)" aria-label="Notes" value={value.notes} onChange={set("notes")} />
     </div>
   );
 }
+
+const toDraft = (p: Partner): Draft => ({ name: p.name, email: p.email, whatsapp: p.whatsapp ? `+${p.whatsapp}` : "", hello: p.hello, giving: p.giving, birthday: p.birthday, notes: p.notes });
 
 function Row({ p, reload }: { p: Partner; reload: () => Promise<void> }) {
   const [edit, setEdit] = useState<Draft | null>(null);
@@ -167,9 +223,19 @@ function Row({ p, reload }: { p: Partner; reload: () => Promise<void> }) {
           <p className="break-words text-sm" style={{ color: SOFT }}>
             {[p.email, p.whatsapp && `+${p.whatsapp}`].filter(Boolean).join(" · ")}
           </p>
+          {(p.giving || p.birthday || p.lastLetterAt) && (
+            <p className="break-words text-sm" style={{ color: SOFT }}>
+              {[p.giving, p.birthday && `🎂 ${fmtBirthday(p.birthday)}`, p.lastLetterAt && `last letter ${fmtShort(p.lastLetterAt)}`].filter(Boolean).join(" · ")}
+            </p>
+          )}
+          {p.notes && (
+            <p className="mt-1 whitespace-pre-line text-sm italic" style={{ color: INK }}>
+              {p.notes}
+            </p>
+          )}
         </div>
         <div className="flex shrink-0 gap-1">
-          <button type="button" className="min-h-11 rounded-full px-3 text-sm font-semibold hover:bg-[#f2ede4]" style={{ color: INK }} onClick={() => setEdit({ name: p.name, email: p.email, whatsapp: p.whatsapp ? `+${p.whatsapp}` : "", hello: p.hello })}>
+          <button type="button" className="min-h-11 rounded-full px-3 text-sm font-semibold hover:bg-[#f2ede4]" style={{ color: INK }} onClick={() => setEdit(toDraft(p))}>
             Edit
           </button>
           <button type="button" className="min-h-11 rounded-full px-3 text-sm font-semibold hover:bg-[#f2ede4]" style={{ color: INK }} onClick={() => void run(() => api.savePartner({ ...p, whatsapp: p.whatsapp ? `+${p.whatsapp}` : "", active: !p.active }))}>

@@ -1,6 +1,19 @@
 /** Typed calls to /api/letters/*, and sign-in through the hours log's owner session. */
 
-export type Partner = { id: string; name: string; email: string; whatsapp: string; hello: string; active: boolean };
+export type Partner = {
+  id: string;
+  name: string;
+  email: string;
+  whatsapp: string;
+  hello: string;
+  active: boolean;
+  /** How they give, in a line. */
+  giving: string;
+  /** MM-DD or YYYY-MM-DD. */
+  birthday: string;
+  notes: string;
+  lastLetterAt: number | null;
+};
 export type Settings = { sender: string; replyTo: string; waTemplate: string; allowDownload: boolean };
 export type Letter = {
   id: string;

@@ -51,6 +51,14 @@ export type Partner = {
   /** The greeting name: "Dear <hello>". */
   hello: string;
   active: boolean;
+  /** How they give, in a line: "Monthly through GCN", "Once a year". Optional. */
+  giving: string;
+  /** Birthday as MM-DD, or YYYY-MM-DD when the year is known. Optional. */
+  birthday: string;
+  /** Anything worth remembering about them. Optional. */
+  notes: string;
+  /** When they were last given a letter (set when their copy is made). */
+  lastLetterAt: number | null;
 };
 
 export type Settings = {
@@ -118,7 +126,7 @@ export async function allPartners(): Promise<Partner[]> {
   const out: Partner[] = [];
   for (const raw of pairs(flat).values()) {
     const p = parse<Partner>(raw);
-    if (p) out.push({ ...p, email: p.email ?? "", whatsapp: p.whatsapp ?? "" });
+    if (p) out.push({ ...p, email: p.email ?? "", whatsapp: p.whatsapp ?? "", giving: p.giving ?? "", birthday: p.birthday ?? "", notes: p.notes ?? "", lastLetterAt: p.lastLetterAt ?? null });
   }
   return out.sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -148,8 +156,27 @@ export function cleanWhatsapp(raw: string): string | null {
   return /^[1-9]\d{7,14}$/.test(d) ? d : null;
 }
 
+/** A birthday as typed: "14 March", "14/03", "2001-03-14", "03-14". Returns MM-DD or YYYY-MM-DD, "" for empty, null when it isn't a date. */
+export function cleanBirthday(raw: string): string | null {
+  const s = raw.trim().toLowerCase();
+  if (!s) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const ok = (m: number, d: number) => m >= 1 && m <= 12 && d >= 1 && d <= 31;
+  let m: RegExpExecArray | null;
+  if ((m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s))) return ok(+m[2], +m[3]) ? `${m[1]}-${pad(+m[2])}-${pad(+m[3])}` : null;
+  if ((m = /^(\d{1,2})-(\d{1,2})$/.exec(s))) return ok(+m[1], +m[2]) ? `${pad(+m[1])}-${pad(+m[2])}` : null;
+  if ((m = /^(\d{1,2})[/.](\d{1,2})(?:[/.](\d{4}))?$/.exec(s))) return ok(+m[2], +m[1]) ? `${m[3] ? `${m[3]}-` : ""}${pad(+m[2])}-${pad(+m[1])}` : null;
+  const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+  if ((m = /^(\d{1,2})\s+([a-z]+)(?:\s+(\d{4}))?$/.exec(s)) || (m = /^([a-z]+)\s+(\d{1,2})(?:,?\s+(\d{4}))?$/.exec(s))) {
+    const [day, mon] = /^\d/.test(m[1]) ? [+m[1], m[2]] : [+m[2], m[1]];
+    const mi = months.indexOf(mon.slice(0, 3));
+    return mi >= 0 && ok(mi + 1, day) ? `${m[3] ? `${m[3]}-` : ""}${pad(mi + 1)}-${pad(day)}` : null;
+  }
+  return null;
+}
+
 /** Validate a partner as typed. Returns the clean partner, or what to fix. */
-export function cleanPartner(p: Record<string, unknown>, id?: string): Partner | string {
+export function cleanPartner(p: Record<string, unknown>, id?: string, keep?: Partner): Partner | string {
   const name = String(p.name ?? "").replace(/\s+/g, " ").trim().slice(0, 100);
   const email = String(p.email ?? "").trim().toLowerCase().slice(0, 200);
   const wa = cleanWhatsapp(String(p.whatsapp ?? "").slice(0, 40));
@@ -158,7 +185,20 @@ export function cleanPartner(p: Record<string, unknown>, id?: string): Partner |
   if (wa === null) return `${name}'s WhatsApp number needs the country code, like +971 50 123 4567.`;
   if (!email && !wa) return `${name} needs an email address or a WhatsApp number.`;
   const hello = String(p.hello ?? "").replace(/\s+/g, " ").trim().slice(0, 60) || name.split(" ")[0];
-  return { id: id ?? randomToken(8), name, email, whatsapp: wa, hello, active: p.active !== false };
+  const birthday = cleanBirthday(String(p.birthday ?? "").slice(0, 40));
+  if (birthday === null) return `${name}'s birthday needs a day and a month, like 14 March or 14/03.`;
+  return {
+    id: id ?? randomToken(8),
+    name,
+    email,
+    whatsapp: wa,
+    hello,
+    active: p.active !== false,
+    giving: String(p.giving ?? "").replace(/\s+/g, " ").trim().slice(0, 120),
+    birthday,
+    notes: String(p.notes ?? "").replace(/\r/g, "").trim().slice(0, 1000),
+    lastLetterAt: keep?.lastLetterAt ?? null,
+  };
 }
 
 // ---------------------------------------------------------------------------

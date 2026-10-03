@@ -5,16 +5,28 @@
 // The client is fixed, so the bill-to block is too. Totals follow the log's
 // own rule (src/work/time.ts fmtMoney): hours rounded to two decimals, times
 // the rate, rounded to the cent once at the end.
-import { OWNER_EMAIL, allEntries, allPayments, getSettings, redis, type Entry, type Payment, type Settings } from "./_lib";
+import {
+  DEFAULT_CLIENT,
+  GCN_BILL_TO,
+  OWNER_EMAIL,
+  allEntries,
+  allPayments,
+  entriesOf,
+  gcnRecipients,
+  getSettings,
+  redis,
+  scoped,
+  settingsFor,
+  type BillTo,
+  type Client,
+  type Entry,
+  type Payment,
+  type Settings,
+} from "./_lib";
 import { renderPdf, toBase64 } from "./_pdf";
 
-export const BILL_TO = {
-  name: "GCN Great Commission Network",
-  lines: ["Mattenstrasse 62", "3800 Matten – Switzerland"],
-  phone: "+41 79 376 87 33",
-  email: "bb@gcn.live",
-  web: "www.gcn.live",
-} as const;
+/** GCN's billing block, which saved invoices from before clients were a list don't carry. */
+export const BILL_TO: BillTo = GCN_BILL_TO;
 
 /** The sender's address, under their name on every invoice. */
 export const FROM_ADDRESS = [
@@ -41,16 +53,26 @@ export const PAYMENT = {
   ],
 } as const;
 
-/** Where the monthly email goes. WORK_INVOICE_TO overrides it (comma-separated). */
-export function invoiceRecipients(): string[] {
-  const raw = process.env.WORK_INVOICE_TO || BILL_TO.email;
-  return raw.split(",").map((s) => s.trim()).filter(Boolean);
+/** Where a client's invoice email goes: the client's list, or for GCN the old default (WORK_INVOICE_TO / their billing email). */
+export function invoiceRecipients(client: Client): string[] {
+  if (client.invoiceTo.length) return client.invoiceTo;
+  return client.id === DEFAULT_CLIENT ? gcnRecipients() : [];
 }
 
 /** Same as WORK_ORIGIN in src/lib/host.ts, which is browser code and not importable here. */
 export const WORK_ORIGIN = "https://work.xerxesduane.com";
-const LOGO = `${WORK_ORIGIN}/brand/clients/gcn.png`;
+const GCN_LOGO = "/brand/clients/gcn.png";
 const OWN_LOGO_PATH = "/brand/mono/logo-black@2x.png";
+
+/** The client's logo path on this site: the invoice's own, else GCN's for invoices saved before clients were a list. */
+export function logoOf(inv: { logo?: string }): string {
+  return inv.logo === undefined ? GCN_LOGO : inv.logo;
+}
+
+/** The invoice's bill-to block, falling back to GCN's for older saved copies. */
+export function billToOf(inv: { billTo?: BillTo }): BillTo {
+  return inv.billTo ?? BILL_TO;
+}
 
 // Dubai time, UTC+4 all year: the same days and months the log shows.
 const OFFSET = 4 * 60 * 60 * 1000;
@@ -150,17 +172,26 @@ export type Invoice = {
   hours: number;
   total: number;
   settings: Settings;
+  /** Which client (invoices saved before clients were a list have none: GCN's). */
+  clientId?: string;
+  billTo?: BillTo;
+  /** Logo path on this site; "" for none. Missing means GCN's. */
+  logo?: string;
 };
 
-export function buildInvoice(entries: Entry[], settings: Settings, period: Period, now = Date.now()): Invoice {
-  const inMonth = entries.filter((e) => e.start >= period.from && e.start < period.to).sort((a, b) => a.start - b.start);
+/** The invoice for one client's month, from that client's entries. */
+export function buildInvoice(entries: Entry[], client: Client, owner: Settings, period: Period, now = Date.now()): Invoice {
+  const inMonth = entriesOf(entries, client.id)
+    .filter((e) => e.start >= period.from && e.start < period.to)
+    .sort((a, b) => a.start - b.start);
   const ms = inMonth.reduce((n, e) => n + (e.end - e.start), 0);
   const hours = Math.round((ms / HOUR) * 100) / 100;
+  const settings = settingsFor(owner, client);
   return {
     periodId: period.id,
-    // Sent by hand before saved copies existed, so treated as issued.
-    status: period.id < FIRST_SAVED ? "issued" : "draft",
-    number: `XD-GCN-${period.id}`,
+    // GCN's September 2026 went by hand before saved copies existed, so it counts as issued.
+    status: client.id === DEFAULT_CLIENT && period.id < FIRST_SAVED ? "issued" : "draft",
+    number: `XD-${client.short}-${period.id}`,
     period: period.label,
     issued: fmtDate(now),
     lines: inMonth.map((e) => ({
@@ -173,17 +204,25 @@ export function buildInvoice(entries: Entry[], settings: Settings, period: Perio
     hours,
     total: Math.round(hours * settings.rate * 100) / 100,
     settings,
+    clientId: client.id,
+    billTo: client.billTo,
+    logo: client.logo,
   };
 }
 
-/** Invoices before this period were sent before saved copies existed. */
+/** GCN invoices before this period were sent before saved copies existed. */
 export const FIRST_SAVED = "2026-10";
 
-const SNAP = (id: string) => `work:v1:inv:${id}`;
+/** True when this period's invoice counts as sent without a saved copy (GCN, by hand, before FIRST_SAVED). */
+export function sentByHand(client: Client, periodId: string): boolean {
+  return client.id === DEFAULT_CLIENT && periodId < FIRST_SAVED;
+}
+
+const SNAP = (client: string, id: string) => scoped(client, `inv:${id}`);
 
 /** The saved copy of an invoice that has been sent, if there is one. */
-export async function savedInvoice(id: string): Promise<Invoice | null> {
-  const [raw] = await redis([["GET", SNAP(id)]]);
+export async function savedInvoice(client: string, id: string): Promise<Invoice | null> {
+  const [raw] = await redis([["GET", SNAP(client, id)]]);
   if (typeof raw !== "string") return null;
   try {
     return JSON.parse(raw) as Invoice;
@@ -192,12 +231,12 @@ export async function savedInvoice(id: string): Promise<Invoice | null> {
   }
 }
 
-/** The invoice for a period as anyone should see it: the saved copy once sent, else a live draft. */
-export async function invoiceFor(period: Period): Promise<Invoice> {
-  const saved = await savedInvoice(period.id);
+/** The invoice for a client's period as anyone should see it: the saved copy once sent, else a live draft. */
+export async function invoiceFor(client: Client, period: Period): Promise<Invoice> {
+  const saved = await savedInvoice(client.id, period.id);
   if (saved) return saved;
-  const [entries, settings] = await Promise.all([allEntries(), getSettings()]);
-  return buildInvoice(entries, settings, period);
+  const [entries, owner] = await Promise.all([allEntries(), getSettings()]);
+  return buildInvoice(entries, client, owner, period);
 }
 
 /**
@@ -207,6 +246,7 @@ export async function invoiceFor(period: Period): Promise<Invoice> {
  * it the night the month ends), "sent" one that has.
  */
 export type InvoiceRow = {
+  client: string;
   periodId: string;
   label: string;
   number: string;
@@ -223,13 +263,14 @@ export type InvoiceRow = {
  * invoices come from their saved copies; the rest are built from the log.
  * `payments` is what the owner has marked paid, by period id.
  */
-export async function listInvoices(entries: Entry[], settings: Settings, payments: Record<string, Payment>, now = Date.now()): Promise<InvoiceRow[]> {
-  if (!entries.length) return [];
+export async function listInvoices(entries: Entry[], client: Client, owner: Settings, payments: Record<string, Payment>, now = Date.now()): Promise<InvoiceRow[]> {
+  const mine = entriesOf(entries, client.id);
+  if (!mine.length) return [];
   const current = periodContaining(now);
-  const first = periodContaining(Math.min(...entries.map((e) => e.start)));
+  const first = periodContaining(Math.min(...mine.map((e) => e.start)));
   const months: Period[] = [];
   for (let p = first; p.id <= current.id && months.length < 240; p = periodContaining(p.to)) months.push(p);
-  const saved = await redis(months.map((p) => ["GET", SNAP(p.id)]));
+  const saved = await redis(months.map((p) => ["GET", SNAP(client.id, p.id)]));
   return months.map((p, i) => {
     let inv: Invoice | null = null;
     if (typeof saved[i] === "string") {
@@ -239,9 +280,10 @@ export async function listInvoices(entries: Entry[], settings: Settings, payment
         inv = null;
       }
     }
-    const live = inv ?? buildInvoice(entries, settings, p, now);
-    const sent = !!inv || p.id < FIRST_SAVED;
+    const live = inv ?? buildInvoice(mine, client, owner, p, now);
+    const sent = !!inv || sentByHand(client, p.id);
     return {
+      client: client.id,
       periodId: p.id,
       label: p.label,
       number: live.number,
@@ -255,10 +297,17 @@ export async function listInvoices(entries: Entry[], settings: Settings, payment
   });
 }
 
-/** The invoice list with everything it needs read. */
-export async function invoiceList(now = Date.now()): Promise<InvoiceRow[]> {
-  const [entries, settings, payments] = await Promise.all([allEntries(), getSettings(), allPayments()]);
-  return listInvoices(entries, settings, payments, now);
+/** One client's invoice list with everything it needs read. */
+export async function invoiceList(client: Client, now = Date.now()): Promise<InvoiceRow[]> {
+  const [entries, owner, payments] = await Promise.all([allEntries(), getSettings(), allPayments(client.id)]);
+  return listInvoices(entries, client, owner, payments, now);
+}
+
+/** Every client's invoice rows in one list (each row names its client). */
+export async function allInvoiceRows(entries: Entry[], clients: Client[], owner: Settings, now = Date.now()): Promise<InvoiceRow[]> {
+  const out: InvoiceRow[] = [];
+  for (const c of clients) out.push(...(await listInvoices(entries, c, owner, await allPayments(c.id), now)));
+  return out;
 }
 
 /** What is still owed: every sent invoice not yet marked paid. */
@@ -280,33 +329,38 @@ export class EmptyInvoice extends Error {}
  * the email fails, so a failed send leaves nothing issued. A later send of
  * the same period only happens with `resend`, and mails the saved copy.
  */
-export async function sendInvoice(period: Period, token: string, opts: { resend?: boolean } = {}): Promise<Invoice> {
-  // September 2026 went out by hand before saved copies existed.
-  if (period.id < FIRST_SAVED) throw new AlreadySent(0);
-  const saved = await savedInvoice(period.id);
+export async function sendInvoice(client: Client, period: Period, token: string, opts: { resend?: boolean } = {}): Promise<Invoice> {
+  // GCN's September 2026 went out by hand before saved copies existed.
+  if (sentByHand(client, period.id)) throw new AlreadySent(0);
+  const to = invoiceRecipients(client);
+  if (!to.length) throw new NoRecipient("no address");
+  const saved = await savedInvoice(client.id, period.id);
   if (saved) {
     if (!opts.resend) throw new AlreadySent(saved.sentAt ?? 0);
-    await emailInvoice(saved, invoiceUrl(token, period.id));
+    await emailInvoice(saved, invoiceUrl(token, period.id), to);
     return saved;
   }
-  const [entries, settings] = await Promise.all([allEntries(), getSettings()]);
-  const draft = buildInvoice(entries, settings, period);
+  const [entries, owner] = await Promise.all([allEntries(), getSettings()]);
+  const draft = buildInvoice(entries, client, owner, period);
   if (draft.lines.length === 0) throw new EmptyInvoice("no hours");
   const now = Date.now();
   const inv: Invoice = { ...draft, status: "issued", sentAt: now, issued: fmtDate(now) };
-  const [claimed] = await redis([["SET", SNAP(period.id), JSON.stringify(inv), "NX"]]);
+  const [claimed] = await redis([["SET", SNAP(client.id, period.id), JSON.stringify(inv), "NX"]]);
   if (claimed !== "OK") {
-    const other = await savedInvoice(period.id);
+    const other = await savedInvoice(client.id, period.id);
     throw new AlreadySent(other?.sentAt ?? now);
   }
   try {
-    await emailInvoice(inv, invoiceUrl(token, period.id));
+    await emailInvoice(inv, invoiceUrl(token, period.id), to);
   } catch (err) {
-    await redis([["DEL", SNAP(period.id)]]).catch(() => undefined);
+    await redis([["DEL", SNAP(client.id, period.id)]]).catch(() => undefined);
     throw err;
   }
   return inv;
 }
+
+/** The client has no email to send invoices to. */
+export class NoRecipient extends Error {}
 
 /** A short note to the owner: a failed send, a forgotten timer. Best effort. */
 export async function notifyOwner(subject: string, body: string): Promise<void> {
@@ -332,9 +386,11 @@ export async function notifyOwner(subject: string, body: string): Promise<void> 
  */
 export function renderInvoice(inv: Invoice, opts: { printable?: boolean; viewUrl?: string; pdfUrl?: string } = {}): string {
   const { settings: s } = inv;
+  const BILL = billToOf(inv);
   // The page loads the logo from its own origin (the CSP allows only that);
   // an email needs the absolute address.
-  const logo = opts.printable ? "/brand/clients/gcn.png" : LOGO;
+  const logoPath = logoOf(inv);
+  const logo = logoPath ? (opts.printable ? logoPath : `${WORK_ORIGIN}${logoPath}`) : "";
   const ownLogo = opts.printable ? OWN_LOGO_PATH : `${WORK_ORIGIN}${OWN_LOGO_PATH}`;
   const cur = s.currency;
   const td = "padding:10px 8px;border-bottom:1px solid #e6e2d8;vertical-align:top;font-size:14px;color:#2b2420;";
@@ -357,7 +413,7 @@ export function renderInvoice(inv: Invoice, opts: { printable?: boolean; viewUrl
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Invoice ${esc(inv.number)} · ${esc(BILL_TO.name)}</title>
+<title>Invoice ${esc(inv.number)} · ${esc(BILL.name)}</title>
 <style>
   @page { size: A4; margin: 14mm; }
   @media print { .no-print { display: none !important; } body { background: #fff !important; } .sheet { box-shadow: none !important; margin: 0 !important; } }
@@ -376,7 +432,7 @@ ${
 <tr><td style="padding:32px 32px 8px;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
     <tr>
-      <td style="vertical-align:top;"><img src="${logo}" alt="GCN Great Commission Network" width="200" style="display:block;width:200px;max-width:100%;height:auto;"></td>
+      <td style="vertical-align:top;">${logo ? `<img src="${esc(logo)}" alt="${esc(BILL.name)}" width="200" style="display:block;width:200px;max-width:100%;height:auto;">` : `<div style="font-size:22px;font-weight:800;color:#2b1a14;">${esc(s.client)}</div>`}</td>
       <td style="vertical-align:top;text-align:right;">
         <div style="font-size:28px;font-weight:800;letter-spacing:.02em;color:${inv.status === "draft" ? "#a6410a" : "#2b1a14"};">${inv.status === "draft" ? "DRAFT" : "INVOICE"}</div>
         <div style="font-size:14px;color:#6b5f55;margin-top:4px;">No. <strong style="color:#2b2420;">${esc(inv.number)}</strong></div>
@@ -391,10 +447,9 @@ ${
     <tr>
       <td style="vertical-align:top;width:50%;padding-right:12px;font-size:14px;line-height:1.5;">
         <div style="font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:#8a7f75;margin-bottom:4px;">Bill to</div>
-        <strong>${esc(BILL_TO.name)}</strong><br>
-        ${BILL_TO.lines.map(esc).join("<br>")}<br>
-        ${esc(BILL_TO.phone)}<br>
-        <a href="mailto:${BILL_TO.email}" style="color:#3b6b35;">${BILL_TO.email}</a> · <a href="https://${BILL_TO.web}" style="color:#3b6b35;">${BILL_TO.web}</a>
+        <strong>${esc(BILL.name)}</strong><br>
+        ${[...BILL.lines, BILL.phone].filter(Boolean).map(esc).join("<br>")}${BILL.lines.length || BILL.phone ? "<br>" : ""}
+        ${[BILL.email && `<a href="mailto:${esc(BILL.email)}" style="color:#3b6b35;">${esc(BILL.email)}</a>`, BILL.web && `<a href="https://${esc(BILL.web)}" style="color:#3b6b35;">${esc(BILL.web)}</a>`].filter(Boolean).join(" · ")}
       </td>
       <td style="vertical-align:top;width:50%;padding-left:12px;font-size:14px;line-height:1.5;text-align:right;">
         <img src="${ownLogo}" alt="Xerxes Duane" width="140" style="display:inline-block;width:140px;max-width:100%;height:auto;margin:0 -12px 6px 0;">
@@ -454,7 +509,7 @@ export function invoiceUrl(token: string, period: string): string {
  * Send the invoice by email through Resend (RESEND_API_KEY). The owner is
  * copied and set as reply-to, so GCN's answer comes straight back.
  */
-export async function emailInvoice(inv: Invoice, viewUrl: string): Promise<void> {
+export async function emailInvoice(inv: Invoice, viewUrl: string, to: string[]): Promise<void> {
   const key = process.env.RESEND_API_KEY;
   if (!key) throw new MailMissing("no key");
   const from = process.env.WORK_INVOICE_FROM || `${inv.settings.name} <invoices@xerxesduane.com>`;
@@ -464,7 +519,7 @@ export async function emailInvoice(inv: Invoice, viewUrl: string): Promise<void>
     headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
     body: JSON.stringify({
       from,
-      to: invoiceRecipients(),
+      to,
       cc: [OWNER_EMAIL],
       reply_to: OWNER_EMAIL,
       subject: `Invoice ${inv.number} · ${inv.period} · ${money(inv.total, inv.settings.currency)}`,

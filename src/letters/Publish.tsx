@@ -6,6 +6,8 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import type { Partner, Settings } from "./api";
+import { clearDraft } from "./compose";
+import Editor from "./Editor";
 import type { Fresh } from "./LetterDetail";
 import { fmtSize, msg } from "./local";
 import { PdfPage } from "./Pages";
@@ -14,7 +16,7 @@ import { publish, type Step } from "./publish";
 import { LIFESPAN_DAYS, MAX_PDF_BYTES } from "./shared";
 import { ACCENT, Bar, Box, Btn, Check, Err, INK, Label, Reach, SERIF, SOFT, inputCls } from "./ui";
 
-type Picked = { name: string; bytes: Uint8Array; doc: PDFDocumentProxy };
+type Picked = { name: string; bytes: Uint8Array; doc: PDFDocumentProxy; written?: boolean };
 
 /** "Xerxes_Loraine_Arise_Asia_2026_1.pdf" -> "Xerxes Loraine Arise Asia 2026 1" */
 /** Drop a trailing " | Senders" or " - Senders" from a PDF title: partners already see who it is from. */
@@ -32,6 +34,7 @@ export default function Publish({ partners, settings, onCancel, onDone }: { part
   const [reading, setReading] = useState(false);
   const [error, setError] = useState("");
   const [drag, setDrag] = useState(false);
+  const [writing, setWriting] = useState(false);
   const input = useRef<HTMLInputElement>(null);
 
   // Let go of the old document when a new one is picked, or on leaving.
@@ -58,6 +61,20 @@ export default function Publish({ partners, settings, onCancel, onDone }: { part
     }
   };
 
+  // From the editor: the composed PDF, previewed like an uploaded one.
+  const written = async (bytes: Uint8Array, name: string) => {
+    setError("");
+    try {
+      const doc = await openPdf(bytes.slice());
+      setFile({ name: `${name}.pdf`, bytes, doc, written: true });
+      setTitle(name);
+      setWriting(false);
+      window.scrollTo(0, 0);
+    } catch (e) {
+      setError(msg(e));
+    }
+  };
+
   const onDrop = (e: DragEvent) => {
     e.preventDefault();
     setDrag(false);
@@ -78,6 +95,7 @@ export default function Publish({ partners, settings, onCancel, onDone }: { part
     setStep({ label: "Encrypting the PDF", done: 0, total: 1 });
     try {
       const r = await publish(file.bytes, { title: title.trim(), allowDownload: allow, sender: settings.sender, partners: recipients }, setStep);
+      if (file.written) clearDraft();
       onDone(r.letter.id, { rec: r.rec, result: r.result });
     } catch (e) {
       setStep(null);
@@ -98,6 +116,8 @@ export default function Publish({ partners, settings, onCancel, onDone }: { part
       </Box>
     );
   }
+
+  if (writing) return <Editor sender={settings.sender} onCancel={() => setWriting(false)} onPdf={(bytes, name) => void written(bytes, name)} />;
 
   return (
     <div className="space-y-4">
@@ -126,9 +146,17 @@ export default function Publish({ partners, settings, onCancel, onDone }: { part
             <p className="mt-1 text-sm" style={{ color: SOFT }}>
               Up to 25 MB. It stays on this device until it's encrypted.
             </p>
-            <Btn kind="primary" className="mt-4" disabled={reading} onClick={() => input.current?.click()}>
-              Choose a PDF
-            </Btn>
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              <Btn kind="primary" disabled={reading} onClick={() => input.current?.click()}>
+                Choose a PDF
+              </Btn>
+              <Btn disabled={reading} onClick={() => setWriting(true)}>
+                Write it here
+              </Btn>
+            </div>
+            <p className="mt-3 text-sm" style={{ color: SOFT }}>
+              Or write the letter on this page, with photos, and it's laid out as a PDF for you.
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -141,9 +169,12 @@ export default function Publish({ partners, settings, onCancel, onDone }: { part
               <p className="min-w-0 text-sm" style={{ color: SOFT }}>
                 <span className="font-semibold" style={{ color: INK }}>{file.name}</span> · {file.doc.numPages} page{file.doc.numPages === 1 ? "" : "s"} · {fmtSize(file.bytes.length)}
               </p>
-              <Btn onClick={() => input.current?.click()} disabled={reading}>
-                Choose another
-              </Btn>
+              <span className="flex gap-2">
+                {file.written && <Btn onClick={() => setWriting(true)}>Edit the letter</Btn>}
+                <Btn onClick={() => input.current?.click()} disabled={reading}>
+                  Choose another
+                </Btn>
+              </span>
             </div>
           </div>
         )}

@@ -4,6 +4,7 @@ import {
   deleteEntry,
   errorResponse,
   findEntry,
+  getClients,
   handle,
   json,
   newId,
@@ -18,9 +19,10 @@ export default handle(async (req) => {
   const denied = await requireOwner(req, true);
   if (denied) return denied;
   const body = await readJson(req);
+  const clients = await getClients();
 
   if (req.method === "POST") {
-    const clean = cleanEntry(body);
+    const clean = cleanEntry(body, clients);
     if (typeof clean === "string") return errorResponse(clean);
     return json({ entry: await saveEntry({ id: newId(clean.start, body.key), ...clean }) }, 201);
   }
@@ -30,7 +32,7 @@ export default handle(async (req) => {
   if (!existing) return errorResponse("That entry no longer exists. Refresh the page.", 404);
 
   if (req.method === "PATCH") {
-    const clean = cleanEntry(body);
+    const clean = cleanEntry({ client: existing.client, ...body }, clients);
     if (typeof clean === "string") return errorResponse(clean);
     return json({ entry: await saveEntry({ id: existing.id, ...clean }, existing) });
   }
