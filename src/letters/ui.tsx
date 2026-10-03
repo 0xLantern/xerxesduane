@@ -18,7 +18,7 @@ export function Box({ children, className = "" }: { children: ReactNode; classNa
 type BtnProps = {
   children: ReactNode;
   onClick?: () => void;
-  kind?: "primary" | "ghost" | "danger" | "whatsapp";
+  kind?: "primary" | "ghost" | "danger" | "whatsapp" | "messenger";
   disabled?: boolean;
   type?: "button" | "submit";
   className?: string;
@@ -31,8 +31,9 @@ export function Btn({ children, onClick, kind = "ghost", disabled, type = "butto
     ghost: "border border-[#ddd5c7] bg-white hover:bg-[#faf8f4]",
     danger: "border border-red-200 bg-white text-red-700 hover:bg-red-50",
     whatsapp: "text-white hover:opacity-90",
+    messenger: "text-white hover:opacity-90",
   }[kind];
-  const style = kind === "primary" ? { background: INK } : kind === "whatsapp" ? { background: "#1f8a4c" } : kind === "ghost" ? { color: INK } : undefined;
+  const style = kind === "primary" ? { background: INK } : kind === "whatsapp" ? { background: "#1f8a4c" } : kind === "messenger" ? { background: "#0866ff" } : kind === "ghost" ? { color: INK } : undefined;
   const cls = `inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-[0.95rem] font-bold transition disabled:opacity-50 ${look} ${className}`;
   if (href) {
     return (
@@ -88,11 +89,12 @@ export function Pill({ children, tone = "plain" }: { children: ReactNode; tone?:
 }
 
 /** How a partner can be reached: small tags. */
-export function Reach({ email, whatsapp }: { email: string; whatsapp: string }) {
+export function Reach({ email, whatsapp, messenger = "" }: { email: string; whatsapp: string; messenger?: string }) {
   return (
     <span className="inline-flex flex-wrap gap-1">
       {email && <Tag>Email</Tag>}
       {whatsapp && <Tag>WhatsApp</Tag>}
+      {messenger && <Tag>Messenger</Tag>}
     </span>
   );
 }

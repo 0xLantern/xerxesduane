@@ -48,6 +48,8 @@ export type Partner = {
   email: string;
   /** Optional; E.164 digits without the +, e.g. 971501234567. */
   whatsapp: string;
+  /** Optional; a Facebook username or profile number, reached at m.me/<messenger>. */
+  messenger: string;
   /** The greeting name: "Dear <hello>". */
   hello: string;
   active: boolean;
@@ -126,7 +128,7 @@ export async function allPartners(): Promise<Partner[]> {
   const out: Partner[] = [];
   for (const raw of pairs(flat).values()) {
     const p = parse<Partner>(raw);
-    if (p) out.push({ ...p, email: p.email ?? "", whatsapp: p.whatsapp ?? "", giving: p.giving ?? "", birthday: p.birthday ?? "", notes: p.notes ?? "", lastLetterAt: p.lastLetterAt ?? null });
+    if (p) out.push({ ...p, email: p.email ?? "", whatsapp: p.whatsapp ?? "", messenger: p.messenger ?? "", giving: p.giving ?? "", birthday: p.birthday ?? "", notes: p.notes ?? "", lastLetterAt: p.lastLetterAt ?? null });
   }
   return out.sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -175,6 +177,24 @@ export function cleanBirthday(raw: string): string | null {
   return null;
 }
 
+/**
+ * A Messenger contact as pasted: a profile link (facebook.com/name,
+ * facebook.com/profile.php?id=123, fb.com/name), a chat link (m.me/name,
+ * messenger.com/t/name) or a bare username. Returns the username or profile
+ * number, "" for empty, null when it isn't one.
+ */
+export function cleanMessenger(raw: string): string | null {
+  let s = raw.trim();
+  if (!s) return "";
+  s = s.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/^(m\.|web\.|mobile\.)(?=facebook\.com)/i, "");
+  const id = /^(?:facebook\.com|fb\.com)\/profile\.php\?(?:.*&)?id=(\d{5,20})/i.exec(s);
+  if (id) return id[1];
+  const path = /^(?:facebook\.com|fb\.com|fb\.me|m\.me|messenger\.com\/t)\/([A-Za-z0-9.]{1,80})\/?(?:[?#].*)?$/i.exec(s);
+  const name = path ? path[1] : s.replace(/^@/, "");
+  if (["profile.php", "people", "groups", "pages", "share"].includes(name.toLowerCase())) return null;
+  return /^[A-Za-z0-9.]{5,80}$/.test(name) && !/^\./.test(name) ? name : null;
+}
+
 /** Validate a partner as typed. Returns the clean partner, or what to fix. */
 export function cleanPartner(p: Record<string, unknown>, id?: string, keep?: Partner): Partner | string {
   const name = String(p.name ?? "").replace(/\s+/g, " ").trim().slice(0, 100);
@@ -183,7 +203,9 @@ export function cleanPartner(p: Record<string, unknown>, id?: string, keep?: Par
   if (!name) return "Give the partner's name.";
   if (email && !isEmail(email)) return `"${email}" doesn't look like an email address.`;
   if (wa === null) return `${name}'s WhatsApp number needs the country code, like +971 50 123 4567.`;
-  if (!email && !wa) return `${name} needs an email address or a WhatsApp number.`;
+  const messenger = cleanMessenger(String(p.messenger ?? "").slice(0, 200));
+  if (messenger === null) return `${name}'s Messenger needs their Facebook profile link, like facebook.com/ramon.cruz.`;
+  if (!email && !wa && !messenger) return `${name} needs an email address, a WhatsApp number or Messenger.`;
   const hello = String(p.hello ?? "").replace(/\s+/g, " ").trim().slice(0, 60) || name.split(" ")[0];
   const birthday = cleanBirthday(String(p.birthday ?? "").slice(0, 40));
   if (birthday === null) return `${name}'s birthday needs a day and a month, like 14 March or 14/03.`;
@@ -192,6 +214,7 @@ export function cleanPartner(p: Record<string, unknown>, id?: string, keep?: Par
     name,
     email,
     whatsapp: wa,
+    messenger,
     hello,
     active: p.active !== false,
     giving: String(p.giving ?? "").replace(/\s+/g, " ").trim().slice(0, 120),

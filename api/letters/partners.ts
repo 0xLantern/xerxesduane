@@ -16,6 +16,7 @@ export default handle(async (req) => {
     const current = await allPartners();
     const emails = new Set(current.map((p) => p.email).filter(Boolean));
     const numbers = new Set(current.map((p) => p.whatsapp).filter(Boolean));
+    const fbs = new Set(current.map((p) => p.messenger.toLowerCase()).filter(Boolean));
     const add: Partner[] = [];
     const skipped: string[] = [];
     for (const raw of list.slice(0, 500)) {
@@ -23,9 +24,11 @@ export default handle(async (req) => {
       if (typeof p === "string") skipped.push(p);
       else if (p.email && emails.has(p.email)) skipped.push(`${p.email} is already on the list.`);
       else if (p.whatsapp && numbers.has(p.whatsapp)) skipped.push(`+${p.whatsapp} is already on the list.`);
+      else if (p.messenger && fbs.has(p.messenger.toLowerCase())) skipped.push(`${p.name}'s Messenger is already on the list.`);
       else {
         if (p.email) emails.add(p.email);
         if (p.whatsapp) numbers.add(p.whatsapp);
+        if (p.messenger) fbs.add(p.messenger.toLowerCase());
         add.push(p);
       }
     }
