@@ -96,7 +96,7 @@ export default function LetterDetail({ id, fresh, partners, settings, onBack }: 
         <p className="text-sm" style={{ color: SOFT }}>
           Published {fmtShort(letter.publishedAt)} · available until {fmtDate(letter.expiresAt)} · {fmtSize(letter.size)} · download {letter.allowDownload ? "allowed" : "off"}
         </p>
-        <div className="grid grid-cols-4 gap-2 text-center">
+        <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
           <Stat label="Copies" value={String(copies.length)} />
           <Stat label="Opened" value={`${opened}`} />
           <Stat label="Praying" value={`${praying}`} />
@@ -138,11 +138,13 @@ export default function LetterDetail({ id, fresh, partners, settings, onBack }: 
               const p = byId.get(c.partnerId);
               const link = keys?.links[c.copyId]?.link;
               const done = !!sent[c.copyId];
+              // Emailed and not on WhatsApp: nothing left to send by hand.
+              const tickable = !!link && !(c.mailed && !p?.whatsapp);
               const withdraw = live ? (
                 <button
                   type="button"
                   disabled={!!busy}
-                  className="min-h-11 shrink-0 rounded-full px-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                  className="ml-auto min-h-11 shrink-0 rounded-full px-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
                   onClick={() => {
                     if (!window.confirm(`Withdraw ${c.name}'s copy? Their link stops working at once.`)) return;
                     void act("withdraw", async () => {
@@ -163,44 +165,28 @@ export default function LetterDetail({ id, fresh, partners, settings, onBack }: 
               ) : null;
               return (
                 <li key={c.copyId} className="py-3">
-                  <div className="flex items-start gap-2">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold" style={{ color: INK }}>
-                        {c.name}
-                      </p>
-                      <p className="text-sm" style={{ color: SOFT }}>
-                        {c.opened ? <span style={{ color: GOOD }}>Opened {fmtTime(c.opened)}</span> : "Not opened yet"}
-                        {c.mailed ? " · emailed" : ""}
-                        {c.praying ? <span style={{ color: "#8a6a2e" }}> · 🙏 praying{c.praying.at ? ` (${fmtTime(c.praying.at)})` : ""}</span> : ""}
-                      </p>
-                      {c.praying?.note && (
-                        <p className="mt-1 rounded-xl bg-[#faf6ee] px-3 py-2 text-sm italic leading-relaxed" style={{ color: INK }}>
-                          “{c.praying.note}”
-                        </p>
-                      )}
-                    </div>
-                    {link ? (
-                      <button
-                        type="button"
-                        aria-pressed={done}
-                        onClick={() => tick(c.copyId, !done)}
-                        className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-bold"
-                        style={done ? { borderColor: "#bcd6b5", background: "#e3eedf", color: GOOD } : { borderColor: "#ddd5c7", color: SOFT }}
-                      >
-                        <span aria-hidden="true">{done ? "✓" : "○"}</span> Sent
-                      </button>
-                    ) : null}
-                    {withdraw}
-                  </div>
-                  {link && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {p?.whatsapp && (
+                  <p className="font-semibold" style={{ color: INK }}>
+                    {c.name}
+                  </p>
+                  <p className="text-sm" style={{ color: SOFT }}>
+                    {c.opened ? <span style={{ color: GOOD }}>Opened {fmtTime(c.opened)}</span> : "Not opened yet"}
+                    {c.mailed ? " · emailed" : ""}
+                    {c.praying ? <span style={{ color: "#8a6a2e" }}> · 🙏 praying{c.praying.at ? ` (${fmtTime(c.praying.at)})` : ""}</span> : ""}
+                  </p>
+                  {c.praying?.note && (
+                    <p className="mt-1 rounded-xl bg-[#faf6ee] px-3 py-2 text-sm italic leading-relaxed" style={{ color: INK }}>
+                      “{c.praying.note}”
+                    </p>
+                  )}
+                  {(link || withdraw) && (
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      {link && p?.whatsapp && (
                         <Btn kind="whatsapp" href={waUrl(p.whatsapp, message(p, link))} onClick={() => tick(c.copyId, true)}>
                           Send on WhatsApp
                         </Btn>
                       )}
-                      <Btn onClick={() => void copy(c.copyId, link)}>{copied === c.copyId ? "Copied" : "Copy link"}</Btn>
-                      {p?.email && !c.mailed && (
+                      {link && <Btn onClick={() => void copy(c.copyId, link)}>{copied === c.copyId ? "Copied" : "Copy link"}</Btn>}
+                      {link && p?.email && !c.mailed && (
                         <Btn
                           disabled={!!busy}
                           onClick={() =>
@@ -213,6 +199,18 @@ export default function LetterDetail({ id, fresh, partners, settings, onBack }: 
                           Send email
                         </Btn>
                       )}
+                      {tickable && (
+                        <button
+                          type="button"
+                          aria-pressed={done}
+                          onClick={() => tick(c.copyId, !done)}
+                          className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-bold"
+                          style={done ? { borderColor: "#bcd6b5", background: "#e3eedf", color: GOOD } : { borderColor: "#ddd5c7", color: SOFT }}
+                        >
+                          <span aria-hidden="true">{done ? "✓" : "○"}</span> Sent
+                        </button>
+                      )}
+                      {withdraw}
                     </div>
                   )}
                 </li>

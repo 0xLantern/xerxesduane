@@ -1,7 +1,8 @@
 // A partner's reply from inside their letter: "Praying for you", with an
 // optional line. No login: the copy id is the partner's, the same way the
 // letter is. Stored with the letter and gone when it is; the owner sees it
-// on the desk, and gets one email per partner per letter.
+// on the desk, and gets an email the first time, and again if a line is
+// added or changed afterwards (sending no line keeps the one there was).
 //   POST { c: copyId, note? }
 import { K, allPartners, copiesOf, errorResponse, esc, getLetter, handle, json, readJson, redis, ttl } from "./_lib";
 import { underLimit } from "../work/_lib";
@@ -29,17 +30,27 @@ export default handle(async (req) => {
   const letter = letterId ? await getLetter(letterId) : null;
   if (!letter || letter.status !== "live") return errorResponse(GONE, 404);
 
-  const note = String(body.note ?? "").replace(/\s+/g, " ").trim().slice(0, 300);
-  const at = Date.now();
+  const typed = String(body.note ?? "").replace(/\s+/g, " ").trim().slice(0, 300);
   const [existing] = await redis([["HGET", `${K}react:${letter.id}`, c]]);
-  const first = typeof existing !== "string";
+  const before = ((): { at: number; note: string } | null => {
+    try {
+      const r = typeof existing === "string" ? (JSON.parse(existing) as { at?: unknown; note?: unknown }) : null;
+      return r ? { at: Number(r.at) || Date.now(), note: String(r.note ?? "") } : null;
+    } catch {
+      return null;
+    }
+  })();
+  // When they first said so stays; a later empty send doesn't wipe their line.
+  const at = before?.at ?? Date.now();
+  const note = typed || before?.note || "";
   await redis([
     ["HSET", `${K}react:${letter.id}`, c, JSON.stringify({ at, note })],
-    ["EXPIRE", `${K}react:${letter.id}`, ttl(letter, at)],
+    ["EXPIRE", `${K}react:${letter.id}`, ttl(letter)],
   ]);
 
-  // Tell the owner, once per partner per letter. Best effort.
-  if (first) {
+  // Tell the owner: the first time, and when a line arrives later. Best effort.
+  const lineAdded = !!before && !!typed && typed !== before.note;
+  if (!before || lineAdded) {
     const key = process.env.RESEND_API_KEY;
     if (key) {
       const partnerId = (await copiesOf(letter.id)).get(c);
@@ -52,9 +63,9 @@ export default handle(async (req) => {
         body: JSON.stringify({
           from,
           to: [OWNER_EMAIL],
-          subject: `🙏 ${who} is praying for you`,
+          subject: lineAdded ? `🙏 ${who} added a line` : `🙏 ${who} is praying for you`,
           html: `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#2b2420;">
-<p><strong>${esc(who)}</strong> read <em>${esc(letter.title)}</em> and tapped <strong>Praying for you</strong>.</p>
+<p>${lineAdded ? `<strong>${esc(who)}</strong>, praying for you since reading <em>${esc(letter.title)}</em>, added a line:` : `<strong>${esc(who)}</strong> read <em>${esc(letter.title)}</em> and tapped <strong>Praying for you</strong>.`}</p>
 ${note ? `<blockquote style="margin:12px 0;padding:10px 14px;border-left:3px solid #8a6a2e;background:#faf6ee;">${esc(note)}</blockquote>` : ""}
 <p style="color:#8a7f75;font-size:13px;">ministry.xerxesduane.com/letters</p></div>`,
         }),

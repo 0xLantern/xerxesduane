@@ -12,7 +12,7 @@ import type { PDFDocumentProxy } from "pdfjs-dist";
 import { api } from "./api";
 import { PdfPages } from "./Pages";
 import { openPdf, pdfjs } from "./pdf";
-import { LINK_KEY, decrypt, fmtDate, fromB64url, importKey, type Wrapped } from "./shared";
+import { LINK_KEY, decrypt, fmtDate, fromB64url, importKey, shortName, type Wrapped } from "./shared";
 import { ACCENT, Bar, INK, PAPER, SERIF, SOFT } from "./ui";
 
 type State =
@@ -28,6 +28,20 @@ type Extras = { praying: boolean; prayer: string | null };
 const INCOMPLETE = "This link isn't complete. Please open it straight from the message it came in, without changing it.";
 const GONE = "This letter has expired or was withdrawn.";
 const OFFLINE = "The letter couldn't be loaded. Please check your connection and try again.";
+
+/**
+ * True on a device the desk has published from (it keeps letters' links in
+ * this site's storage, local.ts). Opening a partner's link there is the
+ * owner checking it, so it isn't counted as that partner's open.
+ */
+function ownDevice(): boolean {
+  try {
+    for (let i = 0; i < localStorage.length; i++) if (localStorage.key(i)?.startsWith("letters-desk:")) return true;
+  } catch {
+    /* storage blocked: count it */
+  }
+  return false;
+}
 
 /** Fetch with one quiet retry, for a phone on a patchy connection. */
 async function get(url: string): Promise<Response | null> {
@@ -70,7 +84,7 @@ export default function Reader({ copyId }: { copyId: string }) {
         setState({ kind: "gone", message: INCOMPLETE });
         return;
       }
-      const res = await get(`/api/letters/read?c=${copyId}`);
+      const res = await get(`/api/letters/read?c=${copyId}${ownDevice() ? "&peek=1" : ""}`);
       if (cancelled) return;
       if (!res || !res.ok) {
         setState(res?.status === 404 ? { kind: "gone", message: GONE } : { kind: "gone", message: OFFLINE, retry: true });
@@ -198,7 +212,7 @@ export default function Reader({ copyId }: { copyId: string }) {
               {w.title}
             </h1>
             <p className="mt-3 text-[0.95rem]" style={{ color: SOFT }}>
-              Private, just for you{w.hello ? `, ${w.hello}` : ""}. Available until {fmtDate(w.expiresAt)}.
+              Private, just for you{w.hello ? `, ${w.hello}` : ""}. Available until <span className="whitespace-nowrap">{fmtDate(w.expiresAt)}</span>.
             </p>
             {state.kind === "ready" && w.allowDownload && (
               <button
@@ -228,8 +242,8 @@ export default function Reader({ copyId }: { copyId: string }) {
               Private by design
             </p>
             <p className="mt-1">
-              This letter was encrypted before it was sent, and only the key in your link opens it, here in your browser. The website never has a copy it can read, and deletes even
-              the encrypted one after {fmtDate(w.expiresAt)}. Please don't forward your link: it's just for you.
+              This letter was encrypted before it was sent, and only the key in your link opens it, here in your browser. The website only ever stores it encrypted, and deletes
+              even that after {fmtDate(w.expiresAt)}. Please don't forward your link: it's just for you.
             </p>
           </footer>
         </>
@@ -247,9 +261,10 @@ function Reply({ copyId, sender, already, prayer }: { copyId: string; sender: st
   const [sent, setSent] = useState(already);
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
+  const [noted, setNoted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const first = sender.split(" ")[0] || sender;
+  const first = shortName(sender);
 
   const send = async () => {
     setBusy(true);
@@ -257,6 +272,7 @@ function Reply({ copyId, sender, already, prayer }: { copyId: string; sender: st
     try {
       await api.react(copyId, note.trim());
       setSent(true);
+      setNoted(!!note.trim());
       setOpen(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "That didn't go through. Please try again.");
@@ -274,22 +290,24 @@ function Reply({ copyId, sender, already, prayer }: { copyId: string; sender: st
               🙏
             </p>
             <p className="mt-2 text-lg font-bold" style={{ color: INK, fontFamily: SERIF }}>
-              Thank you. {first} will know you're praying.
+              {noted ? `Thank you. ${first} will see your line.` : `Thank you. ${first} will know you're praying.`}
             </p>
             <button type="button" onClick={() => setOpen(true)} className="mt-3 min-h-11 text-sm font-semibold" style={{ color: SOFT }}>
-              Add a line
+              {noted ? "Change your line" : "Add a line"}
             </button>
           </>
         ) : (
           <>
             <p className="text-lg font-bold" style={{ color: INK, fontFamily: SERIF }}>
-              Let {first} know you're praying
+              {sent ? `A line for ${first}` : `Let ${first} know you're praying`}
             </p>
             <p className="mt-1 text-sm" style={{ color: SOFT }}>
-              One tap is enough. It goes to {first} only.
+              {sent ? `It goes to ${first} only.` : `One tap is enough. It goes to ${first} only.`}
             </p>
             {open && (
               <textarea
+                autoFocus
+                aria-label={`A line for ${first}`}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 maxLength={300}
@@ -303,15 +321,20 @@ function Reply({ copyId, sender, already, prayer }: { copyId: string; sender: st
               <button
                 type="button"
                 onClick={() => void send()}
-                disabled={busy}
+                disabled={busy || (sent && !note.trim())}
                 className="inline-flex min-h-12 items-center gap-2 rounded-full px-6 text-[1rem] font-bold text-white disabled:opacity-60"
                 style={{ background: INK }}
               >
                 <span aria-hidden="true">🙏</span> {busy ? "Sending…" : sent ? "Send the line" : "Praying for you"}
               </button>
-              {!open && (
-                <button type="button" onClick={() => setOpen(true)} className="inline-flex min-h-12 items-center rounded-full border border-[#ddd5c7] bg-white px-5 text-[0.95rem] font-bold" style={{ color: INK }}>
-                  Add a line
+              {(!open || sent) && (
+                <button
+                  type="button"
+                  onClick={() => setOpen(!open)}
+                  className="inline-flex min-h-12 items-center rounded-full border border-[#ddd5c7] bg-white px-5 text-[0.95rem] font-bold"
+                  style={{ color: INK }}
+                >
+                  {open ? "Cancel" : "Add a line"}
                 </button>
               )}
             </div>

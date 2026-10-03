@@ -347,10 +347,14 @@ export function letterEmail(p: Partner, title: string, link: string, s: Settings
 <p style="font-size:14px;color:#6b5f55;">It's private: only this link opens it, it's just for you, and it's available until ${esc(until)}. Please don't forward this email.</p>
 <p>Thank you for praying with us and standing with us.<br>With gratitude,<br>${esc(s.sender)}</p>
 </div>`;
+  const replyTo = s.replyTo || OWNER_EMAIL;
   return {
     from,
     to: [p.email],
-    reply_to: s.replyTo || OWNER_EMAIL,
+    reply_to: replyTo,
+    // Mail apps show an Unsubscribe button for this, which writes to the
+    // owner (who pauses the partner) instead of the letter landing in spam.
+    headers: { "List-Unsubscribe": `<mailto:${replyTo}?subject=${encodeURIComponent("Please stop sending me letters")}>` },
     subject: title,
     html,
     text: `Dear ${hello},\n\nOur new letter, "${title}", is ready, and this copy is just for you:\n${link}\n\nIt's private: only this link opens it, and it's available until ${until}. Please don't forward this email.\n\nThank you for praying with us and standing with us.\nWith gratitude,\n${s.sender}`,

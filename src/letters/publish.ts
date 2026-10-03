@@ -74,6 +74,9 @@ export async function publish(
     links: {},
   };
   const kept = local.save(rec);
+  // These links exist nowhere else: ask the browser not to clear this site's
+  // storage on its own, as Safari can after a few weeks without a visit.
+  void navigator.storage?.persist?.().catch(() => false);
   const sent = await sendCopies(rec, opts.partners, onStep);
   return { letter: live, rec: sent.rec, result: { ...sent.result, kept: kept && sent.result.kept } };
 }

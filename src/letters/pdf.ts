@@ -25,7 +25,19 @@ export function pdfjs(): Promise<Lib> {
  */
 export async function openPdf(bytes: Uint8Array): Promise<PDFDocumentProxy> {
   const m = await pdfjs();
-  return m.getDocument({ data: bytes, verbosity: m.VerbosityLevel.ERRORS, enableXfa: false }).promise;
+  // pdf.js's data files, served from this site by the pdfjs-data plugin in
+  // vite.config.ts: without them, JPEG 2000 and scanned (JBIG2, CCITT) images
+  // draw blank, and fonts a PDF doesn't embed are only guessed at.
+  const data = new URL(`/pdfjs/${m.version}/`, window.location.origin).href;
+  return m.getDocument({
+    data: bytes,
+    verbosity: m.VerbosityLevel.ERRORS,
+    enableXfa: false,
+    wasmUrl: `${data}wasm/`,
+    standardFontDataUrl: `${data}standard_fonts/`,
+    cMapUrl: `${data}cmaps/`,
+    iccUrl: `${data}iccs/`,
+  }).promise;
 }
 
 /** The title in the PDF's own metadata, if it has a usable one. */
