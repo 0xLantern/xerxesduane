@@ -253,6 +253,7 @@ interface Credential {
 }
 
 const CREDENTIALS: Credential[] = [
+  { label: "Master of Divinity · Philippine Baptist Theological Seminary, 2021" },
   { label: "Indigitous #HACK champion and coach" },
   { label: "4th Lausanne Congress, Seoul 2024" },
   // Certificate files live in /public/ministry/credentials.
