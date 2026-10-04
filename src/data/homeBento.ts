@@ -15,7 +15,7 @@ import { WEB_DESIGNS, type WorkItem } from "./workItems";
  * scripts/build-tool-logos.mjs for where the marks come from and why three
  * of them are lettermarks instead.
  *
- * The section is labelled "Tools I work with", which is what makes showing
+ * The section is labelled "Platforms & tools I work with", which is what makes showing
  * the marks nominative use rather than an implied endorsement. Reword that
  * label and the logos need rethinking.
  */

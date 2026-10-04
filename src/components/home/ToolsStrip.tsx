@@ -101,7 +101,7 @@ export default function ToolsStrip() {
             Daily drivers
           </span>
           <span className="hidden whitespace-nowrap font-display text-[0.95rem] font-bold text-fg sm:block">
-            Tools I work with
+            Platforms &amp; tools I work with
           </span>
         </div>
 
