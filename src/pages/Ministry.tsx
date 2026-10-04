@@ -266,6 +266,7 @@ const CREDENTIALS: Credential[] = [
     ],
   },
   { label: "Digital Missions Launchpad · Discipleship.Space, Cru & Indigitous", href: "/ministry/credentials/digital-missions-launchpad.pdf" },
+  { label: "Seminary Foundations · Seminary Now", href: "/ministry/credentials/seminary-now-foundations.pdf" },
   { label: "Church Digital Strategy · Pontifical University of the Holy Cross", href: "/ministry/credentials/pusc-church-digital-strategy.pdf" },
 ];
 
