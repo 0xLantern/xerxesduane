@@ -30,4 +30,19 @@ export interface Credential {
   logo?: string;
 }
 
-export const CREDENTIALS: Credential[] = [];
+export const CREDENTIALS: Credential[] = [
+  {
+    // Certification code 1e510fd37d8040da89102e0710922cab, valid to Oct 31 2028.
+    name: "Social Media Certified",
+    issuer: "HubSpot Academy",
+    year: 2026,
+    href: "/brand/credentials/hubspot-social-media.png",
+  },
+  {
+    // Certificate 10113cefe8 (Exam id-35), expires 02.10.2027.
+    name: "Master Your Brand Voice",
+    issuer: "Semrush Academy",
+    year: 2026,
+    href: "/brand/credentials/semrush-brand-voice.pdf",
+  },
+];
