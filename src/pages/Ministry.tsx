@@ -243,15 +243,16 @@ const STATS = [
   { value: "5,000+", label: "leaders equipped for digital outreach" },
 ];
 
-const CREDENTIALS: { label: string; href?: string }[] = [
+const CREDENTIALS: { label: string; href?: string; title?: string }[] = [
   { label: "Indigitous #HACK champion and coach" },
   { label: "4th Lausanne Congress, Seoul 2024" },
   // Certificate files live in /public/ministry/credentials.
+  {
+    label: "Christian Leaders · 4 courses",
+    title:
+      "Digital Community Chaplaincy; COM 121 Ministry Sciences & Communications; Online Enterprise Marketing; Enterprise Marketing",
+  },
   { label: "Church Digital Strategy · Pontifical University of the Holy Cross", href: "/ministry/credentials/pusc-church-digital-strategy.pdf" },
-  { label: "Digital Community Chaplaincy · Christian Leaders", href: "/ministry/credentials/cl-digital-community-chaplaincy.webp" },
-  { label: "COM 121 Ministry Sciences & Communications · Christian Leaders", href: "/ministry/credentials/cl-com121-ministry-sciences.webp" },
-  { label: "Online Enterprise Marketing · Christian Leaders", href: "/ministry/credentials/cl-online-enterprise-marketing.webp" },
-  { label: "Enterprise Marketing · Christian Leaders", href: "/ministry/credentials/cl-enterprise-marketing.webp" },
 ];
 
 const FOCUS = [
@@ -660,7 +661,9 @@ export default function Ministry() {
                   {body}
                 </a>
               ) : (
-                <span className={pill}>{body}</span>
+                <span className={pill} title={c.title}>
+                  {body}
+                </span>
               )}
             </li>
           );
