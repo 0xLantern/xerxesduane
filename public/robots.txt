@@ -34,5 +34,6 @@ User-agent: YouBot
 User-agent: Diffbot
 Allow: /
 Disallow: /ministry
+Disallow: /hack
 
 Sitemap: https://www.xerxesduane.com/sitemap.xml

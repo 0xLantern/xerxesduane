@@ -23,7 +23,7 @@ import { APEX_HOST, MINISTRY_HOST, MINISTRY_ORIGIN, SITE_HOST, WORK_HOST, WORK_O
  * every other route, on either host — is untouched and never reaches here.
  */
 export const config = {
-  matcher: ["/", "/ministry", "/robots.txt", "/work", "/r/:path*", "/gcn", "/letters", "/l/:path*", "/pray/:path*"],
+  matcher: ["/", "/ministry", "/hack", "/robots.txt", "/work", "/r/:path*", "/gcn", "/letters", "/l/:path*", "/pray/:path*"],
   // The edge runtime is deprecated for middleware; the build warns on it.
   // Nothing here needs an edge-only API — it reads a header and returns.
   runtime: "nodejs",
@@ -84,6 +84,13 @@ export default function middleware(request: Request): Response {
   // keep working there or the page could never be reviewed before release.
   if ((host === SITE_HOST || host === APEX_HOST) && url.pathname === "/ministry") {
     return Response.redirect(`${MINISTRY_ORIGIN}/`, 308);
+  }
+
+  // #HACK2026 Dubai lives beside the ministry page, at ministry…/hack, where
+  // the whole host is noindex. On that host it is served from the filesystem
+  // as-is; on the business site it moves over. Previews keep /hack.
+  if ((host === SITE_HOST || host === APEX_HOST) && url.pathname === "/hack") {
+    return Response.redirect(`${MINISTRY_ORIGIN}/hack`, 308);
   }
 
   return next();

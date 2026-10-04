@@ -79,6 +79,24 @@
       ]
     },
     {
+      "source": "/hack",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate"
+        }
+      ]
+    },
+    {
+      "source": "/hack/:path*",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate"
+        }
+      ]
+    },
+    {
       "source": "/(.*)",
       "has": [
         {
