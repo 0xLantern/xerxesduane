@@ -3,6 +3,7 @@ import {
   ArrowUpRight,
   Award,
   Church,
+  ChevronDown,
   HandHeart,
   HeartHandshake,
   Mail,
@@ -243,14 +244,26 @@ const STATS = [
   { value: "5,000+", label: "leaders equipped for digital outreach" },
 ];
 
-const CREDENTIALS: { label: string; href?: string; title?: string }[] = [
+interface Credential {
+  label: string;
+  /** The certificate itself, opened in a new tab. */
+  href?: string;
+  /** Several certificates from one issuer, grouped under one pill. */
+  items?: { label: string; href: string }[];
+}
+
+const CREDENTIALS: Credential[] = [
   { label: "Indigitous #HACK champion and coach" },
   { label: "4th Lausanne Congress, Seoul 2024" },
   // Certificate files live in /public/ministry/credentials.
   {
     label: "Christian Leaders · 4 courses",
-    title:
-      "Digital Community Chaplaincy; COM 121 Ministry Sciences & Communications; Online Enterprise Marketing; Enterprise Marketing",
+    items: [
+      { label: "Digital Community Chaplaincy", href: "/ministry/credentials/cl-digital-community-chaplaincy.webp" },
+      { label: "COM 121 Ministry Sciences & Communications", href: "/ministry/credentials/cl-com121-ministry-sciences.webp" },
+      { label: "Online Enterprise Marketing", href: "/ministry/credentials/cl-online-enterprise-marketing.webp" },
+      { label: "Enterprise Marketing", href: "/ministry/credentials/cl-enterprise-marketing.webp" },
+    ],
   },
   { label: "Church Digital Strategy · Pontifical University of the Holy Cross", href: "/ministry/credentials/pusc-church-digital-strategy.pdf" },
 ];
@@ -655,15 +668,42 @@ export default function Ministry() {
             </>
           );
           return (
-            <li key={c.label}>
-              {c.href ? (
+            <li key={c.label} className="has-[details[open]]:basis-full">
+              {c.items ? (
+                <details className="group">
+                  <summary
+                    className={`${pill} cursor-pointer list-none transition-colors hover:border-accent hover:text-fg [&::-webkit-details-marker]:hidden`}
+                  >
+                    {body}
+                    <ChevronDown
+                      size={14}
+                      strokeWidth={2.4}
+                      aria-hidden
+                      className="transition-transform group-open:rotate-180"
+                    />
+                  </summary>
+                  <ul className="mt-2 flex flex-wrap gap-2 ps-3">
+                    {c.items.map((item) => (
+                      <li key={item.label}>
+                        <a
+                          href={item.href}
+                          target="_blank"
+                          rel="noopener"
+                          className="inline-flex items-center gap-1 rounded-full border border-line-soft bg-panel px-2.5 py-1 text-[0.78rem] font-semibold text-fg-soft transition-colors hover:border-accent hover:text-fg"
+                        >
+                          {item.label}
+                          <ArrowUpRight size={12} strokeWidth={2.4} aria-hidden />
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              ) : c.href ? (
                 <a href={c.href} target="_blank" rel="noopener" className={`${pill} transition-colors hover:border-accent hover:text-fg`}>
                   {body}
                 </a>
               ) : (
-                <span className={pill} title={c.title}>
-                  {body}
-                </span>
+                <span className={pill}>{body}</span>
               )}
             </li>
           );

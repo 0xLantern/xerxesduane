@@ -176,7 +176,7 @@ export default function BentoBoard() {
                     width={22}
                     height={22}
                     loading="lazy"
-                    className="size-[22px] shrink-0 rounded-full object-cover"
+                    className="size-[22px] shrink-0 object-contain"
                   />
                 ) : (
                   <BadgeCheck
