@@ -243,7 +243,16 @@ const STATS = [
   { value: "5,000+", label: "leaders equipped for digital outreach" },
 ];
 
-const CREDENTIALS = ["Indigitous #HACK champion and coach", "4th Lausanne Congress, Seoul 2024"];
+const CREDENTIALS: { label: string; href?: string }[] = [
+  { label: "Indigitous #HACK champion and coach" },
+  { label: "4th Lausanne Congress, Seoul 2024" },
+  // Certificate files live in /public/ministry/credentials.
+  { label: "Church Digital Strategy · Pontifical University of the Holy Cross", href: "/ministry/credentials/pusc-church-digital-strategy.pdf" },
+  { label: "Digital Community Chaplaincy · Christian Leaders", href: "/ministry/credentials/cl-digital-community-chaplaincy.webp" },
+  { label: "COM 121 Ministry Sciences & Communications · Christian Leaders", href: "/ministry/credentials/cl-com121-ministry-sciences.webp" },
+  { label: "Online Enterprise Marketing · Christian Leaders", href: "/ministry/credentials/cl-online-enterprise-marketing.webp" },
+  { label: "Enterprise Marketing · Christian Leaders", href: "/ministry/credentials/cl-enterprise-marketing.webp" },
+];
 
 const FOCUS = [
   {
@@ -635,15 +644,27 @@ export default function Ministry() {
         ))}
       </dl>
       <ul className="mb-3 flex flex-wrap gap-2">
-        {CREDENTIALS.map((c) => (
-          <li
-            key={c}
-            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel px-3 py-1.5 text-[0.82rem] font-semibold text-fg-soft shadow-card"
-          >
-            <Award size={14} strokeWidth={2.2} aria-hidden className="text-accent" />
-            {c}
-          </li>
-        ))}
+        {CREDENTIALS.map((c) => {
+          const pill =
+            "inline-flex items-center gap-1.5 rounded-full border border-line bg-panel px-3 py-1.5 text-[0.82rem] font-semibold text-fg-soft shadow-card";
+          const body = (
+            <>
+              <Award size={14} strokeWidth={2.2} aria-hidden className="text-accent" />
+              {c.label}
+            </>
+          );
+          return (
+            <li key={c.label}>
+              {c.href ? (
+                <a href={c.href} target="_blank" rel="noopener" className={`${pill} transition-colors hover:border-accent hover:text-fg`}>
+                  {body}
+                </a>
+              ) : (
+                <span className={pill}>{body}</span>
+              )}
+            </li>
+          );
+        })}
       </ul>
 
       <Gallery photos={HERO_PHOTOS} label="Photos from ministry" eager />
