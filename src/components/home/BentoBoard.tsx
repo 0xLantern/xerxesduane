@@ -159,42 +159,46 @@ export default function BentoBoard() {
           icon={BadgeCheck}
           label="Credentials"
           blurb="Certified and verifiable."
-          href="/about"
+          labelHref="/about"
           className="max-sm:hidden"
         >
           <ul className="my-auto space-y-2.5">
             {CREDENTIALS.slice(0, 3).map((item, i) => (
-              <li
-                key={item.name}
-                className="flex items-start gap-2.5 transition-transform duration-500 ease-smooth group-hover:translate-x-1 group-focus-visible:translate-x-1"
-                style={{ transitionDelay: `${i * 45}ms` }}
-              >
-                {item.logo ? (
-                  <img
-                    src={item.logo}
-                    alt=""
-                    width={22}
-                    height={22}
-                    loading="lazy"
-                    className="size-[22px] shrink-0 object-contain"
-                  />
-                ) : (
-                  <BadgeCheck
-                    size={15}
-                    strokeWidth={2.4}
-                    aria-hidden
-                    className="mt-0.5 shrink-0 text-accent"
-                  />
-                )}
-                <span className="min-w-0">
-                  <span className="block text-[0.82rem] font-bold leading-tight text-fg">
-                    {item.name}
+              <li key={item.name}>
+                <a
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener"
+                  className="flex items-start gap-2.5 rounded-lg transition-transform duration-500 ease-smooth hover:translate-x-1 focus-visible:translate-x-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel [&:hover_.cred-name]:text-accent-deep"
+                  style={{ transitionDelay: `${i * 45}ms` }}
+                >
+                  {item.logo ? (
+                    <img
+                      src={item.logo}
+                      alt=""
+                      width={22}
+                      height={22}
+                      loading="lazy"
+                      className="size-[22px] shrink-0 object-contain"
+                    />
+                  ) : (
+                    <BadgeCheck
+                      size={15}
+                      strokeWidth={2.4}
+                      aria-hidden
+                      className="mt-0.5 shrink-0 text-accent"
+                    />
+                  )}
+                  <span className="min-w-0">
+                    <span className="cred-name block text-[0.82rem] font-bold leading-tight text-fg transition-colors">
+                      {item.name}
+                    </span>
+                    <span className="block text-[0.7rem] leading-tight text-fg-faint">
+                      {item.issuer}
+                      {item.year ? ` · ${item.year}` : ""}
+                    </span>
                   </span>
-                  <span className="block text-[0.7rem] leading-tight text-fg-faint">
-                    {item.issuer}
-                    {item.year ? ` · ${item.year}` : ""}
-                  </span>
-                </span>
+                </a>
               </li>
             ))}
           </ul>

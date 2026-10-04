@@ -265,6 +265,7 @@ const CREDENTIALS: Credential[] = [
       { label: "Enterprise Marketing", href: "/ministry/credentials/cl-enterprise-marketing.webp" },
     ],
   },
+  { label: "Digital Missions Launchpad · Discipleship.Space, Cru & Indigitous", href: "/ministry/credentials/digital-missions-launchpad.pdf" },
   { label: "Church Digital Strategy · Pontifical University of the Holy Cross", href: "/ministry/credentials/pusc-church-digital-strategy.pdf" },
 ];
 

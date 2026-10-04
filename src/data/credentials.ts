@@ -47,4 +47,13 @@ export const CREDENTIALS: Credential[] = [
     href: "/brand/credentials/semrush-brand-voice.pdf",
     logo: "/brand/credentials/semrush-logo.png",
   },
+  {
+    // Certificate UC-d6d9b2f0-6d8e-4621-aaef-12d9474629a7, 35.5 hours, Mar 4 2025.
+    // Copy of the certificate: /brand/credentials/udemy-google-ads.jpg
+    name: "Ultimate Google Ads Training: Pay Per Click",
+    issuer: "Udemy",
+    year: 2025,
+    href: "https://ude.my/UC-d6d9b2f0-6d8e-4621-aaef-12d9474629a7",
+    logo: "/brand/credentials/udemy-logo.png",
+  },
 ];
