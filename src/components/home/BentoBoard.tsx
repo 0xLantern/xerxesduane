@@ -169,12 +169,23 @@ export default function BentoBoard() {
                 className="flex items-start gap-2.5 transition-transform duration-500 ease-smooth group-hover:translate-x-1 group-focus-visible:translate-x-1"
                 style={{ transitionDelay: `${i * 45}ms` }}
               >
-                <BadgeCheck
-                  size={15}
-                  strokeWidth={2.4}
-                  aria-hidden
-                  className="mt-0.5 shrink-0 text-accent"
-                />
+                {item.logo ? (
+                  <img
+                    src={item.logo}
+                    alt=""
+                    width={22}
+                    height={22}
+                    loading="lazy"
+                    className="size-[22px] shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <BadgeCheck
+                    size={15}
+                    strokeWidth={2.4}
+                    aria-hidden
+                    className="mt-0.5 shrink-0 text-accent"
+                  />
+                )}
                 <span className="min-w-0">
                   <span className="block text-[0.82rem] font-bold leading-tight text-fg">
                     {item.name}

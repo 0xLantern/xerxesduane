@@ -37,6 +37,7 @@ export const CREDENTIALS: Credential[] = [
     issuer: "HubSpot Academy",
     year: 2026,
     href: "/brand/credentials/hubspot-social-media.png",
+    logo: "/brand/credentials/hubspot-logo.png",
   },
   {
     // Certificate 10113cefe8 (Exam id-35), expires 02.10.2027.
@@ -44,5 +45,6 @@ export const CREDENTIALS: Credential[] = [
     issuer: "Semrush Academy",
     year: 2026,
     href: "/brand/credentials/semrush-brand-voice.pdf",
+    logo: "/brand/credentials/semrush-logo.png",
   },
 ];
