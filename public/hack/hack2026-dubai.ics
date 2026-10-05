@@ -1,0 +1,128 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//xerxesduane.com//HACK2026 Dubai//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:#HACK2026 Dubai
+X-WR-TIMEZONE:Asia/Dubai
+BEGIN:VEVENT
+UID:kickoff@hack2026-dubai.xerxesduane.com
+DTSTAMP:20261005T000000Z
+DTSTART:20261008T160000Z
+DTEND:20261008T171500Z
+SUMMARY:#HACK2026 Dubai: Online kickoff
+LOCATION:Google Meet\, link sent after you register
+DESCRIPTION:Online. Details: https://ministry.xerxesduane.com/hack
+URL:https://ministry.xerxesduane.com/hack
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:#HACK2026 Dubai: Online kickoff in one hour
+TRIGGER:-PT1H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:team-dinner@hack2026-dubai.xerxesduane.com
+DTSTAMP:20261005T000000Z
+DTSTART:20261017T140000Z
+DTEND:20261017T170000Z
+SUMMARY:#HACK2026 Dubai: Team dinner: form teams and plan
+LOCATION:A home in Dubai\, address sent privately
+DESCRIPTION:In person. Details: https://ministry.xerxesduane.com/hack
+URL:https://ministry.xerxesduane.com/hack
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:#HACK2026 Dubai: Team dinner: form teams and plan in one hour
+TRIGGER:-PT1H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:check-in-1@hack2026-dubai.xerxesduane.com
+DTSTAMP:20261005T000000Z
+DTSTART:20261022T160000Z
+DTEND:20261022T163000Z
+SUMMARY:#HACK2026 Dubai: Weekly check-in 1 of 5
+LOCATION:Google Meet
+DESCRIPTION:Online. Details: https://ministry.xerxesduane.com/hack
+URL:https://ministry.xerxesduane.com/hack
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:#HACK2026 Dubai: Weekly check-in 1 of 5 in one hour
+TRIGGER:-PT1H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:check-in-2@hack2026-dubai.xerxesduane.com
+DTSTAMP:20261005T000000Z
+DTSTART:20261029T160000Z
+DTEND:20261029T163000Z
+SUMMARY:#HACK2026 Dubai: Weekly check-in 2 of 5
+LOCATION:Google Meet
+DESCRIPTION:Online. Details: https://ministry.xerxesduane.com/hack
+URL:https://ministry.xerxesduane.com/hack
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:#HACK2026 Dubai: Weekly check-in 2 of 5 in one hour
+TRIGGER:-PT1H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:check-in-3@hack2026-dubai.xerxesduane.com
+DTSTAMP:20261005T000000Z
+DTSTART:20261105T160000Z
+DTEND:20261105T163000Z
+SUMMARY:#HACK2026 Dubai: Weekly check-in 3 of 5
+LOCATION:Google Meet
+DESCRIPTION:Online. Details: https://ministry.xerxesduane.com/hack
+URL:https://ministry.xerxesduane.com/hack
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:#HACK2026 Dubai: Weekly check-in 3 of 5 in one hour
+TRIGGER:-PT1H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:check-in-4@hack2026-dubai.xerxesduane.com
+DTSTAMP:20261005T000000Z
+DTSTART:20261112T160000Z
+DTEND:20261112T163000Z
+SUMMARY:#HACK2026 Dubai: Weekly check-in 4 of 5
+LOCATION:Google Meet
+DESCRIPTION:Online. Details: https://ministry.xerxesduane.com/hack
+URL:https://ministry.xerxesduane.com/hack
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:#HACK2026 Dubai: Weekly check-in 4 of 5 in one hour
+TRIGGER:-PT1H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:check-in-5@hack2026-dubai.xerxesduane.com
+DTSTAMP:20261005T000000Z
+DTSTART:20261119T160000Z
+DTEND:20261119T163000Z
+SUMMARY:#HACK2026 Dubai: Weekly check-in 5 of 5
+LOCATION:Google Meet
+DESCRIPTION:Online. Details: https://ministry.xerxesduane.com/hack
+URL:https://ministry.xerxesduane.com/hack
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:#HACK2026 Dubai: Weekly check-in 5 of 5 in one hour
+TRIGGER:-PT1H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:presentations@hack2026-dubai.xerxesduane.com
+DTSTAMP:20261005T000000Z
+DTSTART:20261121T140000Z
+DTEND:20261121T170000Z
+SUMMARY:#HACK2026 Dubai: Presentations and dinner
+LOCATION:A home in Dubai\, address sent privately
+DESCRIPTION:In person. Details: https://ministry.xerxesduane.com/hack
+URL:https://ministry.xerxesduane.com/hack
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:#HACK2026 Dubai: Presentations and dinner in one hour
+TRIGGER:-PT1H
+END:VALARM
+END:VEVENT
+END:VCALENDAR

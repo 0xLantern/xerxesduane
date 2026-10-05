@@ -91,7 +91,11 @@ function scrollToHashTarget() {
 
 scrollToHashTarget();
 
-const speedInsightsRoot = document.createElement("div");
-speedInsightsRoot.id = "speed-insights-root";
-document.body.appendChild(speedInsightsRoot);
-createRoot(speedInsightsRoot).render(<SpeedInsights />);
+// /hack carries no tracking of any kind (see NO_ANALYTICS_ROUTES in
+// scripts/prerender.mjs), and that includes Vercel's performance beacon.
+if (routePath(window.location.hostname, window.location.pathname) !== "/hack") {
+  const speedInsightsRoot = document.createElement("div");
+  speedInsightsRoot.id = "speed-insights-root";
+  document.body.appendChild(speedInsightsRoot);
+  createRoot(speedInsightsRoot).render(<SpeedInsights />);
+}

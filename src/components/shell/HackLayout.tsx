@@ -56,9 +56,13 @@ export default function HackLayout({ children }: { children: ReactNode }) {
               <ArrowUpRight size={12} strokeWidth={2.3} aria-hidden />
             </a>
           </p>
-          <a href={siteHref("/privacy")} className="underline-offset-2 hover:underline">
-            Privacy
-          </a>
+          <p className="flex items-center gap-3">
+            {/* True by construction: see NO_ANALYTICS_ROUTES in scripts/prerender.mjs. */}
+            <span>No analytics or tracking on this page.</span>
+            <a href={siteHref("/privacy")} className="underline-offset-2 hover:underline">
+              Privacy
+            </a>
+          </p>
         </div>
       </footer>
     </>

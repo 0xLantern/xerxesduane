@@ -29,6 +29,7 @@
       })();
     </script>
 
+    <!--analytics:start-->
     <!-- Google tag (gtag.js), Consent Mode v2: analytics denied until the
          visitor accepts (see ConsentBanner). Search Console verification still
          works because the tag itself loads. -->
@@ -55,6 +56,9 @@
     <script>
       window.__CLARITY_ID__ = "x0f7gwiena";
     </script>
+    <!--analytics:end-->
+    <!-- Everything between the analytics markers is cut from routes that must
+         not be tracked (NO_ANALYTICS_ROUTES in scripts/prerender.mjs). -->
 
     <!-- Pre-hydration reveal fallback. framer-motion prerenders scroll-reveal
          targets with inline opacity:0 / off-canvas transforms, so until the JS
