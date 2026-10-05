@@ -22,12 +22,28 @@ if (!template.includes("<!--app-html-->")) {
   throw new Error("Template is missing the <!--app-html--> placeholder.");
 }
 
+/**
+ * Routes served with no analytics at all: the Google tag and the Clarity id
+ * between the <!--analytics:start/end--> markers in index.html are cut out.
+ * /hack is a #HACK2026 Dubai event page for a privacy-first project in the
+ * UAE; recording who visits it would undo the point. The client side skips
+ * Speed Insights and the consent banner there too (entry-client.tsx, App.tsx),
+ * and check:seo fails the build if a tracker reappears.
+ */
+const NO_ANALYTICS_ROUTES = new Set(["/hack"]);
+const ANALYTICS_BLOCK = /\s*<!--analytics:start-->[\s\S]*?<!--analytics:end-->/;
+if (!ANALYTICS_BLOCK.test(template)) {
+  throw new Error("Template is missing the <!--analytics:start/end--> markers.");
+}
+
 const routes = allRoutes();
 for (const route of routes) {
   const { html, head } = await render(route);
   let page = template
     .replace("<!--app-head-->", head)
     .replace("<!--app-html-->", html);
+
+  if (NO_ANALYTICS_ROUTES.has(route)) page = page.replace(ANALYTICS_BLOCK, "");
 
   // Arabic routes render right-to-left in Arabic.
   if (route === "/ar" || route.startsWith("/ar/")) {

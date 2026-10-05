@@ -124,7 +124,7 @@ export default function App({ path = "/" }: { path?: string }) {
                 </Suspense>
               </main>
             </HackLayout>
-            <ConsentBanner locale="en" />
+            {/* No consent banner: this page loads no analytics to consent to. */}
           </div>
         </MotionConfig>
       </LazyMotion>

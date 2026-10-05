@@ -36,9 +36,53 @@ export const HACK = {
   lede:
     "Join #HACK2026 Dubai, part of the global Christian hackathon run by Indigitous. Over six weeks, small teams build a free website kit that churches and faith sites can use: simple pages, a private question box and safety features, in Arabic and English.",
   /** The #HACK Champions leading Dubai, as the invitation signs it. */
-  champions: ["Xerxes Duane Magdaluyo", "Abel Thomas"],
+  champions: ["Xerxes Duane", "Abel Thomas"],
   global: "https://hack.indigitous.org/",
+  /**
+   * Who may join. Said plainly in the header, the "who it's for" section and
+   * the FAQ: #HACK2026 Dubai is a gathering of Christians, not an outreach.
+   */
+  audience: "For Christians only",
+  audienceNote: "#HACK2026 Dubai is for Christians only: followers of Jesus who want to use their skills for God.",
+  /** The page's own address, for the share message and the calendar file. */
+  url: "https://ministry.xerxesduane.com/hack",
+  /**
+   * Every gathering as one calendar file. Written by scripts/hack-ics.mjs
+   * from EVENTS on every build, so it can never disagree with the page.
+   */
+  calendarFile: "/hack/hack2026-dubai.ics",
 };
+
+/**
+ * "Hack" sounds like breaking into computers to some people. This section
+ * says what the word means here, that hackathons are ordinary in the UAE,
+ * and that #HACK is the Christian version of one.
+ */
+export const WHAT_IS = {
+  eyebrow: "New to hackathons?",
+  title: "It's not about breaking into computers.",
+  definition: { word: "hack", say: "/hak/", kind: "noun", meaning: "A clever technique for improving something." },
+  points: [
+    {
+      title: "Hack plus marathon",
+      body: "A hackathon is a short, focused stretch where people with different skills form small teams and build something useful together. Designers, writers and testers matter as much as coders.",
+    },
+    {
+      title: "Ordinary across the UAE",
+      body: "Universities, schools and companies across the country run hackathons. The national UAE Hackathon, run by the TDRA, invites school students, university students, government teams and startups to solve real challenges.",
+      link: { href: "https://hackathon.ae/", label: "hackathon.ae" },
+    },
+    {
+      title: "#HACK is the Christian version",
+      body: "Every year since 2016, Indigitous has gathered followers of Jesus in cities around the world to use their skills for good. In Dubai, our teams build a free, private website kit that churches and faith sites can use.",
+      link: { href: "https://hack.indigitous.org/", label: "hack.indigitous.org" },
+    },
+  ],
+};
+
+/** What the "invite a friend" button sends. Keep it to what the page says. */
+export const INVITE_MESSAGE =
+  "Come build with me at #HACK2026 Dubai, a six-week hackathon for Christians. You don't need to code: designers, writers, video makers and testers are all needed. Online kickoff Thu 8 Oct, 8pm. Register by Mon 12 Oct:";
 
 /**
  * Who a guest can message, in the order HACK.champions names them. Numbers
@@ -231,6 +275,14 @@ export const IF_ASKED =
   "It's a free, private website template for faith sites that anyone can use, built at a Christian hackathon.";
 
 export const FAQS = [
+  {
+    q: "Who can join?",
+    a: "Christians only: followers of Jesus who want to use their skills for God. You don't need to be a programmer.",
+  },
+  {
+    q: "Is this about hacking into systems?",
+    a: "No. Here \"hack\" means a clever fix. Teams build a new website kit from scratch with sample content, and nobody touches anyone else's systems.",
+  },
   {
     q: "Do I need to be a programmer?",
     a: "No. Every team needs designers, video makers, writers, testers and researchers as much as it needs code.",
