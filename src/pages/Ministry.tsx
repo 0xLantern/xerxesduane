@@ -271,10 +271,10 @@ const TRAINING: { heading: string; items: TrainingItem[] }[] = [
   {
     heading: "Missions",
     items: [
+      { label: "Leadership Lab: Communicating a Clear Vision for Missional Innovation", detail: "Indigitous, 2026" },
       { label: "Introduction to Strategic Missions", detail: "AIMS & Asian Center for Missions, 2025", href: "/ministry/credentials/aims-strategic-missions.pdf" },
       { label: "Pre-Candidate Orientation Training", detail: "Pioneers in Asia, 2024", href: "/ministry/credentials/pioneers-in-asia-orientation.webp" },
       { label: "Digital Missions Launchpad", detail: "Discipleship.Space, Cru Philippines & Indigitous, 2022", href: "/ministry/credentials/digital-missions-launchpad.pdf" },
-      { label: "Leadership Lab: Communicating a Clear Vision for Missional Innovation", detail: "Indigitous" },
     ],
   },
   {
@@ -362,11 +362,6 @@ const ROAD: { years: string; title: string; body: string }[] = [
     years: "2025–2026",
     title: "Fellowship Dubai",
     body: "An apprenticeship from September 2025 to September 2026: coordinating Alpha and discipleship, coaching leaders to run Alpha themselves, and helping with communications and digital outreach. I now continue there as a volunteer.",
-  },
-  {
-    years: "2025–present",
-    title: "Writer, Scripture Union Philippines",
-    body: "Writing daily Bible reading notes.",
   },
 ];
 
