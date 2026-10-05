@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { LazyMotion, domAnimation, MotionConfig } from "framer-motion";
 import ShellLayout from "./components/shell/ShellLayout";
+import HackLayout from "./components/shell/HackLayout";
 import SiteAssistant from "./components/assistant/SiteAssistant";
 import MobileTabBar from "./components/shell/MobileTabBar";
 import ConsentBanner from "./components/ConsentBanner";
@@ -38,6 +39,8 @@ const Portfolio = lazy(() => import("./pages/Portfolio"));
 const Demos = lazy(() => import("./pages/Demos"));
 // Unlisted: reachable by link, never linked or indexed. See pages/Ministry.tsx.
 const Ministry = lazy(() => import("./pages/Ministry"));
+// Unlisted too, on the ministry host: #HACK2026 Dubai. See pages/Hack.tsx.
+const Hack = lazy(() => import("./pages/Hack"));
 import { getServicePage } from "./data/servicePages";
 import { AR_CHROME } from "./data/servicePagesAr";
 import { getServicePageAr } from "./data/servicePagesAr";
@@ -77,6 +80,7 @@ function Route({ path }: { path: string }) {
   if (slug === "portfolio") return <Portfolio />;
   if (slug === "ai-lab" || slug === "demos") return <Demos />;
   if (slug === "ministry") return <Ministry />;
+  if (slug === "hack") return <Hack />;
   if (slug === "ar") return <HomeAr />;
 
   // Arabic service pages: /ar/<service-slug>
@@ -101,6 +105,32 @@ export default function App({ path = "/" }: { path?: string }) {
   const slug = pathToSlug(path);
   const isArabic = slug === "ar" || slug.startsWith("ar/");
   const lang = altLanguage(path);
+
+  // #HACK2026 Dubai stands alone: its own slim frame, and none of the site's
+  // chrome (rail, nav, tab bar, intro, cursor, assistant). See HackLayout.
+  if (slug === "hack") {
+    return (
+      <LazyMotion features={domAnimation} strict>
+        <MotionConfig reducedMotion="user">
+          <div className="grain relative min-h-dvh" dir="ltr" lang="en">
+            <a href="#top" data-lenis-ignore className="skip-link">
+              Skip to content
+            </a>
+            <SmoothScroll />
+            <HackLayout>
+              <main className="relative z-10">
+                <Suspense fallback={null}>
+                  <Route path={path} />
+                </Suspense>
+              </main>
+            </HackLayout>
+            <ConsentBanner locale="en" />
+          </div>
+        </MotionConfig>
+      </LazyMotion>
+    );
+  }
+
   return (
     <LazyMotion features={domAnimation} strict>
       <MotionConfig reducedMotion="user">
