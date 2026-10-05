@@ -32,6 +32,12 @@ export interface Credential {
 
 export const CREDENTIALS: Credential[] = [
   {
+    // Degree, listed first. The diploma is deliberately not published.
+    name: "BS Information Technology",
+    issuer: "University of Perpetual Help System DALTA",
+    year: 2017,
+  },
+  {
     // Certification code 1e510fd37d8040da89102e0710922cab, valid to Oct 31 2028.
     name: "Social Media Certified",
     issuer: "HubSpot Academy",

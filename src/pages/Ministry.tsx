@@ -4,6 +4,7 @@ import {
   Award,
   Church,
   ChevronDown,
+  GraduationCap,
   HandHeart,
   HeartHandshake,
   Mail,
@@ -248,31 +249,51 @@ const STATS = [
   { value: "5,000+", label: "leaders equipped for digital outreach" },
 ];
 
-interface Credential {
+/**
+ * Credentials, in order of weight: degrees up front, everything else one tap
+ * away. Plain statements with the year, no adjectives. Certificate files live
+ * in /public/ministry/credentials; the diplomas are deliberately not published.
+ */
+const DEGREES = [
+  { label: "Master of Divinity", school: "Philippine Baptist Theological Seminary", year: 2021 },
+  { label: "BS Information Technology", school: "University of Perpetual Help System DALTA", year: 2017 },
+];
+
+interface TrainingItem {
   label: string;
-  /** The certificate itself, opened in a new tab. */
+  /** Who gave it, and when, as one quiet line. */
+  detail: string;
+  /** The certificate, opened in a new tab. */
   href?: string;
-  /** Several certificates from one issuer, grouped under one pill. */
-  items?: { label: string; href: string }[];
 }
 
-const CREDENTIALS: Credential[] = [
-  { label: "Master of Divinity · Philippine Baptist Theological Seminary, 2021" },
-  { label: "Indigitous #HACK champion and coach" },
-  { label: "4th Lausanne Congress, Seoul 2024" },
-  // Certificate files live in /public/ministry/credentials.
+const TRAINING: { heading: string; items: TrainingItem[] }[] = [
   {
-    label: "Christian Leaders · 4 courses",
+    heading: "Missions",
     items: [
-      { label: "Digital Community Chaplaincy", href: "/ministry/credentials/cl-digital-community-chaplaincy.webp" },
-      { label: "COM 121 Ministry Sciences & Communications", href: "/ministry/credentials/cl-com121-ministry-sciences.webp" },
-      { label: "Online Enterprise Marketing", href: "/ministry/credentials/cl-online-enterprise-marketing.webp" },
-      { label: "Enterprise Marketing", href: "/ministry/credentials/cl-enterprise-marketing.webp" },
+      { label: "Introduction to Strategic Missions", detail: "AIMS & Asian Center for Missions, 2025", href: "/ministry/credentials/aims-strategic-missions.pdf" },
+      { label: "Pre-Candidate Orientation Training", detail: "Pioneers in Asia, 2024", href: "/ministry/credentials/pioneers-in-asia-orientation.webp" },
+      { label: "Digital Missions Launchpad", detail: "Discipleship.Space, Cru Philippines & Indigitous, 2022", href: "/ministry/credentials/digital-missions-launchpad.pdf" },
     ],
   },
-  { label: "Digital Missions Launchpad · Discipleship.Space, Cru & Indigitous", href: "/ministry/credentials/digital-missions-launchpad.pdf" },
-  { label: "Seminary Foundations · Seminary Now", href: "/ministry/credentials/seminary-now-foundations.pdf" },
-  { label: "Church Digital Strategy · Pontifical University of the Holy Cross", href: "/ministry/credentials/pusc-church-digital-strategy.pdf" },
+  {
+    heading: "Ministry & communications",
+    items: [
+      { label: "Digital Community Chaplaincy", detail: "Christian Leaders", href: "/ministry/credentials/cl-digital-community-chaplaincy.webp" },
+      { label: "COM 121 Ministry Sciences & Communications", detail: "Christian Leaders", href: "/ministry/credentials/cl-com121-ministry-sciences.webp" },
+      { label: "Online Enterprise Marketing", detail: "Christian Leaders", href: "/ministry/credentials/cl-online-enterprise-marketing.webp" },
+      { label: "Enterprise Marketing", detail: "Christian Leaders", href: "/ministry/credentials/cl-enterprise-marketing.webp" },
+      { label: "Church Communications & Digital Strategy", detail: "Pontifical University of the Holy Cross (online course)", href: "/ministry/credentials/pusc-church-digital-strategy.pdf" },
+      { label: "Seminary Foundations", detail: "Seminary Now, 2020", href: "/ministry/credentials/seminary-now-foundations.pdf" },
+    ],
+  },
+  {
+    heading: "Recognition",
+    items: [
+      { label: "Indigitous #HACK", detail: "Champion 2023, coach 2024" },
+      { label: "4th Lausanne Congress", detail: "Seoul, 2024" },
+    ],
+  },
 ];
 
 const FOCUS = [
@@ -664,58 +685,71 @@ export default function Ministry() {
           </div>
         ))}
       </dl>
-      <ul className="mb-3 flex flex-wrap gap-2">
-        {CREDENTIALS.map((c) => {
-          const pill =
-            "inline-flex items-center gap-1.5 rounded-full border border-line bg-panel px-3 py-1.5 text-[0.82rem] font-semibold text-fg-soft shadow-card";
-          const body = (
-            <>
-              <Award size={14} strokeWidth={2.2} aria-hidden className="text-accent" />
-              {c.label}
-            </>
-          );
-          return (
-            <li key={c.label} className="has-[details[open]]:basis-full">
-              {c.items ? (
-                <details className="group">
-                  <summary
-                    className={`${pill} cursor-pointer list-none transition-colors hover:border-accent hover:text-fg [&::-webkit-details-marker]:hidden`}
-                  >
-                    {body}
-                    <ChevronDown
-                      size={14}
-                      strokeWidth={2.4}
-                      aria-hidden
-                      className="transition-transform group-open:rotate-180"
-                    />
-                  </summary>
-                  <ul className="mt-2 flex flex-wrap gap-2 ps-3">
-                    {c.items.map((item) => (
-                      <li key={item.label}>
-                        <a
-                          href={item.href}
-                          target="_blank"
-                          rel="noopener"
-                          className="inline-flex items-center gap-1 rounded-full border border-line-soft bg-panel px-2.5 py-1 text-[0.78rem] font-semibold text-fg-soft transition-colors hover:border-accent hover:text-fg"
-                        >
+      {/* ---- credentials: degrees first, the rest folded away ---- */}
+      <div className="mb-3 flex flex-wrap items-start gap-2">
+        {DEGREES.map((d) => (
+          <p
+            key={d.label}
+            className="inline-flex items-center gap-1.5 rounded-[1.1rem] border border-line bg-panel px-3 py-1.5 text-[0.82rem] text-fg-soft shadow-card"
+          >
+            <GraduationCap size={15} strokeWidth={2.2} aria-hidden className="shrink-0 text-accent" />
+            <span>
+              <span className="font-semibold text-fg">{d.label}</span>
+              <span className="text-fg-faint">
+                {" "}
+                · {d.school}, {d.year}
+              </span>
+            </span>
+          </p>
+        ))}
+        <details className="group basis-full">
+          <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-full border border-line bg-panel px-3 py-1.5 text-[0.82rem] font-semibold text-fg-soft shadow-card transition-colors hover:border-accent hover:text-fg [&::-webkit-details-marker]:hidden">
+            <Award size={14} strokeWidth={2.2} aria-hidden className="text-accent" />
+            Training &amp; recognition
+            <ChevronDown size={14} strokeWidth={2.4} aria-hidden className="transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="mt-2 grid gap-x-6 gap-y-4 rounded-card border border-line bg-panel p-4 shadow-card sm:grid-cols-3">
+            {TRAINING.map((group) => (
+              <section key={group.heading} aria-label={group.heading}>
+                <h3 className="font-technical text-[0.72rem] font-extrabold uppercase tracking-[0.14em] text-accent-deep">
+                  {group.heading}
+                </h3>
+                <ul className="mt-2 space-y-2">
+                  {group.items.map((item) => {
+                    const text = (
+                      <>
+                        <span className="block text-[0.85rem] font-semibold leading-snug text-fg">
                           {item.label}
-                          <ArrowUpRight size={12} strokeWidth={2.4} aria-hidden />
-                        </a>
+                          {item.href && (
+                            <ArrowUpRight size={12} strokeWidth={2.4} aria-hidden className="ms-0.5 inline align-baseline text-accent" />
+                          )}
+                        </span>
+                        <span className="block text-[0.75rem] leading-snug text-fg-faint">{item.detail}</span>
+                      </>
+                    );
+                    return (
+                      <li key={item.label}>
+                        {item.href ? (
+                          <a
+                            href={item.href}
+                            target="_blank"
+                            rel="noopener"
+                            className="block rounded transition-colors hover:[&>span:first-child]:text-accent-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                          >
+                            {text}
+                          </a>
+                        ) : (
+                          text
+                        )}
                       </li>
-                    ))}
-                  </ul>
-                </details>
-              ) : c.href ? (
-                <a href={c.href} target="_blank" rel="noopener" className={`${pill} transition-colors hover:border-accent hover:text-fg`}>
-                  {body}
-                </a>
-              ) : (
-                <span className={pill}>{body}</span>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+                    );
+                  })}
+                </ul>
+              </section>
+            ))}
+          </div>
+        </details>
+      </div>
 
       <Gallery photos={HERO_PHOTOS} label="Photos from ministry" eager />
 

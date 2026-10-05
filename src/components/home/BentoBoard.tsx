@@ -158,17 +158,17 @@ export default function BentoBoard() {
         <Panel
           icon={BadgeCheck}
           label="Credentials"
-          blurb="Certified and verifiable."
+          blurb="Degree and certifications."
           labelHref="/about"
           className="max-sm:hidden"
         >
           <ul className="my-auto space-y-2.5">
-            {CREDENTIALS.slice(0, 3).map((item, i) => (
+            {CREDENTIALS.slice(0, 4).map((item, i) => (
               <li key={item.name}>
                 <a
                   href={item.href}
-                  target="_blank"
-                  rel="noopener"
+                  target={item.href ? "_blank" : undefined}
+                  rel={item.href ? "noopener" : undefined}
                   className="flex items-start gap-2.5 rounded-lg transition-transform duration-500 ease-smooth hover:translate-x-1 focus-visible:translate-x-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel [&:hover_.cred-name]:text-accent-deep"
                   style={{ transitionDelay: `${i * 45}ms` }}
                 >
