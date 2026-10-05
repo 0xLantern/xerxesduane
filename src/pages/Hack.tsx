@@ -2,8 +2,12 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   ArrowUpRight,
   CalendarDays,
+  CalendarPlus,
+  Check,
   Compass,
   Laptop,
+  Lightbulb,
+  Link2,
   ListChecks,
   MapPin,
   MessageSquareLock,
@@ -27,6 +31,8 @@ import {
   GROUND_RULES,
   HACK,
   IF_ASKED,
+  INVITE_MESSAGE,
+  WHAT_IS,
   JUDGING,
   REGISTRATION,
   ROLES,
@@ -83,6 +89,7 @@ const prose = "max-w-[72ch] space-y-3 text-[0.95rem] leading-relaxed text-fg-sof
 function useNow(intervalMs = 30_000): number | null {
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot client-only init; intentional SSR-safe pattern
     setNow(Date.now());
     const id = window.setInterval(() => setNow(Date.now()), intervalMs);
     return () => window.clearInterval(id);
@@ -297,6 +304,140 @@ function NextUp({ now }: { now: number | null }) {
 /* media                                                               */
 /* ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ */
+/* save the dates, and bring a friend                                  */
+/* ------------------------------------------------------------------ */
+
+const INVITE_HREF = `https://wa.me/?text=${encodeURIComponent(`${INVITE_MESSAGE} ${HACK.url}`)}`;
+
+/** Copies the page link, and says so for two seconds. */
+function CopyLink() {
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return;
+    const id = window.setTimeout(() => setCopied(false), 2000);
+    return () => window.clearTimeout(id);
+  }, [copied]);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(HACK.url);
+      setCopied(true);
+    } catch {
+      // No clipboard (an old browser, or permission denied): show the address.
+      window.prompt("Copy this link:", HACK.url);
+    }
+  };
+  return (
+    <button type="button" onClick={copy} className={`${pill} border border-line bg-panel text-fg hover:border-accent/40`}>
+      {copied ? <Check size={15} strokeWidth={2.4} aria-hidden className="text-[#1FA855]" /> : <Link2 size={15} strokeWidth={2.3} aria-hidden />}
+      <span aria-live="polite">{copied ? "Link copied" : "Copy link"}</span>
+    </button>
+  );
+}
+
+/**
+ * The two things a guest does after reading: put the dates in their calendar,
+ * and pass the page to a friend. Invitations travel by personal message, so
+ * the share is WhatsApp and a plain link, nothing that posts publicly.
+ */
+function SaveAndShare() {
+  return (
+    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+      <Card className="flex flex-col !py-4">
+        <h2 className="font-display text-[1.05rem] font-bold text-fg">Save all 8 dates</h2>
+        <p className="mt-1 text-[0.88rem] leading-snug text-fg-soft">
+          The kickoff, team dinner, five check-ins and presentations, with a reminder an hour before each.
+        </p>
+        <div className="mt-auto flex flex-wrap gap-2 pt-3">
+          <a
+            href={HACK.calendarFile}
+            download
+            data-cta="hack-calendar"
+            className={`${pill} bg-navy text-fg-onSolid shadow-solid hover:bg-navy-hover`}
+          >
+            <CalendarPlus size={15} strokeWidth={2.3} aria-hidden />
+            Add to my calendar
+          </a>
+        </div>
+      </Card>
+      <Card className="flex flex-col !py-4">
+        <h2 className="font-display text-[1.05rem] font-bold text-fg">Bring a friend</h2>
+        <p className="mt-1 text-[0.88rem] leading-snug text-fg-soft">
+          Know a designer, writer or video maker? Send them the page. Please share it personally rather than posting it.
+        </p>
+        <div className="mt-auto flex flex-wrap gap-2 pt-3">
+          <a
+            href={INVITE_HREF}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-cta="hack-invite"
+            className={`${pill} border border-line bg-panel text-fg hover:border-[#1FA855]/50`}
+          >
+            <WhatsAppGlyph size={15} className="text-[#1FA855]" />
+            Invite on WhatsApp
+          </a>
+          <CopyLink />
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* what a hackathon is                                                 */
+/* ------------------------------------------------------------------ */
+
+function WhatIsHackathon() {
+  const d = WHAT_IS.definition;
+  return (
+    <section aria-labelledby="what-title" className="mt-7 board:mt-5">
+      <SectionIntro id="what-title" eyebrow={WHAT_IS.eyebrow} title={WHAT_IS.title} />
+      <div className="grid gap-2 lg:grid-cols-[0.9fr_2fr]">
+        {/* The dictionary card: the same definition the promo video lands on. */}
+        <div
+          className="flex flex-col justify-center rounded-card border-2 p-5 shadow-card"
+          style={{ borderColor: BRAND.yellow, background: BRAND.ink }}
+        >
+          <p className="font-technical text-[0.72rem] uppercase tracking-[0.2em]" style={{ color: BRAND.yellow }}>
+            <dfn className="not-italic">{d.word}</dfn> {d.say} · {d.kind}
+          </p>
+          <p className="mt-2 font-display text-[1.35rem] font-bold leading-snug text-white">{d.meaning}</p>
+          <p className="mt-3 text-[0.85rem] text-white/70">
+            Hack + marathon = <span style={{ color: BRAND.yellow }}>hackathon</span>. Not a coding competition.
+          </p>
+        </div>
+        <ul className="grid gap-2 sm:grid-cols-3">
+          {WHAT_IS.points.map((p, i) => (
+            <li key={p.title}>
+              <Card className="flex h-full flex-col">
+                <div className="flex items-center gap-2.5">
+                  <span
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-display text-[0.8rem] font-extrabold"
+                    style={{ background: BRAND.yellow, color: BRAND.ink }}
+                    aria-hidden
+                  >
+                    {i === 0 ? <Lightbulb size={15} strokeWidth={2.4} /> : i + 1}
+                  </span>
+                  <H3>{p.title}</H3>
+                </div>
+                <p className="mt-2 text-[0.88rem] leading-snug text-fg-soft">{p.body}</p>
+                {p.link && (
+                  <p className="mt-auto pt-3">
+                    <a href={p.link.href} target="_blank" rel="noopener noreferrer nofollow" className={smallLink}>
+                      {p.link.label}
+                      <ArrowUpRight size={13} strokeWidth={2.3} aria-hidden />
+                    </a>
+                  </p>
+                )}
+              </Card>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
 function Media() {
   return (
     <div className="grid items-start gap-2 sm:grid-cols-3">
@@ -358,6 +499,22 @@ function ProgramTable({ rows }: { rows: { time: string; what: string }[] }) {
   );
 }
 
+/** A Google Calendar "add event" link, for people who live in Google Calendar. */
+function googleCalendarHref(e: HackEvent): string {
+  const utc = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const q = new URLSearchParams({
+    action: "TEMPLATE",
+    text: `${HACK.title}: ${e.title}`,
+    dates: `${utc(e.start)}/${utc(e.end)}`,
+    details: `Details: ${HACK.url}`,
+    location: e.where,
+    ctz: "Asia/Dubai",
+  });
+  return `https://calendar.google.com/calendar/render?${q.toString()}`;
+}
+
+const smallLink = "inline-flex items-center gap-1 text-[0.8rem] font-semibold text-accent-deep underline-offset-2 hover:underline";
+
 function EventCard({ e }: { e: HackEvent }) {
   return (
     <Card>
@@ -366,6 +523,16 @@ function EventCard({ e }: { e: HackEvent }) {
         <span>{when(e)}</span>
         <span aria-hidden>·</span>
         <span>{e.where}</span>
+      </p>
+      <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+        <a href={googleCalendarHref(e)} target="_blank" rel="noopener noreferrer" className={smallLink}>
+          <CalendarPlus size={14} strokeWidth={2.2} aria-hidden />
+          Google Calendar
+        </a>
+        <a href={HACK.calendarFile} download className={smallLink}>
+          <CalendarPlus size={14} strokeWidth={2.2} aria-hidden />
+          All dates (Apple, Outlook)
+        </a>
       </p>
       {e.program && (
         <div className="mt-3">
@@ -459,6 +626,9 @@ export default function Hack() {
 
       <BrandSlab now={now} />
       <NextUp now={now} />
+      <SaveAndShare />
+
+      <WhatIsHackathon />
 
       {/* ---- who ---- */}
       <section aria-labelledby="who-title" className="mt-7 board:mt-5">

@@ -78,7 +78,8 @@ const descriptions = new Map();
 const ogImages = new Map();
 
 for (const file of pages) {
-  const route = "/" + relative(dist, file).replace(/index\.html$/, "").replace(/\/$/, "");
+  // Forward slashes on every OS, so a route reads "/hack" on Windows too.
+  const route = "/" + relative(dist, file).replace(/\\/g, "/").replace(/index\.html$/, "").replace(/\/$/, "");
   const html = readFileSync(file, "utf8");
 
   const titleMatch = html.match(/<title>(.*?)<\/title>/s);
@@ -166,6 +167,19 @@ for (const [file, { route, ogType }] of ogImages) {
   check(meta.width === 1200 && meta.height === 630, `${name}: ${meta.width}x${meta.height}, expected 1200x630`);
   const type = meta.format === "jpeg" ? "image/jpeg" : `image/${meta.format}`;
   check(ogType === type, `${route}: og:image:type says ${ogType}, but ${name} is ${type}`);
+}
+
+// Pages that promise no tracking must ship none (NO_ANALYTICS_ROUTES in
+// scripts/prerender.mjs). A template change that moves the Google tag outside
+// the analytics markers would otherwise slip back in without anyone noticing.
+for (const route of ["/hack"]) {
+  const html = htmlByRoute.get(route);
+  check(Boolean(html), `${route}: expected a prerendered page`);
+  if (html) {
+    for (const tracker of ["googletagmanager", "gtag(", "__CLARITY_ID__", "clarity.ms"]) {
+      check(!html.includes(tracker), `${route}: must carry no analytics, but includes "${tracker}"`);
+    }
+  }
 }
 
 // Unlisted pages only stay unlisted while nothing advertises them: not the
