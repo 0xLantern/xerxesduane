@@ -164,6 +164,10 @@ interface Photo {
 const HERO_PHOTOS: Photo[] = [
   { src: "gmc", alt: "A packed hall of young people at a youth conference in the Philippines", w: 1600, h: 903 },
   { src: "ctmi", alt: "Hundreds of students cheering at the Fruitful youth camp, 2024", w: 1600, h: 900 },
+  { src: "youth-alive-blaze", alt: "Xerxes taking a selfie with hundreds of young people at a Youth Alive Blaze gathering in an arena", w: 1600, h: 900 },
+  { src: "youth-camp-selfie", alt: "Xerxes taking a selfie with young people seated on the floor of a hall during a youth camp", w: 1600, h: 900 },
+  { src: "youth-gathering-court", alt: "Xerxes taking a selfie with a crowd of young people seated under a covered court", w: 1600, h: 900 },
+  { src: "ccac-digital-evangelism", alt: "Participants of the Digital Evangelism Workshop at Capital City Alliance Church, with Cru Digital Strategies", w: 1600, h: 900 },
   { src: "fellowship-dubai", alt: "Xerxes and Loraine in front of the Fellowship Dubai sign: a place for everyone", w: 1600, h: 900 },
 ];
 
