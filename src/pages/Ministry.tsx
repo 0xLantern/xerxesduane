@@ -363,7 +363,7 @@ const ROAD: { years: string; title: string; body: string }[] = [
     body: "An apprenticeship from September 2025 to September 2026: coordinating Alpha and discipleship, coaching leaders to run Alpha themselves, and helping with communications and digital outreach. I now continue there as a volunteer.",
   },
   {
-    years: "Now",
+    years: "2025–present",
     title: "Writer, Scripture Union Philippines",
     body: "Writing daily Bible reading notes.",
   },
