@@ -245,7 +245,7 @@ const prose = "max-w-[72ch] space-y-3 text-[0.95rem] leading-relaxed text-fg-sof
 
 const STATS = [
   { value: "9+", label: "years in ministry" },
-  { value: "~2,000", label: "youths & students trained" },
+  { value: "~10,000", label: "youths & students trained" },
   { value: "5,000+", label: "leaders equipped for digital outreach" },
 ];
 
@@ -828,7 +828,7 @@ export default function Ministry() {
                         ministry was as a campus missionary, from 2017 to 2018, and from 2018 to 2021
                         I was a youth pastor in a Southern Baptist church in Baguio: developing youth,
                         training leaders, and helping students grow into people who can disciple
-                        others. Across camps, conferences, and campuses I&rsquo;ve trained around 2,000
+                        others. Across camps, conferences, and campuses I&rsquo;ve trained around 10,000
                         youths and students, and watched many of them begin to lead on their own.
                         Alongside the youth ministry in Baguio I studied at Philippine Baptist
                         Theological Seminary, and graduated with a Master of Divinity in May 2021.
