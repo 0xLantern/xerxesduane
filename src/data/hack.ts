@@ -36,8 +36,14 @@ export const HACK = {
   lede:
     "Join #HACK2026 Dubai, part of the global Christian hackathon run by Indigitous. Over six weeks, small teams build a free website kit that churches and faith sites can use: simple pages, a private question box and safety features, in Arabic and English.",
   /** The #HACK Champions leading Dubai, as the invitation signs it. */
-  champions: ["Xerxes Duane Magdaluyo", "Abel Thomas"],
+  champions: ["Xerxes Duane", "Abel Thomas"],
   global: "https://hack.indigitous.org/",
+  /**
+   * Who may join. Said plainly in the header, the "who it's for" section and
+   * the FAQ: #HACK2026 Dubai is a gathering of Christians, not an outreach.
+   */
+  audience: "For Christians only",
+  audienceNote: "#HACK2026 Dubai is for Christians only: followers of Jesus who want to use their skills for God.",
   /** The page's own address, for the share message and the calendar file. */
   url: "https://ministry.xerxesduane.com/hack",
   /**
@@ -76,7 +82,7 @@ export const WHAT_IS = {
 
 /** What the "invite a friend" button sends. Keep it to what the page says. */
 export const INVITE_MESSAGE =
-  "Come build with me at #HACK2026 Dubai, a six-week Christian hackathon. You don't need to code: designers, writers, video makers and testers are all needed. Online kickoff Thu 8 Oct, 8pm. Register by Mon 12 Oct:";
+  "Come build with me at #HACK2026 Dubai, a six-week hackathon for Christians. You don't need to code: designers, writers, video makers and testers are all needed. Online kickoff Thu 8 Oct, 8pm. Register by Mon 12 Oct:";
 
 /**
  * Who a guest can message, in the order HACK.champions names them. Numbers
@@ -269,6 +275,10 @@ export const IF_ASKED =
   "It's a free, private website template for faith sites that anyone can use, built at a Christian hackathon.";
 
 export const FAQS = [
+  {
+    q: "Who can join?",
+    a: "Christians only: followers of Jesus who want to use their skills for God. You don't need to be a programmer.",
+  },
   {
     q: "Is this about hacking into systems?",
     a: "No. Here \"hack\" means a clever fix. Teams build a new website kit from scratch with sample content, and nobody touches anyone else's systems.",

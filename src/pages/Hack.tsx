@@ -4,6 +4,7 @@ import {
   CalendarDays,
   CalendarPlus,
   Check,
+  Church,
   Compass,
   Laptop,
   Lightbulb,
@@ -604,6 +605,10 @@ export default function Hack() {
               <Users size={14} strokeWidth={2.2} aria-hidden className="text-accent" />
               Led by {HACK.champions.join(" and ")}, #HACK Champions
             </span>
+            <span className="inline-flex items-center gap-1.5 font-semibold text-fg">
+              <Church size={14} strokeWidth={2.2} aria-hidden className="text-accent" />
+              {HACK.audience}
+            </span>
           </>
         }
         actions={
@@ -635,8 +640,14 @@ export default function Hack() {
         <SectionIntro
           id="who-title"
           eyebrow="Who it's for"
-          title="You don't need to be a programmer."
-          lede="Every team needs designers, video makers, writers, testers and researchers as much as it needs code. If you're willing to learn, there's a seat for you."
+          title="For Christians. No coding needed."
+          lede={
+            <>
+              <strong className="text-fg">{HACK.audienceNote}</strong> Every team needs designers, video makers,
+              writers, testers and researchers as much as it needs code. If you&rsquo;re willing to learn, there&rsquo;s a
+              seat for you.
+            </>
+          }
         />
         <ol className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
           {ROLES.map((r, i) => (
