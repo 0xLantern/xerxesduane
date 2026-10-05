@@ -250,6 +250,44 @@ export const CHALLENGES: Challenge[] = [
 
 export const TOOLS = "GitHub and Astro for code, Figma and Canva for design, CapCut for video.";
 
+/**
+ * The "Get ready for 17 October" panel. Visible until the team dinner ends,
+ * then it steps aside. Ticks on the checklist are kept in the visitor's own
+ * browser only; nothing is sent anywhere.
+ */
+export const GET_READY = {
+  title: "Get ready for 17 October",
+  lede: "The team dinner is where teams form and plan. Five minutes now makes the evening easier.",
+  /** Bump the version if the checklist items change, so old ticks don't carry over. */
+  storageKey: "hack2026-dubai-ready-v1",
+  checklist: [
+    { id: "register", text: "Register and pay the AED 30 by Monday 12 October." },
+    { id: "kickoff", text: "Join the online kickoff on Thursday 8 October at 8pm." },
+    {
+      id: "github",
+      text: "Create a free GitHub account with your personal email, not a work one.",
+      link: { href: "https://github.com/signup", label: "github.com/signup" },
+    },
+    { id: "poll", text: "Vote for your top two challenges in the poll sent after the kickoff." },
+    { id: "address", text: "Save the address when it arrives privately, and keep it to yourself." },
+    { id: "cant", text: "Can't make it? Message Xerxes or Abel so we can place you in a team." },
+  ],
+  bring: [
+    "Your laptop and its charger, fully charged",
+    "Your phone, signed in to GitHub",
+    "Something to write on, or your favourite notes app",
+    "An appetite: dinner is served at 6pm",
+    "Optional: a sketch, idea or link that inspired you for your top challenge",
+  ],
+  tips: [
+    { title: "Come curious, not perfect", body: "Nobody expects you to know everything. Most people learn something new at their first hackathon." },
+    { title: "Say what you bring", body: "Tell your team what you're good at and what you'd like to learn. Both help them plan." },
+    { title: "Small and working wins", body: "Something small that works on 21 November beats something big that doesn't." },
+    { title: "Ask early", body: "Stuck for more than half an hour? Ask your team or a Champion. That's what check-ins are for." },
+    { title: "Keep it quiet", body: "Arrive and leave quietly, and keep photos and posts off social media." },
+  ],
+};
+
 export const STEPS = [
   { title: "Register", body: `Fill in the form and pay the ${REGISTRATION.fee} by ${REGISTRATION.closesLabel}.` },
   { title: "Set up GitHub", body: "Create a free GitHub account before 17 October, using your personal email, not a work one." },
