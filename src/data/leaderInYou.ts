@@ -1,3 +1,5 @@
+import { CONTACT } from "./contact";
+
 /**
  * The Leader in Y.O.U.: everything /leader-in-you says, in one place.
  *
@@ -47,16 +49,20 @@ export const FACILITATOR = {
   personalSite: "https://www.owenfernandes.com",
 };
 
-export const CONTACT_OWEN = {
-  whatsapp: "971509146925",
-  phoneDisplay: "+971 50 914 6925",
-  phoneHref: "tel:+971509146925",
-  email: "owen@ascendhigher.ae",
+/**
+ * Enquiries go to Xerxes, who manages the program in Dubai, not to Dr. Owen
+ * directly. The numbers live in data/contact.ts.
+ */
+export const CONTACT_ENQUIRY = {
+  whatsapp: CONTACT.whatsapp,
+  phoneDisplay: CONTACT.whatsappDisplay,
+  phoneHref: `tel:+${CONTACT.whatsapp}`,
+  email: CONTACT.email,
 };
 
 /** What the Reserve / WhatsApp buttons open with. */
 export const WHATSAPP_MESSAGE =
-  "Hi Dr. Owen, I found The Leader in Y.O.U. on xerxesduane.com. Please tell me about the next 2-day masterclass in Dubai.";
+  "Hi Xerxes, I found The Leader in Y.O.U. on your website. Please tell me about the next 2-day masterclass in Dubai.";
 
 export const EMAIL_SUBJECT = "The Leader in Y.O.U. - next masterclass in Dubai";
 export const EMAIL_BODY =
@@ -218,7 +224,7 @@ export const HOW_IT_RUNS = [
 export const FAQS: { q: string; a: string }[] = [
   {
     q: "When is the next program, and what does it cost?",
-    a: "Dates and the fee for each cohort are shared directly by Dr. Owen, because groups are kept small. Message him on WhatsApp or email and you will get the next dates, the venue and the fee.",
+    a: "Dates and the fee for each cohort are shared on request, because groups are kept small. Message Xerxes, who coordinates the program in Dubai, on WhatsApp or email and you will get the next dates, the venue and the fee.",
   },
   {
     q: "How long is it, and where?",
@@ -238,7 +244,7 @@ export const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Can my company or church bring it to our own team?",
-    a: "Yes. The program can be delivered for your organisation, onsite, with a certificate that can be co-branded. Contact Dr. Owen with your team size and goals for a proposal.",
+    a: "Yes. The program can be delivered for your organisation, onsite, with a certificate that can be co-branded. Message Xerxes with your team size and goals and he will arrange a proposal with Dr. Owen.",
   },
   {
     q: "Do I get a certificate?",

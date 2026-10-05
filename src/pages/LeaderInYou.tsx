@@ -17,7 +17,7 @@ import FaqList from "../components/FaqList";
 import {
   AUDIENCES,
   COMPETENCIES,
-  CONTACT_OWEN,
+  CONTACT_ENQUIRY,
   EMAIL_BODY,
   EMAIL_SUBJECT,
   FACILITATOR,
@@ -43,8 +43,8 @@ import {
  * silent or inconsistent on some of them.
  */
 
-const whatsappHref = `https://wa.me/${CONTACT_OWEN.whatsapp}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
-const mailHref = `mailto:${CONTACT_OWEN.email}?subject=${encodeURIComponent(EMAIL_SUBJECT)}&body=${encodeURIComponent(EMAIL_BODY)}`;
+const whatsappHref = `https://wa.me/${CONTACT_ENQUIRY.whatsapp}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
+const mailHref = `mailto:${CONTACT_ENQUIRY.email}?subject=${encodeURIComponent(EMAIL_SUBJECT)}&body=${encodeURIComponent(EMAIL_BODY)}`;
 
 const ring =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-canvas";
@@ -106,7 +106,7 @@ function Hero() {
         </p>
 
         <div className="mt-7 flex flex-wrap items-center gap-3">
-          <WhatsAppButton cta="leader-hero-whatsapp">Message Dr. Owen</WhatsAppButton>
+          <WhatsAppButton cta="leader-hero-whatsapp">Message us on WhatsApp</WhatsAppButton>
           <EmailButton cta="leader-hero-email">Ask for the next dates</EmailButton>
         </div>
 
@@ -452,7 +452,7 @@ function Reserve() {
         <p className="mt-4 max-w-[58ch] text-[1.02rem] leading-relaxed text-white/85">
           {NEXT_COHORT
             ? `Next program: ${NEXT_COHORT.dates}.`
-            : "Groups are kept to 12, so seats go quickly. Message Dr. Owen for the next dates, the venue and the fee."}{" "}
+            : "Groups are kept to 12, so seats go quickly. Message Xerxes, who coordinates the program in Dubai, for the next dates, the venue and the fee."}{" "}
           Bringing a team from your company or church? Ask about a private program with a co-branded certificate.
         </p>
         <div className="mt-7 flex flex-wrap gap-3">
@@ -464,15 +464,15 @@ function Reserve() {
             className={`${btn} bg-white text-[#5a0b43] hover:bg-[#fdf2fa]`}
           >
             <WhatsAppGlyph size={16} />
-            WhatsApp Dr. Owen
+            WhatsApp us
           </a>
           <a href={mailHref} data-cta="leader-reserve-email" className={`${btn} border border-white/40 text-white hover:bg-white/10`}>
             <Mail size={16} strokeWidth={2.2} aria-hidden />
-            {CONTACT_OWEN.email}
+            {CONTACT_ENQUIRY.email}
           </a>
-          <a href={CONTACT_OWEN.phoneHref} data-cta="leader-reserve-call" className={`${btn} border border-white/40 text-white hover:bg-white/10`}>
+          <a href={CONTACT_ENQUIRY.phoneHref} data-cta="leader-reserve-call" className={`${btn} border border-white/40 text-white hover:bg-white/10`}>
             <Phone size={16} strokeWidth={2.2} aria-hidden />
-            {CONTACT_OWEN.phoneDisplay}
+            {CONTACT_ENQUIRY.phoneDisplay}
           </a>
         </div>
       </div>
