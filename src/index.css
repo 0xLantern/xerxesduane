@@ -977,3 +977,24 @@ html[data-theme-vt="active"]::view-transition-new(root) {
 [role="dialog"] .bg-panel {
   --tw-bg-opacity: 1;
 }
+
+/*
+ * Ascend Higher plum, for /leader-in-you. The page is Dr. Owen Fernandes's
+ * program, so it wears his brand colour instead of the site's orange. Only the
+ * accent tokens move; surfaces, ink and hairlines stay the site's own, and the
+ * dark set lightens the accent text so it keeps AA on the navy ground.
+ */
+.theme-ascend {
+  --c-accent: 168 30 124;
+  --c-accent-soft: 247 230 241;
+  --c-accent-deep: 122 16 92;
+  --c-accent-hover: 104 12 78;
+  --c-accent-ink: 255 255 255;
+}
+:root[data-theme="dark"] .theme-ascend {
+  --c-accent: 214 72 168;
+  --c-accent-soft: 58 22 52;
+  --c-accent-deep: 240 150 210;
+  --c-accent-hover: 226 110 190;
+  --c-accent-ink: 24 8 20;
+}
