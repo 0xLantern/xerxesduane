@@ -353,9 +353,19 @@ const ROAD: { years: string; title: string; body: string }[] = [
     body: "Nominated through #HACK. There my call to missions in the Middle East was confirmed, and one meeting led, in time, to Dubai. I have since been selected for the Young Leaders Gathering in 2027.",
   },
   {
+    years: "2024–2025",
+    title: "Digital marketing and web development, Dubai",
+    body: "After the Congress I moved to Dubai and worked mostly in digital marketing and website development for businesses there.",
+  },
+  {
     years: "2025–2026",
     title: "Fellowship Dubai",
     body: "An apprenticeship from September 2025 to September 2026: coordinating Alpha and discipleship, coaching leaders to run Alpha themselves, and helping with communications and digital outreach. I now continue there as a volunteer.",
+  },
+  {
+    years: "Now",
+    title: "Writer, Scripture Union Philippines",
+    body: "Writing daily Bible reading notes.",
   },
 ];
 
@@ -868,7 +878,7 @@ export default function Ministry() {
                           community of Christians working at the intersection of faith and technology.
                         </li>
                         <li>
-                          Write for{" "}
+                          Write daily Bible reading notes for{" "}
                           <Ext href="https://scriptureunion.global/movements/philippines/">
                             Scripture Union Philippines
                           </Ext>
@@ -1015,8 +1025,8 @@ export default function Ministry() {
                   <p>
                     At the same time, God was shaping my personal life. I married my wife, Loraine,
                     on December 18, 2024, and we began preparing for a new season together. After
-                    the Congress I moved to Dubai, found work, and served there for about ten
-                    months. In May 2025, Pastor Bill invited me to apply as an apprentice at
+                    the Congress I moved to Dubai, found work in digital marketing and website
+                    development for businesses, and served there for about ten months. In May 2025, Pastor Bill invited me to apply as an apprentice at
                     Fellowship Dubai, and in September 2025 I was officially hired. I completed the
                     apprenticeship in September 2026 and continue serving there as a volunteer.
                   </p>
