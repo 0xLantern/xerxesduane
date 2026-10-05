@@ -722,9 +722,10 @@ export default function Ministry() {
           <div className="mt-2 grid gap-x-6 gap-y-4 rounded-card border border-line bg-panel p-4 shadow-card sm:grid-cols-3">
             {TRAINING.map((group) => (
               <section key={group.heading} aria-label={group.heading}>
-                <h3 className="font-technical text-[0.72rem] font-extrabold uppercase tracking-[0.14em] text-accent-deep">
+                {/* A label, not a heading: these sit under the h1 with no h2 above them, so an h3 skipped a level (check:seo). The section's aria-label names the group. */}
+                <p className="font-technical text-[0.72rem] font-extrabold uppercase tracking-[0.14em] text-accent-deep">
                   {group.heading}
-                </h3>
+                </p>
                 <ul className="mt-2 space-y-2">
                   {group.items.map((item) => {
                     const text = (

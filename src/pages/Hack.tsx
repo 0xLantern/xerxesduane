@@ -29,6 +29,7 @@ import {
   CHECK_IN_GOALS,
   EVENTS,
   FAQS,
+  GET_READY,
   GROUND_RULES,
   HACK,
   IF_ASKED,
@@ -273,6 +274,14 @@ function NextUp({ now }: { now: number | null }) {
       <>
         <strong className="text-fg">{next.title}</strong>, {when(next)}. {next.where}.
         {goal && <> Aim to have: {goal.charAt(0).toLowerCase() + goal.slice(1)}.</>}
+        {next.id === "team-dinner" && (
+          <>
+            {" "}
+            <a href="#get-ready" className="font-semibold text-accent-deep underline-offset-2 hover:underline">
+              Get ready checklist
+            </a>
+          </>
+        )}
       </>
     );
   } else {
@@ -434,6 +443,109 @@ function WhatIsHackathon() {
             </li>
           ))}
         </ul>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* get ready for the team dinner                                       */
+/* ------------------------------------------------------------------ */
+
+/** Reads and writes the visitor's ticks. Storage can be blocked; the list still works. */
+function useChecklist(key: string) {
+  const [done, setDone] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(key);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot client-only init; intentional SSR-safe pattern
+      if (saved) setDone(JSON.parse(saved) as Record<string, boolean>);
+    } catch {
+      /* storage blocked or corrupt: start empty */
+    }
+  }, [key]);
+  const toggle = (id: string) =>
+    setDone((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      try {
+        window.localStorage.setItem(key, JSON.stringify(next));
+      } catch {
+        /* storage blocked: the tick still shows for this visit */
+      }
+      return next;
+    });
+  return { done, toggle };
+}
+
+function GetReady({ now }: { now: number | null }) {
+  const dinner = EVENTS.find((e) => e.id === "team-dinner")!;
+  const { done, toggle } = useChecklist(GET_READY.storageKey);
+  // Once the dinner is over the panel has done its job.
+  if (now !== null && now > Date.parse(dinner.end)) return null;
+  const count = GET_READY.checklist.filter((c) => done[c.id]).length;
+
+  return (
+    <section id="get-ready" aria-labelledby="ready-title" className="mt-7 scroll-mt-24 board:mt-5">
+      <SectionIntro id="ready-title" eyebrow="Team dinner · Sat 17 Oct, 6pm" title={GET_READY.title} lede={GET_READY.lede} />
+      <div className="grid gap-2 lg:grid-cols-3">
+        <Card className="flex flex-col">
+          <div className="flex items-center justify-between gap-2">
+            <H3>Before you come</H3>
+            <span className="font-technical text-[0.75rem] text-accent-deep" aria-live="polite">
+              {count} of {GET_READY.checklist.length} done
+            </span>
+          </div>
+          <ul className="mt-3 space-y-2">
+            {GET_READY.checklist.map((c) => (
+              <li key={c.id}>
+                <label className="flex cursor-pointer gap-2.5 text-[0.88rem] leading-snug text-fg-soft">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(done[c.id])}
+                    onChange={() => toggle(c.id)}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-[#EF4E25]"
+                  />
+                  <span className={done[c.id] ? "text-fg-faint line-through" : undefined}>
+                    {c.text}
+                    {c.link && (
+                      <>
+                        {" "}
+                        <a href={c.link.href} target="_blank" rel="noopener noreferrer" className={smallLink}>
+                          {c.link.label}
+                          <ArrowUpRight size={12} strokeWidth={2.3} aria-hidden />
+                        </a>
+                      </>
+                    )}
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-auto pt-3 text-[0.75rem] text-fg-faint">Your ticks stay on this device. Nothing is sent anywhere.</p>
+        </Card>
+
+        <Card>
+          <H3>What to bring</H3>
+          <ul className={`${prose} mt-3 list-disc space-y-1.5 pl-5 text-[0.88rem]`}>
+            {GET_READY.bring.map((b) => (
+              <li key={b}>{b}</li>
+            ))}
+          </ul>
+          <p className="mt-3 text-[0.82rem] text-fg-faint">
+            {dinner.where}. Dinner is covered by your registration.
+          </p>
+        </Card>
+
+        <Card>
+          <H3>First hackathon?</H3>
+          <ul className="mt-3 space-y-2.5">
+            {GET_READY.tips.map((t) => (
+              <li key={t.title} className="text-[0.88rem] leading-snug text-fg-soft">
+                <strong className="text-fg">{t.title}.</strong> {t.body}
+              </li>
+            ))}
+          </ul>
+        </Card>
       </div>
     </section>
   );
@@ -772,6 +884,8 @@ export default function Hack() {
           </Card>
         </div>
       </section>
+
+      <GetReady now={now} />
 
       {/* ---- presenting, and the rules ---- */}
       <section aria-labelledby="rules-title" className="mt-7 board:mt-5">
