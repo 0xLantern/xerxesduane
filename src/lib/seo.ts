@@ -269,7 +269,7 @@ export function allRoutes(): string[] {
  * never indexed. Each one also needs its X-Robots-Tag header in vercel.json
  * and its Disallow for AI crawlers in public/robots.txt.
  */
-export const UNLISTED_ROUTES = ["/ministry"];
+export const UNLISTED_ROUTES = ["/ministry", "/hack"];
 
 /** Whether a route belongs in the sitemap. */
 export function isIndexable(path: string): boolean {
@@ -463,6 +463,22 @@ const MINISTRY_META: PageMeta = {
   unlisted: true,
 };
 
+/**
+ * Unlisted, on the ministry host, like /ministry. #HACK2026 Dubai invites by
+ * personal message and poster, never by search. No JSON-LD: an Event node is
+ * exactly the kind of thing that would put it in front of strangers.
+ */
+const HACK_META: PageMeta = {
+  title: "#HACK2026 Dubai - Xerxes Duane",
+  ogTitle: "#HACK2026 Dubai: You already have the skills. Let's use them for God.",
+  description:
+    "Join #HACK2026 Dubai: six weeks, small teams, one free website kit for churches and faith sites. Kickoff 8 October. No coding needed.",
+  canonical: `${MINISTRY_ORIGIN}/hack`,
+  ogImage: `${MINISTRY_ORIGIN}/hack/share.jpg`,
+  noindex: true,
+  unlisted: true,
+};
+
 const SHOWREEL_META: PageMeta = {
   title: "Showreel - Xerxes Duane",
   description:
@@ -588,6 +604,7 @@ export function getPageMeta(path: string): PageMeta {
   if (slug === "portfolio") return PORTFOLIO_META;
   if (slug === "showreel") return SHOWREEL_META;
   if (slug === "ministry") return MINISTRY_META;
+  if (slug === "hack") return HACK_META;
   if (slug === "ar") return AR_HOME_META;
 
   // Arabic service pages.
