@@ -363,6 +363,11 @@ const ROAD: { years: string; title: string; body: string }[] = [
     title: "Fellowship Dubai",
     body: "An apprenticeship from September 2025 to September 2026: coordinating Alpha and discipleship, coaching leaders to run Alpha themselves, and helping with communications and digital outreach. I now continue there as a volunteer.",
   },
+  {
+    years: "2026–present",
+    title: "Head of Technology, Great Commission Network (GCN), Switzerland",
+    body: "Since September 2026, responsible for GCN's digital platform: the global church and ministry directory on gcn.live, its data model and roadmap, and the technology behind GCN's collaboration work. I own the architecture and the product side in-house and direct the external development agency that builds and operates the site.",
+  },
 ];
 
 const ALONGSIDE = [
@@ -855,6 +860,12 @@ export default function Ministry() {
                         outreach. With the apprenticeship complete, I now:
                       </p>
                       <ul className="list-disc space-y-1.5 pl-5">
+                        <li>
+                          Serve as Head of Technology at the Great Commission Network (GCN),
+                          Switzerland, responsible for its digital platform: the global church and
+                          ministry directory on <Ext href="https://gcn.live">gcn.live</Ext>, its data
+                          model and roadmap, and the technology behind GCN&rsquo;s collaboration work.
+                        </li>
                         <li>
                           Volunteer in Communications and Digital &amp; Online Ministry at Fellowship
                           Dubai, building dashboards and custom web apps that help the church&rsquo;s
