@@ -833,6 +833,13 @@ export default function Ministry() {
                           <Ext href="https://www.faithtech.com/communities/dubai">FaithTech Dubai</Ext>, a
                           community of Christians working at the intersection of faith and technology.
                         </li>
+                        <li>
+                          Write for{" "}
+                          <Ext href="https://scriptureunion.global/movements/philippines/">
+                            Scripture Union Philippines
+                          </Ext>
+                          .
+                        </li>
                       </ul>
                     </div>
                   </Card>
