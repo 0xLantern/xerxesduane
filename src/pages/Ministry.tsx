@@ -274,6 +274,7 @@ const TRAINING: { heading: string; items: TrainingItem[] }[] = [
       { label: "Introduction to Strategic Missions", detail: "AIMS & Asian Center for Missions, 2025", href: "/ministry/credentials/aims-strategic-missions.pdf" },
       { label: "Pre-Candidate Orientation Training", detail: "Pioneers in Asia, 2024", href: "/ministry/credentials/pioneers-in-asia-orientation.webp" },
       { label: "Digital Missions Launchpad", detail: "Discipleship.Space, Cru Philippines & Indigitous, 2022", href: "/ministry/credentials/digital-missions-launchpad.pdf" },
+      { label: "Leadership Lab: Communicating a Clear Vision for Missional Innovation", detail: "Indigitous" },
     ],
   },
   {
