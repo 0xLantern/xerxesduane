@@ -665,7 +665,7 @@ export default function Ministry() {
         meta={
           <span className="inline-flex items-center gap-1.5">
             <MapPin size={14} strokeWidth={2.2} aria-hidden className="text-accent" />
-            Volunteer, Fellowship Dubai · Dubai, UAE
+            Head of Technology, Great Commission Network (GCN) · Based in Dubai, UAE
           </span>
         }
         actions={
