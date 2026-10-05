@@ -164,7 +164,7 @@ interface Photo {
 const HERO_PHOTOS: Photo[] = [
   { src: "gmc", alt: "A packed hall of young people at a youth conference in the Philippines", w: 1600, h: 903 },
   { src: "ctmi", alt: "Hundreds of students cheering at the Fruitful youth camp, 2024", w: 1600, h: 900 },
-  { src: "outreach", alt: "Church leaders gathered around a table after a training session", w: 1600, h: 900 },
+  { src: "fellowship-dubai", alt: "Xerxes and Loraine in front of the Fellowship Dubai sign: a place for everyone", w: 1600, h: 900 },
 ];
 
 const CALLING_PHOTOS: Photo[] = [
