@@ -9,6 +9,11 @@
  * sites". The page is unlisted (see UNLISTED_ROUTES in lib/seo.ts), but an
  * unlisted page is still a public page to anyone holding the link.
  *
+ * Detailed challenge briefs (who a track serves, research, data sources)
+ * go to registered teams privately, never onto this page. The page keeps
+ * the four general challenges from the invitation and says the full brief
+ * comes privately.
+ *
  * NEXT YEAR. Change the dates, the form link and the copy here. The page
  * works out which gathering is next, and whether registration is still open,
  * from EVENTS and REGISTRATION at view time.
