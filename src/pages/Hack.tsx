@@ -782,7 +782,7 @@ export default function Hack() {
           id="build-title"
           eyebrow="The four challenges"
           title="One free website kit, built in four parts"
-          lede="Each team builds one part of the kit, using sample content only. You choose your top two in a poll after the kickoff."
+          lede="Each team builds one part of the kit, using sample content only. You choose your top two in a poll after the kickoff, and registered teams get the full challenge brief privately."
         />
         <ul className="grid gap-2 sm:grid-cols-2">
           {CHALLENGES.map((c, i) => {
