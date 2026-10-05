@@ -868,7 +868,7 @@ export default function Ministry() {
                           community of Christians working at the intersection of faith and technology.
                         </li>
                         <li>
-                          Write for{" "}
+                          Write daily Bible reading notes for{" "}
                           <Ext href="https://scriptureunion.global/movements/philippines/">
                             Scripture Union Philippines
                           </Ext>
