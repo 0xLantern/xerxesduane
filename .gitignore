@@ -30,4 +30,3 @@ dist-ssr
 
 # Raw hero footage — the encoded MP4 is committed instead
 public/hero/raw.mp4
-.env*
