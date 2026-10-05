@@ -97,6 +97,7 @@ function lastCommitDate(paths) {
 function sourcesFor(route) {
   const slug = route.replace(/^\/+|\/+$/g, "");
   if (slug === "pricing" || slug === "starter") return ["src/data/pricing.ts"];
+  if (slug === "leader-in-you") return ["src/data/leaderInYou.ts"];
   if (slug === "ar" || slug.startsWith("ar/")) return ["src/data/servicePagesAr.ts"];
   if (slug === "case-studies" || slug.startsWith("case-studies/")) return ["src/data/content.ts"];
   if (slug === "insights" || slug.startsWith("insights/")) return ["src/data/insights.ts"];

@@ -117,6 +117,9 @@ const CARDS = [
   { file: "insights", icon: "book-open", eyebrow: "Insights", title: ["Plain-English", "systems thinking."], subtitle: "Odoo, automation and growth for small businesses in Dubai.", cta: "Read the insights" },
   { file: "ai-lab", icon: "bot", eyebrow: "AI Lab · Live tools", title: ["Try the AI.", "Not just read about it."], subtitle: "Practical AI tools for sales, service, content, operations and reporting.", cta: "Try the tools" },
 
+  // Landing page: The Leader in Y.O.U. (Dr. Owen Fernandes, Ascend Higher).
+  { file: "leader-in-you", icon: "award", eyebrow: "Leadership masterclass · Dubai", title: ["The Leader", "in Y.O.U."], subtitle: "A 2-day masterclass with Dr. Owen Fernandes, for managers and church and ministry leaders.", cta: "Reserve your seat" },
+
   // Service pages.
   { file: "odoo-erp-dubai", icon: "boxes", eyebrow: "Odoo ERP · Dubai", title: ["Odoo ERP,", "set up properly."], subtitle: "Implementation, configuration and support for Dubai small businesses.", cta: AUDIT },
   { file: "web-development-dubai", icon: "code", eyebrow: "Web development · Dubai", title: ["A website that", "brings in customers."], subtitle: "Custom sites, web apps and landing pages, built fast and mobile-first.", cta: AUDIT },

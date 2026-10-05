@@ -4,6 +4,7 @@ import { CURRENCY, NONPROFIT, RATE_CARD, STARTER, UNIT_SCHEMA, aed, priceForSlug
 import { INSIGHTS, getInsight } from "../data/insights";
 import { SERVICE_PAGES_AR, getServicePageAr } from "../data/servicePagesAr";
 
+import { FAQS as LEADER_FAQS } from "../data/leaderInYou";
 import { MINISTRY_ORIGIN, SITE_ORIGIN } from "./host";
 
 export { SITE_ORIGIN };
@@ -62,7 +63,7 @@ const DEFAULT_OG_IMAGE = ogCard("home");
  * OG image by URL for weeks, so a versioned query string forces them to fetch
  * the current image instead of serving a stale (or wrong) cached one.
  */
-const OG_IMAGE_VERSION = "8";
+const OG_IMAGE_VERSION = "9";
 
 /** Absolute, cache-busted share-image URL for a page. */
 function ogImageUrl(image?: string): string {
@@ -256,6 +257,7 @@ export function allRoutes(): string[] {
     "/insights",
     "/privacy",
     "/terms",
+    "/leader-in-you",
     ...INSIGHTS.map((p) => `/insights/${p.slug}`),
     ...SERVICE_PAGES.map((p) => `/${p.slug}`),
     "/ar",
@@ -479,6 +481,51 @@ const HACK_META: PageMeta = {
   unlisted: true,
 };
 
+const LEADER_URL = `${SITE_ORIGIN}/leader-in-you`;
+const LEADER_META: PageMeta = {
+  title: "The Leader in Y.O.U. - Leadership Course in Dubai",
+  ogTitle: "The Leader in Y.O.U.: a 2-day leadership masterclass in Dubai",
+  description:
+    "A 2-day leadership masterclass in Dubai with Dr. Owen Fernandes, for managers, team leaders and church and ministry leaders. Psychometric profiling, 10 core competencies, certificate.",
+  canonical: LEADER_URL,
+  ogImage: ogCard("leader-in-you"),
+  jsonLd: [
+    breadcrumb([HOME_CRUMB, { name: "The Leader in Y.O.U.", url: LEADER_URL }]),
+    {
+      "@context": "https://schema.org",
+      "@type": "Course",
+      name: "The Leader in Y.O.U.",
+      alternateName: "Developing the Leader in Y.O.U.",
+      description:
+        "A 2-day in-person leadership masterclass in Dubai: psychometric assessment and debrief, a five-phase journey from self-awareness to action, and ten core leadership competencies.",
+      url: LEADER_URL,
+      inLanguage: "en",
+      educationalCredentialAwarded: "International certificate of completion",
+      provider: {
+        "@type": "Organization",
+        name: "Ascend Higher Associates",
+        sameAs: "https://www.ascendhigher.ae",
+      },
+      hasCourseInstance: {
+        "@type": "CourseInstance",
+        courseMode: "onsite",
+        courseWorkload: "P2D",
+        location: { "@type": "Place", name: "Dubai", address: { "@type": "PostalAddress", addressLocality: "Dubai", addressCountry: "AE" } },
+        instructor: { "@type": "Person", name: "Dr. Owen Fernandes", jobTitle: "Founder & Managing Partner, Ascend Higher Associates" },
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: LEADER_FAQS.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    },
+  ],
+};
+
 const SHOWREEL_META: PageMeta = {
   title: "Showreel - Xerxes Duane",
   description:
@@ -605,6 +652,7 @@ export function getPageMeta(path: string): PageMeta {
   if (slug === "showreel") return SHOWREEL_META;
   if (slug === "ministry") return MINISTRY_META;
   if (slug === "hack") return HACK_META;
+  if (slug === "leader-in-you") return LEADER_META;
   if (slug === "ar") return AR_HOME_META;
 
   // Arabic service pages.

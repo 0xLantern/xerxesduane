@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { LazyMotion, domAnimation, MotionConfig } from "framer-motion";
 import ShellLayout from "./components/shell/ShellLayout";
 import HackLayout from "./components/shell/HackLayout";
+import LeaderLayout from "./components/shell/LeaderLayout";
 import SiteAssistant from "./components/assistant/SiteAssistant";
 import MobileTabBar from "./components/shell/MobileTabBar";
 import ConsentBanner from "./components/ConsentBanner";
@@ -41,6 +42,8 @@ const Demos = lazy(() => import("./pages/Demos"));
 const Ministry = lazy(() => import("./pages/Ministry"));
 // Unlisted too, on the ministry host: #HACK2026 Dubai. See pages/Hack.tsx.
 const Hack = lazy(() => import("./pages/Hack"));
+// Public landing page for Dr. Owen Fernandes's program. See pages/LeaderInYou.tsx.
+const LeaderInYou = lazy(() => import("./pages/LeaderInYou"));
 import { getServicePage } from "./data/servicePages";
 import { AR_CHROME } from "./data/servicePagesAr";
 import { getServicePageAr } from "./data/servicePagesAr";
@@ -81,6 +84,7 @@ function Route({ path }: { path: string }) {
   if (slug === "ai-lab" || slug === "demos") return <Demos />;
   if (slug === "ministry") return <Ministry />;
   if (slug === "hack") return <Hack />;
+  if (slug === "leader-in-you") return <LeaderInYou />;
   if (slug === "ar") return <HomeAr />;
 
   // Arabic service pages: /ar/<service-slug>
@@ -125,6 +129,31 @@ export default function App({ path = "/" }: { path?: string }) {
               </main>
             </HackLayout>
             {/* No consent banner: this page loads no analytics to consent to. */}
+          </div>
+        </MotionConfig>
+      </LazyMotion>
+    );
+  }
+
+  // The Leader in Y.O.U. is a standalone landing page too, but public: it keeps
+  // analytics and the consent banner, and drops the rail, nav and assistant.
+  if (slug === "leader-in-you") {
+    return (
+      <LazyMotion features={domAnimation} strict>
+        <MotionConfig reducedMotion="user">
+          <div className="grain relative min-h-dvh" dir="ltr" lang="en">
+            <a href="#top" data-lenis-ignore className="skip-link">
+              Skip to content
+            </a>
+            <SmoothScroll />
+            <LeaderLayout>
+              <main className="relative z-10">
+                <Suspense fallback={null}>
+                  <Route path={path} />
+                </Suspense>
+              </main>
+            </LeaderLayout>
+            <ConsentBanner locale="en" />
           </div>
         </MotionConfig>
       </LazyMotion>
