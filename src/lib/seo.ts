@@ -474,7 +474,7 @@ const HACK_META: PageMeta = {
   title: "#HACK2026 Dubai - Xerxes Duane",
   ogTitle: "#HACK2026 Dubai: You already have the skills. Let's use them for God.",
   description:
-    "Join #HACK2026 Dubai: six weeks, eight challenges, free tools for churches and faith sites. Kickoff 8 October. No coding needed.",
+    "Join #HACK2026 Dubai: six weeks, seven challenges, free tools for churches and faith sites. Kickoff 8 October. No coding needed.",
   canonical: `${MINISTRY_ORIGIN}/hack`,
   ogImage: `${MINISTRY_ORIGIN}/hack/share.jpg`,
   noindex: true,
