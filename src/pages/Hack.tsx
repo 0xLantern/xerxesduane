@@ -1,18 +1,21 @@
 import { useEffect, useState, type ReactNode } from "react";
 import {
   ArrowUpRight,
+  BriefcaseBusiness,
   CalendarDays,
   CalendarPlus,
   Check,
   Church,
   Compass,
+  HandHeart,
+  HeartPulse,
+  House,
   Laptop,
   Lightbulb,
   Link2,
   ListChecks,
   MapPin,
   MessageSquareLock,
-  Search,
   ShieldCheck,
   Users,
   type LucideIcon,
@@ -26,6 +29,7 @@ import {
   AT_A_GLANCE,
   CHAMPION_CONTACTS,
   CHALLENGES,
+  TRACKS,
   CHECK_IN_GOALS,
   EVENTS,
   FAQS,
@@ -73,7 +77,8 @@ type Contact = (typeof CHAMPION_CONTACTS)[number];
 const waLink = (c: Contact, topic: Topic) =>
   `https://wa.me/${c.whatsapp}?text=${encodeURIComponent(`Hi ${c.first}, ${WA[topic]}`)}`;
 
-const CHALLENGE_ICONS: LucideIcon[] = [Compass, MessageSquareLock, ShieldCheck, Search];
+/** One per challenge, in order: the three kit parts, then Sojourn, Serve, Steady, Provision. */
+const CHALLENGE_ICONS: LucideIcon[] = [Compass, MessageSquareLock, ShieldCheck, House, HandHeart, HeartPulse, BriefcaseBusiness];
 
 const prose = "max-w-[72ch] space-y-3 text-[0.95rem] leading-relaxed text-fg-soft";
 
@@ -780,35 +785,51 @@ export default function Hack() {
       <section aria-labelledby="build-title" className="mt-7 board:mt-5">
         <SectionIntro
           id="build-title"
-          eyebrow="The four challenges"
-          title="One free website kit, built in four parts"
-          lede="Each team builds one part of the kit, using sample content only. You choose your top two in a poll after the kickoff, and registered teams get the full challenge brief privately."
+          eyebrow="The seven challenges"
+          title="Seven challenges in two tracks"
+          lede="Every challenge ends with a working app tested by real people, not slides. You choose your top two in a poll after the kickoff, and registered teams get the full challenge brief privately."
         />
-        <ul className="grid gap-2 sm:grid-cols-2">
-          {CHALLENGES.map((c, i) => {
-            const Icon = CHALLENGE_ICONS[i];
-            return (
-              <li key={c.n}>
-                <Card className="flex h-full flex-col">
-                  <div className="flex items-center gap-3">
-                    <IconTile>
-                      <Icon size={20} strokeWidth={2.2} aria-hidden />
-                    </IconTile>
-                    <div>
-                      <p className="font-technical text-[0.7rem] uppercase tracking-[0.16em] text-accent-deep">Challenge {c.n}</p>
-                      <H3>{c.title}</H3>
-                    </div>
-                  </div>
-                  <p className="mt-3 text-[0.9rem] leading-snug text-fg-soft">{c.build}</p>
-                  <p className="mt-auto pt-3 text-[0.8rem] text-fg-faint">
-                    <Users size={13} aria-hidden className="mr-1 inline align-[-2px]" />
-                    Good fit: {c.fit}
-                  </p>
-                </Card>
-              </li>
-            );
-          })}
-        </ul>
+        {TRACKS.map((t) => (
+          <div key={t.id} className="mt-4 first:mt-0">
+            <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span
+                className="rounded-sm px-2 py-0.5 font-technical text-[0.68rem] font-bold uppercase tracking-[0.16em]"
+                style={{ background: BRAND.yellow, color: BRAND.ink }}
+              >
+                {t.label}
+              </span>
+              <h3 className="font-display text-[1.2rem] font-bold text-fg">{t.title}</h3>
+              <p className="basis-full text-[0.88rem] leading-snug text-fg-soft">{t.lede}</p>
+            </div>
+            <ul className={`grid gap-2 sm:grid-cols-2 ${t.id === "kit" ? "lg:grid-cols-3" : ""}`}>
+              {CHALLENGES.filter((c) => c.track === t.id).map((c) => {
+                const Icon = CHALLENGE_ICONS[c.n - 1] ?? Compass;
+                return (
+                  <li key={c.n}>
+                    <Card className="flex h-full flex-col">
+                      <div className="flex items-center gap-3">
+                        <IconTile>
+                          <Icon size={20} strokeWidth={2.2} aria-hidden />
+                        </IconTile>
+                        <div>
+                          <p className="font-technical text-[0.7rem] uppercase tracking-[0.16em] text-accent-deep">
+                            Challenge {String(c.n).padStart(2, "0")} · {c.tag}
+                          </p>
+                          <h4 className="font-display text-[1.05rem] font-bold text-fg">{c.title}</h4>
+                        </div>
+                      </div>
+                      <p className="mt-3 text-[0.9rem] leading-snug text-fg-soft">{c.build}</p>
+                      <p className="mt-auto pt-3 text-[0.8rem] text-fg-faint">
+                        <Users size={13} aria-hidden className="mr-1 inline align-[-2px]" />
+                        Team: {c.team}
+                      </p>
+                    </Card>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
         <p className="mt-2 text-[0.85rem] text-fg-faint">
           Tools: {TOOLS} The AI and design subscriptions are covered by your registration.
         </p>
