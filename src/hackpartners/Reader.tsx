@@ -19,7 +19,7 @@ type Content = {
   title: string;
   intro: string;
   program: Row[];
-  ask: { headline: string; amount: string; amountNote: string; carries: string; places: number; shareNote: string; deadline: string };
+  ask: { headline: string; amount: string; amountNote: string; carries: string; places: number; shareNote: string };
   budget: { item: string; total: number; each: number }[];
   receives: string[];
   howToGive: string[];

@@ -8,6 +8,7 @@
 // Source: "HACK2026_Dubai_Partners_UAE.pdf" (Lighthouse folder), which says
 // "Please share in person, don't post or forward". Keep it in step with that
 // document; no payment details belong here, they are sent privately.
+// Unlike the PDF, there is no gift deadline: the owner asked for none.
 
 export const CONTENT = {
   eyebrow: "#HACK2026 · Dubai · For friends here in the UAE",
@@ -23,13 +24,12 @@ export const CONTENT = {
   ],
 
   ask: {
-    headline: "We're looking for 10 partners at AED 300: AED 3,000 for the whole program, by Friday 9 October.",
+    headline: "We're looking for 10 partners at AED 300: AED 3,000 for the whole program.",
     amount: "AED 300",
     amountNote: "one gift, once · about US$82",
     carries: "Carries one builder through all six weeks: dinner on both nights, a share of the tools and hosting their team needs, and a token of thanks.",
     places: 10,
     shareNote: "Two friends can share a place at AED 150 each. In-kind gifts count the same, for example buying a software licence or a domain directly.",
-    deadline: "2026-10-09",
   },
 
   budget: [
@@ -53,7 +53,6 @@ export const CONTENT = {
   howToGive: [
     "Tell Xerxes in person, or in a private message, that you'd like one of the ten places.",
     "We'll send giving details to you privately. No need to mention #HACK in a transfer reference.",
-    "Gifts by Friday 9 October, so tools and dinner are ready for the 17th.",
   ],
 
   pray: [
