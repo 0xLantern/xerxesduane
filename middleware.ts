@@ -23,7 +23,7 @@ import { APEX_HOST, MINISTRY_HOST, MINISTRY_ORIGIN, SITE_HOST, WORK_HOST, WORK_O
  * every other route, on either host — is untouched and never reaches here.
  */
 export const config = {
-  matcher: ["/", "/ministry", "/hack", "/robots.txt", "/work", "/r/:path*", "/gcn", "/letters", "/l/:path*", "/pray/:path*"],
+  matcher: ["/", "/ministry", "/hack", "/robots.txt", "/work", "/r/:path*", "/gcn", "/letters", "/l/:path*", "/pray/:path*", "/hp", "/hp/:path*", "/partners"],
   // The edge runtime is deprecated for middleware; the build warns on it.
   // Nothing here needs an edge-only API — it reads a header and returns.
   runtime: "nodejs",
@@ -50,6 +50,12 @@ export default function middleware(request: Request): Response {
     // The prayer team's page, /pray/<token>, is the same page too.
     if (url.pathname.startsWith("/l/") || url.pathname.startsWith("/pray/")) return rewrite(new URL("/letters", url));
     if (url.pathname === "/letters") return next();
+
+    // #HACK2026 Dubai partner page: /hp is the owner's panel, /hp/<code> one
+    // partner's private page. Both are partners.html, which holds no content;
+    // the words come from api/hack-partners/read for a valid code only.
+    if (url.pathname === "/hp" || url.pathname.startsWith("/hp/")) return rewrite(new URL("/partners", url));
+    if (url.pathname === "/partners") return Response.redirect(new URL("/hp", url), 308);
   }
 
   // work.xerxesduane.com is the hours log: work.html at the root and at each
@@ -72,6 +78,12 @@ export default function middleware(request: Request): Response {
     if (url.pathname === "/letters" || url.pathname.startsWith("/l/") || url.pathname.startsWith("/pray/")) {
       return Response.redirect(`${MINISTRY_ORIGIN}${url.pathname}${url.search}`, 308);
     }
+    // So is the #HACK partner page.
+    if (url.pathname === "/hp" || url.pathname.startsWith("/hp/")) return Response.redirect(`${MINISTRY_ORIGIN}${url.pathname}`, 308);
+    if (url.pathname === "/partners") return Response.redirect(`${MINISTRY_ORIGIN}/hp`, 308);
+  } else if (url.pathname === "/hp" || url.pathname.startsWith("/hp/")) {
+    // Previews and localhost: the partner page, so it can be tried before release.
+    return rewrite(new URL("/partners", url));
   } else if (url.pathname.startsWith("/r/") || url.pathname === "/gcn") {
     return rewrite(new URL("/work", url));
   } else if (url.pathname.startsWith("/l/") || url.pathname.startsWith("/pray/")) {
