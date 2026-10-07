@@ -255,7 +255,7 @@ export const CHALLENGES: Challenge[] = [
     title: "Start where they are",
     tag: "The journey site",
     build:
-      "A home page that opens with a question, a picker of feeling-words, and one short journey behind each: a question, a short video, a passage and a reflection. Arabic first, fast on a cheap phone, and easy for a non-developer to add more.",
+      "A home page that opens with a question, a picker of feeling-words, and one short journey behind each: a question, a short video, a passage and a reflection. Arabic first, fast on a cheap phone, and easy for a non-developer to add more. Plus reusable short-video templates for churches and faith sites: faceless, with Arabic captions that render correctly, and clear with the sound off.",
     team: "Developer, designer, Arabic writer, video editor",
   },
   {
