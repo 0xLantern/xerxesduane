@@ -51,7 +51,7 @@ export const CONTENT = {
   ],
 
   howToGive: [
-    "Tell Xerxes in person, or in a private message, that you'd like one of the ten places.",
+    "Tap one of the answers above, or tell us in person, if you'd like one of the ten places.",
     "We'll send giving details to you privately. No need to mention #HACK in a transfer reference.",
   ],
 

@@ -13,6 +13,7 @@ import {
   K,
   MAX_DEVICES,
   alertOwner,
+  championContact,
   countryName,
   deviceHash,
   errorResponse,
@@ -112,5 +113,8 @@ export default handle(async (req) => {
     places: { taken, total: CONTENT.ask.places },
     expiresAt: EXPIRES_AT,
     owner,
+    // Replies go to whoever sent the link.
+    from: championContact(invite.by),
+    response: invite.response?.kind ?? null,
   });
 });

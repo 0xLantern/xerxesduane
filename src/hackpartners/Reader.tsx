@@ -39,7 +39,96 @@ type Content = {
   signature: string;
   whatsapp: { number: string; text: string };
 };
-type Payload = { name: string; content: Content; places: { taken: number; total: number }; expiresAt: number; owner: boolean };
+type Kind = "in" | "share" | "pray" | "notnow";
+type Payload = {
+  name: string;
+  content: Content;
+  places: { taken: number; total: number };
+  expiresAt: number;
+  owner: boolean;
+  /** The Champion who sent this link; replies go to them. */
+  from?: { name: string; whatsapp: string };
+  response?: Kind | null;
+};
+
+/**
+ * The four answers. Each tap records the answer (api/hack-partners/respond.ts)
+ * and opens WhatsApp to the Champion who sent the link, with a message ready.
+ */
+const ANSWERS: { kind: Kind; label: string; note: string; text: (champion: string) => string }[] = [
+  { kind: "in", label: "Count me in for a place", note: "AED 300", text: (n) => `Hi ${n}, I've read the page. Count me in for one of the ten places 🙏` },
+  { kind: "share", label: "I'd like to share a place", note: "AED 150 with a friend", text: (n) => `Hi ${n}, I've read the page. I'd like to share a place with a friend (AED 150) 🙏` },
+  { kind: "pray", label: "I'll pray with you", note: "for the teams", text: (n) => `Hi ${n}, I've read the page. I can't give right now, but I'll be praying for the teams 🙏` },
+  { kind: "notnow", label: "Not this time", note: "and that's okay", text: (n) => `Hi ${n}, thank you for thinking of me. Not this time, but I'm cheering you on 🙏` },
+];
+
+function Answers({ code, data }: { code: string; data: Payload }) {
+  const [picked, setPicked] = useState<Kind | null>(data.response ?? null);
+  const from = data.from ?? { name: "Xerxes", whatsapp: data.content.whatsapp.number };
+
+  // Recorded without waiting, so the tap still opens WhatsApp straight away;
+  // keepalive lets the request finish as the page hands over to WhatsApp.
+  const record = (kind: Kind) => {
+    setPicked(kind);
+    if (data.owner) return;
+    fetch("/api/hack-partners/respond", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ c: code, d: deviceId(), kind }),
+      keepalive: true,
+      credentials: "same-origin",
+    }).catch(() => undefined);
+  };
+
+  const thanks: Record<Kind, string> = {
+    in: `Thank you! ${from.name} will send you the giving details privately.`,
+    share: `Thank you! ${from.name} will help pair you with a friend and send the details privately.`,
+    pray: "Thank you. Your prayers carry this as much as any gift.",
+    notnow: "Thank you for reading it. No pressure at all, and we're grateful you're in our corner.",
+  };
+
+  return (
+    <div className="mt-5">
+      <p className="text-[0.95rem] font-bold text-[#131313]">How would you like to respond?</p>
+      <p className="mt-0.5 text-[0.82rem] text-[#5a5a5a]">Each answer opens WhatsApp to {from.name} with a message ready to send. You can change it any time.</p>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        {ANSWERS.map((a) => {
+          const on = picked === a.kind;
+          return (
+            <a
+              key={a.kind}
+              href={`https://wa.me/${from.whatsapp}?text=${encodeURIComponent(a.text(from.name))}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => record(a.kind)}
+              className="flex items-center justify-between gap-3 rounded-2xl border-2 px-4 py-3 transition hover:-translate-y-0.5"
+              style={
+                on
+                  ? { background: Y, borderColor: INK, color: INK }
+                  : a.kind === "in"
+                    ? { background: INK, borderColor: INK, color: "#fff" }
+                    : { background: "#fff", borderColor: "#d9d4c8", color: INK }
+              }
+            >
+              <span>
+                <span className="block font-display text-[0.98rem] font-extrabold">{a.label}</span>
+                <span className={`block text-[0.78rem] ${a.kind === "in" && !on ? "text-white/70" : "text-[#5a5a5a]"}`}>{a.note}</span>
+              </span>
+              <span aria-hidden className="text-[1.1rem]">
+                {on ? "✓" : "→"}
+              </span>
+            </a>
+          );
+        })}
+      </div>
+      {picked && (
+        <p className="mt-3 rounded-xl px-4 py-3 text-[0.9rem] font-semibold" style={{ background: "#FBF8D6", color: INK }} aria-live="polite">
+          {thanks[picked]}
+        </p>
+      )}
+    </div>
+  );
+}
 
 const Y = "#EFE974";
 const O = "#EF4E25";
@@ -165,7 +254,6 @@ export default function Reader({ code }: { code: string }) {
   if (!data) return <Message title="Opening your page…" body="Just a moment." />;
 
   const c = data.content;
-  const wa = `https://wa.me/${c.whatsapp.number}?text=${encodeURIComponent(c.whatsapp.text)}`;
   const until = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", timeZone: "Asia/Dubai" }).format(new Date(data.expiresAt));
   const totalBudget = c.budget.reduce((s, r) => s + r.total, 0);
 
@@ -266,15 +354,7 @@ export default function Reader({ code }: { code: string }) {
                 <p className="mt-2 text-[0.82rem] leading-snug text-[#5a5640]">{c.ask.shareNote}</p>
               </Box>
             </div>
-            <a
-              href={wa}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 rounded-full px-5 py-3 font-display text-[0.95rem] font-extrabold transition hover:-translate-y-0.5"
-              style={{ background: Y, color: INK, boxShadow: `0 0 0 2px ${INK}` }}
-            >
-              I'd like one of the ten places
-            </a>
+            <Answers code={code} data={data} />
           </Section>
 
           {/* ---- budget and what partners receive ---- */}
