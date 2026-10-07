@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { greetName } from "./greet";
 
 /**
  * The Champions' panel: one personal link per partner.
@@ -38,7 +39,7 @@ const when = (t: number) => new Intl.DateTimeFormat("en-GB", { day: "numeric", m
  */
 const message = (name: string, link: string, from: string) =>
   [
-    `Hi ${name.trim().split(/\s+/)[0]}! 😊`,
+    `Hi ${greetName(name)}! 😊`,
     "",
     "I've been praying about who to ask to stand with us in something close to my heart these coming weeks, and you came to mind.",
     "",

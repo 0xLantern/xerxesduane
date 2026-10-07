@@ -5,6 +5,7 @@
 // when both pass. A revoked or expired code is a 404, a third device a 403.
 // The signed-in owner can open any code to check it without using a device slot.
 import { CONTENT } from "./_content";
+import { greetName } from "../../src/hackpartners/greet";
 import {
   CODE,
   DEVICE_ID,
@@ -105,8 +106,8 @@ export default handle(async (req) => {
 
   const taken = Math.max(0, Math.min(CONTENT.ask.places, Number(rawPlaces) || 0));
   return reply({
-    // The first word only: it greets them and goes in the watermark.
-    name: invite.name.trim().split(/\s+/)[0] || "friend",
+    // How they are greeted, and what the watermark says (src/hackpartners/greet.ts).
+    name: greetName(invite.name),
     content: CONTENT,
     places: { taken, total: CONTENT.ask.places },
     expiresAt: EXPIRES_AT,
