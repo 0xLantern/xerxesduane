@@ -91,7 +91,7 @@ export default handle(async (req) => {
         ["HSET", `${K}invites`, c, JSON.stringify(invite)],
       ]);
       if (first) {
-        await alertOwner(`opened:${c}`, 24 * 60, `${invite.name} opened the #HACK partner page`, `<p><strong>${esc(invite.name)}</strong> opened their partner page${country ? ` from ${esc(countryName(country))}` : ""}.</p>`);
+        await alertOwner(`opened:${c}`, 24 * 60, `${invite.name} opened the #HACK partner page`, `<p><strong>${esc(invite.name)}</strong> opened their partner page${country ? ` from ${esc(countryName(country))}` : ""}.${invite.by && invite.by !== "Xerxes" ? ` The link came from ${esc(invite.by)}.` : ""}</p>`);
       } else if (newCountry && seen.countries.length > 1) {
         await alertOwner(
           `country:${c}:${country}`,

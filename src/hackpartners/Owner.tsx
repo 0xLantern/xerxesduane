@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 /**
- * The owner's panel at /hp: one personal link per partner. Signs in with the
- * same owner login as /letters (the cookie is per host, and both live on
- * ministry.xerxesduane.com).
+ * The Champions' panel: one personal link per partner.
+ *
+ *   /hp                 the owner, signed in with the /letters login (the cookie
+ *                       is per host, and both live on ministry.xerxesduane.com).
+ *                       Sees every link and who made it.
+ *   /hp/team/<secret>   a co-Champion's own panel (see api/hack-partners/_lib.ts).
+ *                       Sees and manages only the links they made.
  */
 
 type Row = {
@@ -11,34 +15,28 @@ type Row = {
   name: string;
   createdAt: number;
   openedAt: number | null;
+  by: string;
   link: string;
   devices: number;
   countries: string[];
 };
-type List = { invites: Row[]; places: { taken: number; total: number }; expiresAt: number };
+type List = {
+  invites: Row[];
+  places: { taken: number; total: number };
+  expiresAt: number;
+  me: { role: "owner" | "champion"; name: string };
+};
 
 const INK = "#131313";
 const Y = "#EFE974";
 
-async function call<T>(method: "GET" | "POST", body?: unknown): Promise<{ ok: boolean; status: number; data: T & { error?: string } }> {
-  const res = await fetch("/api/hack-partners/invites", {
-    method,
-    credentials: "same-origin",
-    cache: "no-store",
-    headers: body ? { "content-type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const data = (await res.json().catch(() => ({}))) as T & { error?: string };
-  return { ok: res.ok, status: res.status, data };
-}
-
 const when = (t: number) => new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Asia/Dubai" }).format(new Date(t));
 
 /**
- * What goes to the partner, in Xerxes's words. It says nothing about #HACK
- * or money, in case the chat is ever seen: the page explains everything.
+ * What goes to the partner, in the sender's own words. It says nothing about
+ * #HACK or money, in case the chat is ever seen: the page explains everything.
  */
-const message = (name: string, link: string) =>
+const message = (name: string, link: string, from: string) =>
   [
     `Hi ${name.trim().split(/\s+/)[0]}! 😊`,
     "",
@@ -50,35 +48,60 @@ const message = (name: string, link: string) =>
     "Please read it when you have a quiet moment. It opens only for you, so please don't forward it. No pressure at all, and if you have any questions, just message me here.",
     "",
     "Thank you, friend. 🙏",
-    "Xerxes",
+    from,
   ].join("\n");
 
 const btn = "rounded-full px-3 py-1.5 text-[0.8rem] font-semibold transition hover:-translate-y-0.5 disabled:opacity-50";
 
-export default function Owner() {
+export default function Owner({ team }: { team?: string }) {
   const [state, setState] = useState<"loading" | "login" | "off" | "error" | "ready">("loading");
   const [list, setList] = useState<List | null>(null);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
 
+  const call = useCallback(
+    async <T,>(method: "GET" | "POST", body?: unknown): Promise<{ ok: boolean; status: number; data: T & { error?: string } }> => {
+      const headers: Record<string, string> = {};
+      if (body) headers["content-type"] = "application/json";
+      if (team) headers["x-hp-champion"] = team;
+      const res = await fetch("/api/hack-partners/invites", {
+        method,
+        credentials: "same-origin",
+        cache: "no-store",
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const data = (await res.json().catch(() => ({}))) as T & { error?: string };
+      return { ok: res.ok, status: res.status, data };
+    },
+    [team],
+  );
+
   const load = useCallback(async () => {
     const r = await call<List>("GET");
-    if (r.status === 401) return setState("login");
+    if (r.status === 401) {
+      if (team) setNote(r.data.error ?? "This panel link isn't valid any more.");
+      return setState(team ? "error" : "login");
+    }
     if (r.status === 503) return setState("off");
     if (r.ok) {
       setList(r.data);
       setState("ready");
+      document.title = r.data.me.role === "champion" ? `Partner links · ${r.data.me.name}` : "Partner links";
     } else {
       setNote(r.data.error ?? "Couldn't load the links. Reload to try again.");
       setState("error");
     }
-  }, []);
+  }, [call, team]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot client-only init; intentional SSR-safe pattern
     load();
   }, [load]);
+
+  const from = list?.me.name ?? "Xerxes";
+  const owner = list?.me.role === "owner";
 
   const act = async (body: Record<string, unknown>, done: string) => {
     setBusy(true);
@@ -89,7 +112,7 @@ export default function Owner() {
     setNote(done);
     if (body.action === "create" && r.data.invite) {
       try {
-        await navigator.clipboard.writeText(message(r.data.invite.name, r.data.invite.link));
+        await navigator.clipboard.writeText(message(r.data.invite.name, r.data.invite.link, from));
         setNote(`Link for ${r.data.invite.name} made, and the message is copied. Paste it into WhatsApp.`);
       } catch {
         /* the WhatsApp button on the row still works */
@@ -120,11 +143,20 @@ export default function Owner() {
 
   return (
     <Shell wide>
-      <h1 className="font-display text-[1.5rem] font-bold text-white">#HACK2026 Dubai partner links</h1>
+      <h1 className="font-display text-[1.5rem] font-bold text-white">
+        #HACK2026 Dubai partner links{owner ? "" : ` · ${from}`}
+      </h1>
       <p className="mt-1 text-[0.9rem] text-white/70">
-        One private link per person. Each opens on up to two devices and stops working after {expires}. You get an email when a link is first opened, and
-        when it's tried on a third device.
+        One private link per person. Each opens on up to two devices and stops working after {expires}.{" "}
+        {owner
+          ? "You get an email when a link is first opened, and when it's tried on a third device."
+          : "You see only the links you make here. Xerxes is told when a link is first opened."}
       </p>
+      {!owner && (
+        <p className="mt-2 rounded-xl border border-white/15 px-3 py-2 text-[0.8rem] text-white/60">
+          🔒 This panel is just for you. Keep its address private: anyone who has it can make links in your name.
+        </p>
+      )}
 
       <form
         className="mt-5 flex flex-wrap gap-2"
@@ -156,7 +188,7 @@ export default function Owner() {
           <button type="button" className={`${btn} border border-white/30`} disabled={busy || list.places.taken >= list.places.total} onClick={() => act({ action: "places", taken: list.places.taken + 1 }, "Updated.")}>
             +
           </button>
-          <span className="text-[0.78rem] text-white/50">Partners see this on their page.</span>
+          <span className="text-[0.78rem] text-white/50">Shared between the Champions. Partners see it on their page.</span>
         </div>
       )}
 
@@ -167,7 +199,10 @@ export default function Owner() {
         {list?.invites.map((r) => (
           <li key={r.code} className="rounded-2xl bg-white p-4 text-[#131313]">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <p className="font-display text-[1.05rem] font-bold">{r.name}</p>
+              <p className="font-display text-[1.05rem] font-bold">
+                {r.name}
+                {owner && r.by !== "Xerxes" && <span className="ml-2 text-[0.75rem] font-semibold text-[#9A3412]">via {r.by}</span>}
+              </p>
               <p className="text-[0.78rem] text-[#6a6a6a]">
                 {r.openedAt ? `Opened ${when(r.openedAt)}` : "Not opened yet"} · {r.devices} of 2 devices
                 {r.countries.length ? ` · ${r.countries.join(", ")}` : ""}
@@ -175,7 +210,7 @@ export default function Owner() {
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               <a
-                href={`https://wa.me/?text=${encodeURIComponent(message(r.name, r.link))}`}
+                href={`https://wa.me/?text=${encodeURIComponent(message(r.name, r.link, from))}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={btn}
@@ -183,12 +218,15 @@ export default function Owner() {
               >
                 Send on WhatsApp
               </a>
-              <button type="button" className={`${btn} border border-[#ccc]`} onClick={() => navigator.clipboard?.writeText(message(r.name, r.link)).then(() => setNote(`Message for ${r.name} copied.`))}>
+              <button type="button" className={`${btn} border border-[#ccc]`} onClick={() => navigator.clipboard?.writeText(message(r.name, r.link, from)).then(() => setNote(`Message for ${r.name} copied.`))}>
                 Copy message
               </button>
-              <a href={r.link} target="_blank" rel="noopener noreferrer" className={`${btn} border border-[#ccc]`}>
-                Preview
-              </a>
+              {/* Only the signed-in owner can preview without using one of the partner's two device slots. */}
+              {owner && (
+                <a href={r.link} target="_blank" rel="noopener noreferrer" className={`${btn} border border-[#ccc]`}>
+                  Preview
+                </a>
+              )}
               <button type="button" className={`${btn} border border-[#ccc]`} disabled={busy || r.devices === 0} onClick={() => act({ action: "reset", code: r.code }, `${r.name} can open the link on a new device now.`)}>
                 Let a new device in
               </button>
@@ -206,7 +244,11 @@ export default function Owner() {
           </li>
         ))}
       </ul>
-      <p className="mt-6 text-[0.8rem] text-white/45">Previewing while signed in doesn't use a device slot or send you an "opened" email.</p>
+      <p className="mt-6 text-[0.8rem] text-white/45">
+        {owner
+          ? "Previewing while signed in doesn't use a device slot or send you an \"opened\" email."
+          : "Don't open a partner's link yourself: it would use one of their two device slots."}
+      </p>
     </Shell>
   );
 }

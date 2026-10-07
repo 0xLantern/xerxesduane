@@ -18,8 +18,37 @@
 //   places             how many of the ten places are taken (owner sets it)
 //
 // The owner signs in with the same login as /letters (api/work/session).
-export { errorResponse, handle, isOwner, json, randomToken, readJson, redis, requireOwner, underLimit } from "../work/_lib";
-import { OWNER_EMAIL, redis } from "../work/_lib";
+export { errorResponse, handle, isOwner, json, randomToken, readJson, redis, requireOwner, sameOrigin, underLimit } from "../work/_lib";
+import { OWNER_EMAIL, redis, safeEqual } from "../work/_lib";
+
+/**
+ * Co-Champions: people other than the owner who may make partner links, each
+ * through their own panel link, ministry.xerxesduane.com/hp/team/<secret>.
+ *
+ * Kept in the HACKP_CHAMPIONS environment variable as JSON, secret -> name,
+ * e.g. {"Xq3…": "Abel Thomas"}, so no secret is ever in the repository.
+ * Removing an entry (and redeploying) shuts that panel at once. A co-Champion
+ * sees and manages only the links they made; the owner sees all of them.
+ */
+function champions(): Record<string, string> {
+  try {
+    const raw = JSON.parse(process.env.HACKP_CHAMPIONS || "{}") as Record<string, unknown>;
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(raw)) if (/^[A-Za-z0-9_-]{24,64}$/.test(k) && typeof v === "string" && v.trim()) out[k] = v.trim();
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+/** The co-Champion a panel secret belongs to, by first name, or null. Compared in constant time. */
+export async function championFor(secret: string): Promise<string | null> {
+  if (!/^[A-Za-z0-9_-]{24,64}$/.test(secret)) return null;
+  for (const [k, name] of Object.entries(champions())) {
+    if (await safeEqual(k, secret)) return name.split(/\s+/)[0];
+  }
+  return null;
+}
 
 export const K = "hackp:v1:";
 export const ORIGIN = "https://ministry.xerxesduane.com";
@@ -40,6 +69,8 @@ export type Invite = {
   createdAt: number;
   /** First time the link opened on a device that was let in. */
   openedAt: number | null;
+  /** Which Champion made it, by first name. Missing on links made before co-Champions existed: those are Xerxes's. */
+  by?: string;
 };
 
 export type Seen = { devices: { h: string; at: number; country: string }[]; countries: string[] };
