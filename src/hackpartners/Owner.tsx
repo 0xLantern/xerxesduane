@@ -20,6 +20,8 @@ type Row = {
   link: string;
   devices: number;
   countries: string[];
+  /** What the partner tapped on their page, if anything. */
+  response?: { kind: "in" | "share" | "pray" | "notnow"; at: number };
 };
 type List = {
   invites: Row[];
@@ -53,6 +55,28 @@ const message = (name: string, link: string, from: string) =>
   ].join("\n");
 
 const btn = "rounded-full px-3 py-1.5 text-[0.8rem] font-semibold transition hover:-translate-y-0.5 disabled:opacity-50";
+
+/** A soft follow-up with the same link. No deadline, no pressure. */
+const reminder = (name: string, link: string, from: string) =>
+  [
+    `Hi ${greetName(name)}! 😊 Just a gentle follow-up on the private page I sent. No rush and no pressure at all, read it when you have a quiet moment:`,
+    link,
+    "",
+    "If you have any questions, I'm here. Thank you, friend 🙏",
+    from,
+  ].join("\n");
+
+/** Where each link stands: the partner's answer if they gave one, otherwise whether they opened it. */
+type Status = "in" | "share" | "pray" | "notnow" | "opened" | "unopened";
+const STATUS: Record<Status, { label: string; style: { background: string; color: string } }> = {
+  in: { label: "In", style: { background: "#16a34a", color: "#fff" } },
+  share: { label: "Sharing a place", style: { background: "#86efac", color: "#14532d" } },
+  pray: { label: "Praying", style: { background: "#dbeafe", color: "#1e3a8a" } },
+  notnow: { label: "Not this time", style: { background: "#e5e5e5", color: "#404040" } },
+  opened: { label: "Opened, no answer yet", style: { background: "#FBF6C9", color: "#713f12" } },
+  unopened: { label: "Not opened yet", style: { background: "#fee2e2", color: "#7f1d1d" } },
+};
+const status = (r: Row): Status => r.response?.kind ?? (r.openedAt ? "opened" : "unopened");
 
 export default function Owner({ team }: { team?: string }) {
   const [state, setState] = useState<"loading" | "login" | "off" | "error" | "ready">("loading");
@@ -193,6 +217,19 @@ export default function Owner({ team }: { team?: string }) {
         </div>
       )}
 
+      {list && list.invites.length > 0 && (
+        <p className="mt-3 flex flex-wrap gap-1.5 text-[0.8rem]">
+          {(Object.keys(STATUS) as Status[]).map((s) => {
+            const n = list.invites.filter((r) => status(r) === s).length;
+            return n ? (
+              <span key={s} className="rounded-full px-2.5 py-0.5 font-bold" style={STATUS[s].style}>
+                {STATUS[s].label}: {n}
+              </span>
+            ) : null;
+          })}
+        </p>
+      )}
+
       {note && <p className="mt-3 text-[0.88rem]" style={{ color: Y }} aria-live="polite">{note}</p>}
 
       <ul className="mt-4 space-y-2">
@@ -209,7 +246,25 @@ export default function Owner({ team }: { team?: string }) {
                 {r.countries.length ? ` · ${r.countries.join(", ")}` : ""}
               </p>
             </div>
+            <p className="mt-2">
+              <span className="inline-block rounded-full px-2.5 py-0.5 text-[0.75rem] font-bold" style={STATUS[status(r)].style}>
+                {STATUS[status(r)].label}
+              </span>
+              {r.response && <span className="ml-2 text-[0.75rem] text-[#6a6a6a]">{when(r.response.at)}</span>}
+            </p>
             <div className="mt-3 flex flex-wrap gap-2">
+              {/* Before an answer, the nudge; after one, nothing to chase. The first send is still there either way. */}
+              {!r.response && (
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(reminder(r.name, r.link, from))}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={btn}
+                  style={{ background: Y, color: INK }}
+                >
+                  Send a gentle reminder
+                </a>
+              )}
               <a
                 href={`https://wa.me/?text=${encodeURIComponent(message(r.name, r.link, from))}`}
                 target="_blank"

@@ -71,7 +71,35 @@ export type Invite = {
   openedAt: number | null;
   /** Which Champion made it, by first name. Missing on links made before co-Champions existed: those are Xerxes's. */
   by?: string;
+  /** What the partner tapped on their page, if anything. The latest tap wins. */
+  response?: { kind: ResponseKind; at: number };
 };
+
+/** The four answers a partner can give on their page. */
+export const RESPONSE_KINDS = ["in", "share", "pray", "notnow"] as const;
+export type ResponseKind = (typeof RESPONSE_KINDS)[number];
+
+export const RESPONSE_LABEL: Record<ResponseKind, string> = {
+  in: "is in for a place",
+  share: "would like to share a place",
+  pray: "will pray with you",
+  notnow: "said not this time",
+};
+
+/**
+ * Where a partner's reply goes: the Champion who sent their link. Both numbers
+ * are already public on the #HACK page. A co-Champion without a number here
+ * falls back to Xerxes.
+ */
+const CHAMPION_WHATSAPP: Record<string, string> = {
+  Xerxes: "971543281995",
+  Abel: "971503454307",
+};
+
+export function championContact(by: string | undefined): { name: string; whatsapp: string } {
+  const name = by && CHAMPION_WHATSAPP[by] ? by : "Xerxes";
+  return { name, whatsapp: CHAMPION_WHATSAPP[name] };
+}
 
 export type Seen = { devices: { h: string; at: number; country: string }[]; countries: string[] };
 
