@@ -11,7 +11,7 @@
  *
  * Detailed challenge briefs (who a track serves, research, data sources)
  * go to registered teams privately, never onto this page. The page keeps
- * a public summary of the seven challenges and says the full brief
+ * a public summary of the eight challenges and says the full brief
  * comes privately.
  *
  * NEXT YEAR. Change the dates, the form link and the copy here. The page
@@ -39,7 +39,7 @@ export const HACK = {
   title: "#HACK2026 Dubai",
   tagline: "You already have the skills. Let's use them for God.",
   lede:
-    "Join #HACK2026 Dubai, part of the global Christian hackathon run by Indigitous. Over six weeks, small teams take on seven challenges: a free, private website kit in Arabic and English, and four community apps for churches and the people they serve.",
+    "Join #HACK2026 Dubai, part of the global Christian hackathon run by Indigitous. Over six weeks, small teams take on eight challenges: a free, private website kit in Arabic and English, and five community apps for churches and the people they serve.",
   /** The #HACK Champions leading Dubai, as the invitation signs it. */
   champions: ["Xerxes Duane", "Abel Thomas"],
   global: "https://hack.indigitous.org/",
@@ -79,7 +79,7 @@ export const WHAT_IS = {
     },
     {
       title: "#HACK is the Christian version",
-      body: "Every year since 2016, Indigitous has gathered followers of Jesus in cities around the world to use their skills for good. In Dubai, our teams build a free website kit and four community apps for churches and faith sites.",
+      body: "Every year since 2016, Indigitous has gathered followers of Jesus in cities around the world to use their skills for good. In Dubai, our teams build a free website kit and five community apps for churches and faith sites.",
       link: { href: "https://hack.indigitous.org/", label: "hack.indigitous.org" },
     },
   ],
@@ -140,7 +140,7 @@ export const EVENTS: HackEvent[] = [
       { time: "8:00", what: "Welcome, a quiet moment to begin, and introductions by first name" },
       { time: "8:10", what: "What #HACK is and what we're building" },
       { time: "8:25", what: "The ground rules" },
-      { time: "8:35", what: "The seven challenges" },
+      { time: "8:35", what: "The eight challenges" },
       { time: "8:55", what: "Questions" },
       { time: "9:05", what: "Next steps and a send-off. The challenge poll is sent after the call." },
     ],
@@ -244,7 +244,7 @@ export const TRACKS: { id: TrackId; label: string; title: string; lede: string }
     id: "apps",
     label: "Part two",
     title: "Community apps",
-    lede: "Four apps for churches, ministries and the people they serve, each tested with partner churches by 21 November.",
+    lede: "Five apps for churches, ministries and the people they serve, each tested with partner churches by 21 November.",
   },
 ];
 
@@ -312,6 +312,15 @@ export const CHALLENGES: Challenge[] = [
       "A trusted job network for churches: verified members post real openings, seekers tap \"I'm interested\", and scam checks keep everyone safe. It never charges anyone.",
     team: "6 to 8: product lead, developers, designer, writer, church liaisons",
   },
+  {
+    n: 8,
+    track: "apps",
+    title: "Kinship",
+    tag: "Find people by skill",
+    build:
+      "A members-only church directory by skill and profession: accountants, mechanics, teachers, physios and more. Members keep their own profiles, church leaders verify everyone, and contact is shared only when both sides agree. Free for churches to use.",
+    team: "5 to 7: product lead, developers, designer, writer, church liaison",
+  },
 ];
 
 export const TOOLS = "GitHub and Astro for code, Figma and Canva for design, CapCut for video.";
@@ -357,7 +366,7 @@ export const GET_READY = {
 export const STEPS = [
   { title: "Register", body: `Fill in the form and pay the ${REGISTRATION.fee} by ${REGISTRATION.closesLabel}.` },
   { title: "Set up GitHub", body: "Create a free GitHub account before 17 October, using your personal email, not a work one." },
-  { title: "Pick your top two", body: "Read the seven challenges and think about your top two. You choose in a poll after the kickoff." },
+  { title: "Pick your top two", body: "Read the eight challenges and think about your top two. You choose in a poll after the kickoff." },
   { title: "Can't make 17 October?", body: "Message Xerxes or Abel. We'll place you in a team and catch you up." },
 ];
 

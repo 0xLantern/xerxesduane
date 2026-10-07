@@ -7,6 +7,7 @@ import {
   Check,
   Church,
   Compass,
+  Contact,
   HandHeart,
   HeartPulse,
   House,
@@ -77,8 +78,8 @@ type Contact = (typeof CHAMPION_CONTACTS)[number];
 const waLink = (c: Contact, topic: Topic) =>
   `https://wa.me/${c.whatsapp}?text=${encodeURIComponent(`Hi ${c.first}, ${WA[topic]}`)}`;
 
-/** One per challenge, in order: the three kit parts, then Sojourn, Serve, Steady, Provision. */
-const CHALLENGE_ICONS: LucideIcon[] = [Compass, MessageSquareLock, ShieldCheck, House, HandHeart, HeartPulse, BriefcaseBusiness];
+/** One per challenge, in order: the three kit parts, then Sojourn, Serve, Steady, Provision, Kinship. */
+const CHALLENGE_ICONS: LucideIcon[] = [Compass, MessageSquareLock, ShieldCheck, House, HandHeart, HeartPulse, BriefcaseBusiness, Contact];
 
 const prose = "max-w-[72ch] space-y-3 text-[0.95rem] leading-relaxed text-fg-soft";
 
@@ -785,8 +786,8 @@ export default function Hack() {
       <section aria-labelledby="build-title" className="mt-7 board:mt-5">
         <SectionIntro
           id="build-title"
-          eyebrow="The seven challenges"
-          title="Seven challenges in two tracks"
+          eyebrow="The eight challenges"
+          title="Eight challenges in two tracks"
           lede="Every challenge ends with a working app tested by real people, not slides. You choose your top two in a poll after the kickoff, and registered teams get the full challenge brief privately."
         />
         {TRACKS.map((t) => (
