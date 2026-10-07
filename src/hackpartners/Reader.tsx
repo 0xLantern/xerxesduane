@@ -7,8 +7,9 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
  *
  *   - a faint watermark with their first name and today's date, so a
  *     screenshot that travels says whose link it came from;
- *   - the page blurs when the tab or app is switched away, so the phone's
- *     app switcher keeps a blurred snapshot, not a readable one;
+ *   - a plain cover hides the page while it is switched away (page visibility
+ *     only), so the phone's app switcher keeps a covered snapshot, not a
+ *     readable one; "Tap to show" lifts it;
  *   - printing shows a notice instead (see partners.html);
  *   - nothing is stored except a random device id.
  */
@@ -140,18 +141,21 @@ export default function Reader({ code }: { code: string }) {
     };
   }, [code]);
 
-  // Blur when the page is switched away from, so the app switcher's snapshot can't be read.
+  // Cover the page while it is hidden, so the app switcher's snapshot can't be read.
+  //
+  // Only the page-visibility signal, never window blur/focus: WhatsApp's in-app
+  // browser on iPhone fires "blur" without ever firing "focus" again, which left
+  // the page stuck behind the cover (a partner saw a black screen, 7 Oct 2026).
+  // Visibility always comes back to "visible" when the page is shown again, and
+  // the cover has a tap-to-show button besides, so nobody can be locked out.
   useEffect(() => {
-    const on = () => setHidden(document.visibilityState === "hidden");
-    const blur = () => setHidden(true);
-    const focus = () => setHidden(false);
-    document.addEventListener("visibilitychange", on);
-    window.addEventListener("blur", blur);
-    window.addEventListener("focus", focus);
+    const sync = () => setHidden(document.visibilityState === "hidden");
+    const shown = () => setHidden(false);
+    document.addEventListener("visibilitychange", sync);
+    window.addEventListener("pageshow", shown);
     return () => {
-      document.removeEventListener("visibilitychange", on);
-      window.removeEventListener("blur", blur);
-      window.removeEventListener("focus", focus);
+      document.removeEventListener("visibilitychange", sync);
+      window.removeEventListener("pageshow", shown);
     };
   }, []);
 
@@ -170,7 +174,24 @@ export default function Reader({ code }: { code: string }) {
       {/* The watermark sits over everything and catches nothing. */}
       <div aria-hidden className="pointer-events-none fixed inset-0 z-40" style={{ backgroundImage: mark, backgroundRepeat: "repeat" }} />
 
-      <div className={`transition-[filter] duration-150 ${hidden ? "blur-xl" : ""}`}>
+      {/* A plain cover rather than a CSS blur: Safari can paint a large blurred layer as solid black. */}
+      {hidden && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 px-6 text-center" style={{ background: "#f6f3ee" }}>
+          <p className="text-[1.6rem]" aria-hidden>
+            🔒
+          </p>
+          <p className="font-display text-[1.05rem] font-bold text-[#131313]">Private page</p>
+          <button
+            type="button"
+            onClick={() => setHidden(false)}
+            className="rounded-full px-5 py-2.5 font-display text-[0.95rem] font-bold"
+            style={{ background: INK, color: Y }}
+          >
+            Tap to show
+          </button>
+        </div>
+      )}
+      <div>
         {/* ---- header ---- */}
         <header style={{ background: INK }}>
           <div className="mx-auto max-w-3xl px-5 pb-8 pt-6 sm:px-8">
