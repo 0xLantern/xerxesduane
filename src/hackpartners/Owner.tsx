@@ -34,9 +34,24 @@ async function call<T>(method: "GET" | "POST", body?: unknown): Promise<{ ok: bo
 
 const when = (t: number) => new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Asia/Dubai" }).format(new Date(t));
 
-/** What goes to the partner. It says nothing about #HACK, in case the chat is ever seen. */
+/**
+ * What goes to the partner, in Xerxes's words. It says nothing about #HACK
+ * or money, in case the chat is ever seen: the page explains everything.
+ */
 const message = (name: string, link: string) =>
-  `Hi ${name.split(" ")[0]}, here's the private page I mentioned. It's just for you, so please don't forward it: ${link}`;
+  [
+    `Hi ${name.trim().split(/\s+/)[0]}! 😊`,
+    "",
+    "I've been praying about who to ask to stand with us in something close to my heart these coming weeks, and you came to mind.",
+    "",
+    "I made a short private page just for you that explains it all:",
+    link,
+    "",
+    "Please read it when you have a quiet moment. It opens only for you, so please don't forward it. No pressure at all, and if you have any questions, just message me here.",
+    "",
+    "Thank you, friend. 🙏",
+    "Xerxes",
+  ].join("\n");
 
 const btn = "rounded-full px-3 py-1.5 text-[0.8rem] font-semibold transition hover:-translate-y-0.5 disabled:opacity-50";
 
