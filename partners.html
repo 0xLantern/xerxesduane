@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- Private partner page. This file holds no content at all: the words
+         come from /api/hack-partners/read, and only for a valid personal
+         link (see api/hack-partners/_lib.ts). Never indexed, and the link
+         never leaks to another site through a referrer. The share card is
+         deliberately plain: WhatsApp fetches it for every link, so it must
+         say nothing about #HACK or what the page asks. -->
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="theme-color" content="#131313" />
+    <link rel="icon" type="image/svg+xml" href="/brand/icon/icon.svg" />
+    <link rel="preload" href="/fonts/plus-jakarta-sans-var.woff2" as="font" type="font/woff2" crossorigin />
+    <title>A private note from Xerxes</title>
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Xerxes Duane" />
+    <meta property="og:title" content="A private note from Xerxes" />
+    <meta property="og:description" content="Just for you. Tap to open it." />
+    <meta property="og:image" content="https://ministry.xerxesduane.com/ministry/share.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <style>
+      /* Printing is the easiest way to take the page away whole. */
+      @media print { body * { display: none !important; } body::after { content: "This page is private and can't be printed."; display: block; font: 16px sans-serif; padding: 40px; } }
+    </style>
+  </head>
+  <body class="antialiased" style="background:#131313">
+    <div id="partners-root"></div>
+    <script type="module" src="/src/hackpartners/main.tsx"></script>
+  </body>
+</html>

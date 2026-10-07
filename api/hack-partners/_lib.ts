@@ -1,0 +1,101 @@
+// #HACK2026 Dubai partner page: storage, device lock and owner alerts.
+//
+// The page is for about ten friends in the UAE, and the document it comes
+// from says "share in person, don't post or forward". So nothing is public:
+//
+//   - The words live on the server (_content.ts) and are sent only to a
+//     browser holding a valid personal link: ministry.xerxesduane.com/hp/<code>.
+//   - Each person gets their own code, made by the owner on /hp. A code can be
+//     revoked at any time, and every code expires on EXPIRES_AT.
+//   - A code opens on at most MAX_DEVICES devices, the first ones to open it.
+//     A forwarded link fails on a third device, and the owner gets an email.
+//   - Guessing is pointless (128-bit codes) and rate limited anyway.
+//   - Responses are no-store and noindex; the page loads no analytics.
+//
+// Storage is the site's Redis, under hackp:v1:
+//   invites            hash, code -> Invite JSON
+//   seen:<code>        Seen JSON: devices and countries it was opened from
+//   places             how many of the ten places are taken (owner sets it)
+//
+// The owner signs in with the same login as /letters (api/work/session).
+export { errorResponse, handle, isOwner, json, randomToken, readJson, redis, requireOwner, underLimit } from "../work/_lib";
+import { OWNER_EMAIL, redis } from "../work/_lib";
+
+export const K = "hackp:v1:";
+export const ORIGIN = "https://ministry.xerxesduane.com";
+
+/** Every link stops working after this: a week after the presentations. */
+export const EXPIRES_AT = Date.parse("2026-11-28T23:59:59+04:00");
+
+/** A phone and a laptop, say. */
+export const MAX_DEVICES = 2;
+
+export const CODE = /^[A-Za-z0-9_-]{20,32}$/;
+export const DEVICE_ID = /^[A-Za-z0-9_-]{16,64}$/;
+
+export type Invite = {
+  code: string;
+  /** Who it is for, as the owner wrote it. The page greets them by the first word. */
+  name: string;
+  createdAt: number;
+  /** First time the link opened on a device that was let in. */
+  openedAt: number | null;
+};
+
+export type Seen = { devices: { h: string; at: number; country: string }[]; countries: string[] };
+
+export function parse<T>(raw: unknown): T | null {
+  try {
+    return typeof raw === "string" ? (JSON.parse(raw) as T) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** A device id as the browser sends it, hashed so the stored value can't be replayed. */
+export async function deviceHash(d: string): Promise<string> {
+  const bytes = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`hackp-device|${d}`)));
+  let s = "";
+  for (const b of bytes.subarray(0, 16)) s += String.fromCharCode(b);
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+export function countryName(code: string): string {
+  try {
+    return new Intl.DisplayNames(["en"], { type: "region" }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+function esc(s: string) {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+}
+
+/**
+ * Email the owner, at most once per `key` per `hours`. Best effort: a page
+ * view never fails because an alert could not be sent.
+ */
+export async function alertOwner(key: string, hours: number, subject: string, html: string) {
+  const api = process.env.RESEND_API_KEY;
+  if (!api) return;
+  try {
+    const [first] = await redis([["SET", `${K}alerted:${key}`, "1", "NX", "EX", hours * 3600]]);
+    if (first !== "OK") return;
+    const from = process.env.LETTERS_FROM || "Partner letters <letters@xerxesduane.com>";
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { authorization: `Bearer ${api}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        from,
+        to: [OWNER_EMAIL],
+        subject,
+        html: `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.5;color:#1a1a1a">${html}<p style="color:#8a7f75;font-size:13px;">ministry.xerxesduane.com/hp</p></div>`,
+      }),
+    });
+  } catch {
+    /* best effort */
+  }
+}
+
+export { esc };
