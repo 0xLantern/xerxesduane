@@ -14,7 +14,7 @@ export const CONTENT = {
   eyebrow: "#HACK2026 · Dubai · For friends here in the UAE",
   title: "Ten friends, AED 300 each",
   intro:
-    "#HACK began in Manila as a public event, with sponsors thanked on stage. This year a small group of builders, designers and writers here in the UAE spends six weeks building a free, private website kit for people who are searching for God. We're asking ten friends who live here to carry it together. Here, the kindest way to thank a partner is to keep them, and everyone taking part, out of the spotlight.",
+    "#HACK began in Manila as a public event, with sponsors thanked on stage. This year a small group of builders, designers and writers here in the UAE spends six weeks building a free, private website kit for people who are searching for God, and four community apps for churches and the people they serve. We're asking ten friends who live here to carry it together. Here, the kindest way to thank a partner is to keep them, and everyone taking part, out of the spotlight.",
 
   program: [
     { when: "Thu 8 October · online", what: "Kickoff call: what #HACK is, how we work safely, and the challenges teams can choose from." },
@@ -88,11 +88,34 @@ export const CONTENT = {
         instead: "A simple website that its owners control, a copy that works offline, and a spare address ready to switch to.",
       },
     ],
-    challenges: [
-      { title: "Start where they are", hook: "Pages that meet a person in how they feel, not in what we want to say.", body: "A \"pick a feeling\" menu and short journeys: a question, a short video, a passage, a reflection, then three gentle choices. Fast on a cheap phone." },
-      { title: "A question without a name", hook: "The one thing YouTube can't do: let a person ask, and be answered.", body: "An anonymous box for a question or prayer request: no email, no phone number, no account. It keeps as little as possible and deletes old messages on its own." },
-      { title: "Safe to visit", hook: "Built so that visiting the site never puts anyone at risk.", body: "A quick-exit button, a \"read this site safely\" page, an offline copy and a spare web address, plus an honest first screen that says it's written by followers of Jesus." },
-      { title: "Found by the people who are looking", hook: "A safe site only helps if a searcher can find it, and use it.", body: "Pages that search engines understand, for the questions people really ask, and that work with a screen reader or a keyboard alone." },
+    /**
+     * The seven challenges, in step with the public /hack page (src/data/hack.ts)
+     * and HACK_Dubai_Challenges.pptx. Numbered across both tracks. The "hook"
+     * lines say why, which is fine here: this page is for partners only.
+     */
+    challengesTitle: "The seven challenges our teams will take on",
+    tracks: [
+      {
+        label: "Part one",
+        title: "The website kit",
+        lede: "Three teams of four, each building one part. Sample content only, and nothing goes live during the program.",
+        challenges: [
+          { title: "Start where they are", hook: "Pages that meet a person in how they feel, not in what we want to say.", body: "A home page that opens with a question, a \"pick a feeling\" menu and short journeys: a question, a short video, a passage, a reflection, then three gentle choices. Arabic first, fast on a cheap phone, and easy for a non-developer to add to. Plus reusable short-video templates: faceless, with Arabic captions, clear with the sound off." },
+          { title: "A question without a name", hook: "The one thing YouTube can't do: let a person ask, and be answered.", body: "An anonymous box for a question or prayer request: no email, no phone number, no account. A short code to come back for the reply, and a private inbox for the real person who answers. It keeps as little as possible." },
+          { title: "Safe to visit, easy to find", hook: "A safe site only helps if a searcher can find it, and visiting it never puts anyone at risk.", body: "A quick-exit button, a \"read this site safely\" page and an offline copy, plus pages that search engines, screen readers and keyboards all understand." },
+        ],
+      },
+      {
+        label: "Part two",
+        title: "Community apps",
+        lede: "Four apps for churches, ministries and the people they serve, each tried out with a partner church by 21 November.",
+        challenges: [
+          { title: "Sojourn", hook: "Young Christians arrive in the UAE alone and don't know where a youth group in their language meets.", body: "A welcome app: find a fellowship, a welcome buddy and events, without pulling anyone from a church they already belong to." },
+          { title: "Serve", hook: "A church of 500 a service is full of skills nobody can find, and ministries that need them.", body: "One app, two sides. Ministries post needs such as posters, videos or music, and skilled Christians offer to help. And a members-only directory by skill and profession, from accountants to physios. Church leaders verify everyone; contact is shared only when both sides agree." },
+          { title: "Steady", hook: "Many students carry stress, loneliness and anxiety quietly.", body: "A wellbeing app for adult students: honest Christian content, simple self-care tools kept on the phone, and an easy way to talk to a trusted person. Every piece reviewed by a licensed professional." },
+          { title: "Provision", hook: "People come to the UAE for work, or lose a job and need one fast, and fake offers spread.", body: "A trusted job network for churches: verified members post real openings, seekers tap \"I'm interested\", and scam checks keep everyone safe. It never charges anyone." },
+        ],
+      },
     ],
     giftTitle: "Why your gift goes further here",
     gift:

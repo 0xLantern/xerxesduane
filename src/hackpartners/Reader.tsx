@@ -31,7 +31,8 @@ type Content = {
     intro: string;
     punch: string;
     rows: { problem: string; looks: string; instead: string }[];
-    challenges: { title: string; hook: string; body: string }[];
+    challengesTitle: string;
+    tracks: { label: string; title: string; lede: string; challenges: { title: string; hook: string; body: string }[] }[];
     giftTitle: string;
     gift: string;
   };
@@ -165,6 +166,12 @@ function watermark(name: string): string {
 }
 
 const aed = (n: number) => `AED ${n.toLocaleString("en-US")}`;
+
+/** Challenges numbered 1..7 straight through both tracks. */
+function numbered(tracks: Content["why"]["tracks"]) {
+  let n = 0;
+  return tracks.map((t) => ({ ...t, challenges: t.challenges.map((ch) => ({ ...ch, n: ++n })) }));
+}
 
 function Section({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <section className={`mt-8 ${className}`}>{children}</section>;
@@ -442,21 +449,36 @@ export default function Reader({ code }: { code: string }) {
           </Section>
 
           <Section>
-            <h2 className="font-display text-[1.2rem] font-bold text-[#131313]">The four challenges our teams will take on</h2>
-            <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-              {c.why.challenges.map((ch, i) => (
-                <li key={ch.title}>
-                  <Box tone={i === 2 ? "ink" : "panel"} className="h-full">
-                    <p className="font-technical text-[0.7rem] font-bold uppercase tracking-[0.16em]" style={{ color: i === 2 ? Y : O }}>
-                      Challenge {i + 1}
-                    </p>
-                    <h3 className="mt-1 font-display text-[1.05rem] font-bold">{ch.title}</h3>
-                    <p className="mt-2 text-[0.9rem] font-semibold leading-snug">{ch.hook}</p>
-                    <p className={`mt-1.5 text-[0.88rem] leading-snug ${i === 2 ? "text-white/75" : "text-[#4a4a4a]"}`}>{ch.body}</p>
-                  </Box>
-                </li>
-              ))}
-            </ul>
+            <h2 className="font-display text-[1.2rem] font-bold text-[#131313]">{c.why.challengesTitle}</h2>
+            {numbered(c.why.tracks).map((t) => (
+                <div key={t.title} className="mt-4">
+                  <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+                    <span className="rounded-sm px-2 py-0.5 font-technical text-[0.68rem] font-bold uppercase tracking-[0.16em]" style={{ background: Y, color: INK }}>
+                      {t.label}
+                    </span>
+                    <h3 className="font-display text-[1.1rem] font-bold text-[#131313]">{t.title}</h3>
+                    <p className="basis-full text-[0.86rem] leading-snug text-[#4a4a4a]">{t.lede}</p>
+                  </div>
+                  <ul className="mt-2.5 grid gap-3 sm:grid-cols-2">
+                    {t.challenges.map((ch) => {
+                      // The third kit challenge stays the dark card, as on the printed sheet.
+                      const dark = ch.n === 3;
+                      return (
+                        <li key={ch.title}>
+                          <Box tone={dark ? "ink" : "panel"} className="h-full">
+                            <p className="font-technical text-[0.7rem] font-bold uppercase tracking-[0.16em]" style={{ color: dark ? Y : O }}>
+                              Challenge {String(ch.n).padStart(2, "0")}
+                            </p>
+                            <h4 className="mt-1 font-display text-[1.05rem] font-bold">{ch.title}</h4>
+                            <p className="mt-2 text-[0.9rem] font-semibold leading-snug">{ch.hook}</p>
+                            <p className={`mt-1.5 text-[0.88rem] leading-snug ${dark ? "text-white/75" : "text-[#4a4a4a]"}`}>{ch.body}</p>
+                          </Box>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+            ))}
           </Section>
 
           <Section>
