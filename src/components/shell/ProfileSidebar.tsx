@@ -166,6 +166,16 @@ export default function ProfileSidebar({ path, lang, locale = "en" }: ProfileSid
             </a>
           </p>
           <p className="text-xs text-fg-faint board:text-[0.7rem]">
+            {/* On this line, not the one above: that one already fills the
+                narrow rail, and a fourth link wraps it at 1024px. */}
+            {!ar && (
+              <>
+                <a href={siteHref("/cv/freelance")} className="font-semibold text-fg-soft transition-colors hover:text-accent-deep">
+                  CV
+                </a>
+                <span aria-hidden> · </span>
+              </>
+            )}
             © {new Date().getFullYear()} {SHELL_IDENTITY.name}
           </p>
         </m.div>

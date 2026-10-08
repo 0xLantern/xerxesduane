@@ -1,0 +1,4 @@
+# iCalendar files must use CRLF line endings (RFC 5545), and
+# scripts/hack-ics.mjs writes them that way. Keep git from converting them,
+# so the committed file matches what the build generates byte for byte.
+*.ics -text

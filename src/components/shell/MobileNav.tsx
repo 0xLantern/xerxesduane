@@ -137,6 +137,9 @@ export default function MobileNav({
           <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-0 border-t border-line pt-2 text-xs text-fg-faint">
             {!ar && (
               <>
+                <a href={siteHref("/cv/freelance")} className="py-1.5 font-semibold text-fg-soft transition-colors hover:text-accent-deep">
+                  CV
+                </a>
                 <a href={siteHref("/privacy")} className="py-1.5 transition-colors hover:text-accent-deep">
                   Privacy
                 </a>
