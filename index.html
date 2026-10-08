@@ -81,18 +81,6 @@
       }
     </style>
 
-    <!-- tw-intro: first-paint curtain for the intro preloader. Keep commented
-         while PRELOADER_ENABLED=false in src/lib/config.ts. When enabling the
-         preloader, uncomment BOTH blocks so the curtain paints before the JS
-         bundle executes (otherwise the page flashes, then gets covered).
-    <style>
-      #tw-intro{position:fixed;inset:0;z-index:90;background:#07090A}
-    </style>
-    <script>
-      try{if(!sessionStorage.getItem("tw-intro-seen")&&!matchMedia("(prefers-reduced-motion: reduce)").matches){document.write('<div id="tw-intro"></div>')}}catch(e){}
-    </script>
-    -->
-
     <!-- Primary SEO, per-route title/description/canonical injected at build time -->
     <!--app-head-->
     <meta

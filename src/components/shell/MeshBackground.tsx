@@ -1,118 +1,23 @@
-import { Component, lazy, Suspense, useEffect, useState } from "react";
-import type { ReactNode } from "react";
-import { useTheme } from "../../lib/useTheme";
-import { afterPageSettles } from "../../lib/afterPageSettles";
-
 /**
- * A still, brand-coloured mesh gradient behind every page (Paper Shaders).
+ * The brand-coloured mesh gradient behind every page, as a still image.
  *
- * Still on purpose: animated, the shader re-rendered the full viewport every
- * frame, and on desktops that was the main source of lag (measured ~8fps
- * while scrolling, ~50fps with it frozen). One frame keeps the look for free.
+ * It used to be a WebGL shader (Paper Shaders) frozen on one frame. Because
+ * the shader was heavy, it was loaded two seconds after `load` and faded in
+ * over 1.2s, so the background arrived 3–4s after the page did. The frame it
+ * drew never changed, so it is now that exact frame, captured per theme and
+ * per orientation (the shader laid itself out differently on a portrait
+ * screen) and saved as ~5 KB WebPs in /brand/bg. The captures match the shader
+ * output to within one shade on average.
  *
- * The palettes are not decorative guesses. The first version only used tints
- * lighter than the canvas (fg-faint was 4.71:1 on it, no headroom) and was too
- * faint to notice. fg-faint was darkened to 80 95 121 (5.8:1 on the canvas) to
- * make room for real blue and peach. Every colour and blend keeps fg-faint,
- * fg-soft and the accent eyebrow at 4.5:1 or better in both themes. Change a
- * colour and re-measure on rendered frames before shipping it.
+ * It renders on the server and is styled in index.css (`.mesh-bg`), keyed off
+ * the `data-theme` attribute the inline script in index.html sets before first
+ * paint, so it appears with the page in the right theme, with no JavaScript,
+ * no WebGL and no fade.
  *
- * Cost is kept off the critical path:
- * - Nothing renders on the server, so the prerendered HTML is untouched. The
- *   shader chunk is fetched two seconds after `load`, once the page is idle,
- *   so it never competes with the page's own first paint (see START_DELAY_MS).
- * - It fades in, so it never pops.
- * - Paper pauses the render loop when the tab is hidden.
- * - Pixels are capped: the gradient is soft, so rendering it at a fraction of
- *   a high-DPI phone's resolution is invisible and saves the GPU.
- * - Save-Data and browsers without WebGL2 get the plain canvas colour, which is what the page had before.
+ * The colours are the ones the contrast work was measured against: fg-faint,
+ * fg-soft and the accent eyebrow stay at 4.5:1 or better on it in both themes.
+ * Re-capture and re-measure before changing them.
  */
-
-/**
- * A failed chunk (offline, an ad blocker, a stale deploy) must not take the
- * page down with it: an unhandled rejection from `lazy` unmounts the whole
- * app. It resolves to nothing instead, and the plain canvas shows through.
- */
-const MeshGradient = lazy(() =>
-  import("@paper-design/shaders-react")
-    .then((m) => ({ default: m.MeshGradient }))
-    .catch(() => ({ default: () => null })),
-);
-
-/** Contains anything else the shader throws while rendering. */
-class Contained extends Component<{ children: ReactNode }, { failed: boolean }> {
-  state = { failed: false };
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-  render() {
-    return this.state.failed ? null : this.props.children;
-  }
-}
-
-const PALETTES = {
-  light: ["#f5f3ec", "#ffffff", "#d9e6f8", "#fbdcc4", "#e4ecf9"],
-  dark: ["#0c1526", "#172f5a", "#3a2418", "#12223f"],
-} as const;
-
-/** About 1000×600. The gradient is a blur, so upscaling it is invisible. */
-const MAX_PIXELS = 600_000;
-
-/**
- * How long after `load` to wait before starting. Measured: starting at idle
- * straight after `load` competed with the page's own image paints and pushed
- * LCP on /ministry from ~0.55s to ~1s. Two seconds clears it.
- */
-const START_DELAY_MS = 2000;
-
-function canRender(): boolean {
-  const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
-  if (nav.connection?.saveData) return false;
-  try {
-    return Boolean(document.createElement("canvas").getContext("webgl2"));
-  } catch {
-    return false;
-  }
-}
-
 export default function MeshBackground() {
-  const { theme } = useTheme();
-  const [ready, setReady] = useState(false);
-  const [shown, setShown] = useState(false);
-
-  useEffect(() => {
-    if (!canRender()) return;
-    const start = () => {
-      setReady(true);
-      // Let the canvas draw its first frame before fading it in.
-      requestAnimationFrame(() => requestAnimationFrame(() => setShown(true)));
-    };
-    return afterPageSettles(start, START_DELAY_MS);
-  }, []);
-
-  if (!ready) return null;
-
-  return (
-    <div
-      aria-hidden
-      className={`pointer-events-none fixed inset-0 -z-20 transition-opacity duration-[1200ms] ease-out ${
-        shown ? "opacity-100" : "opacity-0"
-      }`}
-    >
-      <Contained>
-        <Suspense fallback={null}>
-          <MeshGradient
-            colors={[...PALETTES[theme]]}
-            distortion={0.8}
-            swirl={0.12}
-            speed={0}
-            frame={12_000}
-            minPixelRatio={1}
-            maxPixelCount={MAX_PIXELS}
-            style={{ width: "100%", height: "100%" }}
-          />
-        </Suspense>
-      </Contained>
-    </div>
-  );
+  return <div aria-hidden className="mesh-bg pointer-events-none fixed inset-0 -z-20" />;
 }

@@ -25,7 +25,20 @@ export default function HeroBlock() {
         variants={riseIn}
         className="max-w-[15ch] text-balance font-display text-hero font-extrabold text-fg sm:col-start-1 sm:row-start-1 board:max-w-[32ch]"
       >
-        {HERO.headline}
+        {/* The headline itself never moves: animating its words delayed LCP
+            by ~140ms (9-run median), because the browser re-measures moving
+            text. The motion is a decorative underline drawing in under the
+            second sentence instead (.hero-mark in index.css). */}
+        {(() => {
+          const cut = HERO.headline.indexOf(". ");
+          if (cut < 0) return HERO.headline;
+          return (
+            <>
+              {HERO.headline.slice(0, cut + 1)}{" "}
+              <span className="hero-mark">{HERO.headline.slice(cut + 2)}</span>
+            </>
+          );
+        })()}
       </m.h1>
 
       <m.p

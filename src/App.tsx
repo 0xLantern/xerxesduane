@@ -7,7 +7,6 @@ import SiteAssistant from "./components/assistant/SiteAssistant";
 import MobileTabBar from "./components/shell/MobileTabBar";
 import ConsentBanner from "./components/ConsentBanner";
 import PageTransition from "./components/fx/PageTransition";
-import IntroSequence from "./components/fx/IntroSequence";
 
 // Route-level code splitting: each page ships as its own chunk, so a visitor
 // only downloads the JS for the route they're on. The streaming prerender
@@ -109,7 +108,7 @@ export default function App({ path = "/" }: { path?: string }) {
   const lang = altLanguage(path);
 
   // #HACK2026 Dubai stands alone: its own slim frame, and none of the site's
-  // chrome (rail, nav, tab bar, intro, cursor, assistant). See HackLayout.
+  // chrome (rail, nav, tab bar, cursor, assistant). See HackLayout.
   if (slug === "hack") {
     return (
       <LazyMotion features={domAnimation} strict>
@@ -174,9 +173,6 @@ export default function App({ path = "/" }: { path?: string }) {
         </a>
 
         <PageTransition />
-        {/* The business intro ("Bringing the systems online") is the wrong
-            first impression for a pastor opening the ministry link. */}
-        {slug !== "ministry" && <IntroSequence />}
 
         <ShellLayout path={path} lang={lang} locale={isArabic ? "ar" : "en"}>
           <main className="relative z-10">

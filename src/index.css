@@ -299,94 +299,6 @@ html[data-theme-vt="active"]::view-transition-new(root) {
     overflow: hidden;
   }
 
-  /* ---- Intro sequence -------------------------------------------------
-     A workflow pipeline that runs once before the dashboard appears: the
-     connector fills left to right and each node pops as the fill reaches it.
-     Every element is driven by --i (its index) so the stagger stays in step
-     with the fill without any JS timing. Distances are in the element's own
-     transform space, so this costs no layout. */
-  .intro {
-    position: fixed;
-    inset: 0;
-    z-index: 80;
-    display: grid;
-    place-items: center;
-    background: rgb(var(--c-canvas));
-    animation: intro-out 520ms cubic-bezier(0.16, 1, 0.3, 1) var(--intro-hold, 2100ms) forwards;
-  }
-  @keyframes intro-out {
-    to { opacity: 0; visibility: hidden; }
-  }
-
-  .intro__mark {
-    opacity: 0;
-    animation: intro-rise 560ms cubic-bezier(0.16, 1, 0.3, 1) 80ms forwards;
-  }
-  @keyframes intro-rise {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: none; }
-  }
-
-  /* The rail the nodes sit on, and the gold fill that travels along it. */
-  .intro__track {
-    position: relative;
-    height: 2px;
-    background: rgb(var(--c-line));
-  }
-  .intro__fill {
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 100%;
-    background: rgb(var(--c-accent));
-    transform: scaleX(0);
-    transform-origin: left center;
-    animation: intro-fill 1500ms cubic-bezier(0.65, 0, 0.35, 1) 320ms forwards;
-  }
-  [dir="rtl"] .intro__fill { transform-origin: right center; }
-  @keyframes intro-fill {
-    to { transform: scaleX(1); }
-  }
-
-  /* Each node pops as the fill passes it: delay = fill start + its share. */
-  .intro__node {
-    opacity: 0;
-    transform: scale(0.82);
-    animation: intro-pop 460ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    animation-delay: calc(320ms + var(--i) * 300ms);
-  }
-  @keyframes intro-pop {
-    60%  { opacity: 1; transform: scale(1.06); }
-    100% { opacity: 1; transform: scale(1); }
-  }
-
-  .intro__check {
-    opacity: 0;
-    transform: scale(0.4);
-    animation: intro-pop 380ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    animation-delay: calc(520ms + var(--i) * 300ms);
-  }
-
-  .intro__label {
-    opacity: 0;
-    animation: intro-rise 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    animation-delay: calc(400ms + var(--i) * 300ms);
-  }
-
-  .intro__status {
-    opacity: 0;
-    animation: intro-rise 420ms cubic-bezier(0.16, 1, 0.3, 1) 420ms forwards;
-  }
-  .intro__pulse {
-    animation: intro-pulse 1100ms ease-in-out infinite;
-  }
-  @keyframes intro-pulse {
-    0%, 100% { opacity: 1; }
-    50%      { opacity: 0.35; }
-  }
-
-  /* Anyone who asked for less motion never sees this at all — the component
-     does not mount — so there is no reduced-motion variant to write here. */
-
   /* Skip link.
      Not `sr-only`: that positions absolutely with `margin: -1px`, so the 1px
      box sits at its static position and hangs a pixel past the inline edge —
@@ -948,4 +860,42 @@ html[data-theme-vt="active"]::view-transition-new(root) {
   --c-accent-deep: 240 150 210;
   --c-accent-hover: 226 110 190;
   --c-accent-ink: 24 8 20;
+}
+
+/* The still mesh gradient behind every page (MeshBackground.tsx). Captured
+   from the shader that used to draw it; per theme and per orientation. */
+.mesh-bg {
+  background: rgb(var(--c-canvas)) url("/brand/bg/mesh-light-landscape.webp") center / cover no-repeat;
+}
+:root[data-theme="dark"] .mesh-bg { background-image: url("/brand/bg/mesh-dark-landscape.webp"); }
+@media (orientation: portrait) {
+  .mesh-bg { background-image: url("/brand/bg/mesh-light-portrait.webp"); }
+  :root[data-theme="dark"] .mesh-bg { background-image: url("/brand/bg/mesh-dark-portrait.webp"); }
+}
+
+/* Homepage headline: an accent underline draws in under the second sentence,
+   once, from first paint. Pure CSS on a pseudo-element, so it runs before
+   hydration and never moves the text (moving text delayed LCP). */
+.hero-mark {
+  position: relative;
+  white-space: nowrap;
+}
+.hero-mark::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0.02em;
+  height: 0.09em;
+  border-radius: 999px;
+  background: rgb(var(--c-accent));
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: hero-mark 0.9s cubic-bezier(0.65, 0, 0.35, 1) 0.35s forwards;
+}
+[dir="rtl"] .hero-mark::after { transform-origin: right center; }
+@keyframes hero-mark {
+  to { transform: scaleX(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-mark::after { animation: none; transform: none; }
 }
