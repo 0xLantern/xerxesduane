@@ -1,8 +1,54 @@
-import { m } from "framer-motion";
+import { m, type Variants } from "framer-motion";
+import { Check } from "lucide-react";
 import { PROCESS } from "../data/content";
-import { fadeUp, stagger, VIEWPORT } from "../lib/motion";
+import { EASE, VIEWPORT } from "../lib/motion";
 import SectionHeading from "./ui/SectionHeading";
 import DottedOrbit from "./fx/DottedOrbit";
+
+/**
+ * The five steps check off in order the first time the band scrolls into
+ * view, the way the old intro overlay did, but in the page where it can be
+ * read: a solid line fills along the dotted one, each card rises in as the
+ * line reaches it, its number pops and a small check ticks on. Transform and
+ * opacity only, once. Under `prefers-reduced-motion` MotionConfig (App.tsx)
+ * keeps only the fades, so the line and checks simply appear.
+ */
+const STEP_GAP = 0.22;
+const START = 0.1;
+/** When the filling line reaches step i, measured from the moment the band enters view. */
+const at = (i: number) => START + i * STEP_GAP;
+
+// Every delay is explicit and keyed to the step index (`custom`), not left to
+// staggerChildren: framer does not carry a parent's stagger into variants
+// nested inside each card, so the checks were all firing together.
+const steps: Variants = { hidden: {}, show: {} };
+const fill: Variants = {
+  hidden: { scaleX: 0 },
+  show: {
+    scaleX: 1,
+    transition: { delay: START, duration: STEP_GAP * (PROCESS.length - 1) + 0.25, ease: "linear" },
+  },
+};
+const card: Variants = {
+  hidden: { opacity: 0, y: 18 },
+  show: (i: number) => ({ opacity: 1, y: 0, transition: { delay: at(i), duration: 0.6, ease: EASE } }),
+};
+const pop: Variants = {
+  hidden: { scale: 0.5, opacity: 0 },
+  show: (i: number) => ({
+    scale: 1,
+    opacity: 1,
+    transition: { delay: at(i) + 0.05, type: "spring", stiffness: 420, damping: 16 },
+  }),
+};
+const tick: Variants = {
+  hidden: { scale: 0, opacity: 0 },
+  show: (i: number) => ({
+    scale: 1,
+    opacity: 1,
+    transition: { delay: at(i) + 0.35, type: "spring", stiffness: 520, damping: 18 },
+  }),
+};
 
 export default function Process() {
   return (
@@ -34,26 +80,45 @@ export default function Process() {
         />
 
         <m.ol
-          variants={stagger}
+          variants={steps}
           initial="hidden"
           whileInView="show"
           viewport={VIEWPORT}
           className="relative mt-14 grid gap-4 md:grid-cols-5"
         >
-          {/* dotted flow line through the step numbers (desktop) */}
+          {/* dotted flow line through the step numbers (desktop), and the
+              solid line that fills along it */}
           <span
             aria-hidden
             className="absolute left-0 right-0 top-[2.1rem] hidden border-t-2 border-ink/20 [border-top-style:dotted] md:block"
           />
-          {PROCESS.map((step) => (
+          <m.span
+            aria-hidden
+            variants={fill}
+            className="absolute left-0 right-0 top-[2.1rem] hidden h-0.5 origin-left rounded-full bg-accent-deep md:block rtl:origin-right"
+          />
+          {PROCESS.map((step, i) => (
             <m.li
               key={step.no}
-              variants={fadeUp}
-              className="relative rounded-2xl border border-ink/10 bg-white/50 p-5 backdrop-blur-sm transition-transform duration-300 ease-smooth hover:-translate-y-1"
+              custom={i}
+              variants={card}
+              className="relative rounded-2xl border border-ink/10 bg-white/50 p-5 backdrop-blur-sm"
             >
-              <span className="relative z-10 flex h-9 w-9 items-center justify-center rounded-full bg-ink font-mono text-sm font-semibold text-accent ring-4 ring-[#E8E1D2]">
+              <m.span
+                custom={i}
+                variants={pop}
+                className="relative z-10 flex h-9 w-9 items-center justify-center rounded-full bg-ink font-mono text-sm font-semibold text-accent ring-4 ring-[#E8E1D2]"
+              >
                 {step.no}
-              </span>
+                <m.span
+                  aria-hidden
+                  custom={i}
+                  variants={tick}
+                  className="absolute -bottom-1 -end-1 grid h-4 w-4 place-items-center rounded-full bg-accent-deep text-white ring-2 ring-[#E8E1D2]"
+                >
+                  <Check size={10} strokeWidth={3.4} />
+                </m.span>
+              </m.span>
               <h3 className="mt-4 text-lg !text-ink">{step.title}</h3>
               <p className="mt-2 text-sm text-ink/65">{step.body}</p>
             </m.li>
