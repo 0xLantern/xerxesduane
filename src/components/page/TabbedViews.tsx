@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { animate, m } from "framer-motion";
+import { EASE } from "../../lib/motion";
+import { useReducedMotionPref } from "../../lib/usePrefs";
 
 export interface TabView {
   /** Doubles as the URL fragment, so an old #anchor can keep working. */
@@ -15,6 +18,12 @@ interface TabbedViewsProps {
   /** Names the tablist for a screen reader. */
   label: string;
   className?: string;
+  /**
+   * Opt-in motion: the selected pill glides to the tapped tab and the new
+   * view fades up. Off by default, so pages that should stay still (#HACK)
+   * and the business pages are untouched. Needs a LazyMotion parent.
+   */
+  animated?: boolean;
 }
 
 /**
@@ -35,11 +44,46 @@ interface TabbedViewsProps {
  * A real tablist: `aria-selected` and `aria-controls` are wired, focus roves
  * with the arrow keys, and only the selected tab is in the tab order.
  */
-export default function TabbedViews({ views, label, className = "" }: TabbedViewsProps) {
+export default function TabbedViews({ views, label, className = "", animated = false }: TabbedViewsProps) {
   const first = views[0].id;
   const [active, setActive] = useState(first);
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
   const listRef = useRef<HTMLDivElement>(null);
+  const pillRef = useRef<HTMLSpanElement>(null);
+  const reduced = useReducedMotionPref();
+  const activeIndex = views.findIndex((v) => v.id === active);
+
+  // The gliding pill. Until it has been placed once, each tab keeps its own
+  // navy background (prerendered HTML, no JS), then `data-pill` hands the
+  // job to the pill. It glides only when the reader picks a tab, and jumps
+  // straight into place on load and whenever the row resizes (fonts loading,
+  // rotating a phone). The resize watcher lives in its own effect: a fresh
+  // ResizeObserver reports once on observe(), which would cut every glide short.
+  const activeRef = useRef(activeIndex);
+  const place = useCallback(
+    (glide: boolean) => {
+      const tab = tabs.current[activeRef.current];
+      const pill = pillRef.current;
+      if (!tab || !pill) return;
+      const to = { x: tab.offsetLeft, y: tab.offsetTop, width: tab.offsetWidth, height: tab.offsetHeight };
+      animate(pill, to, glide && !reduced ? { duration: 0.4, ease: EASE } : { duration: 0 });
+    },
+    [reduced],
+  );
+  useEffect(() => {
+    const list = listRef.current;
+    if (!animated || !list) return;
+    place(false);
+    list.dataset.pill = "ready";
+    const ro = new ResizeObserver(() => place(false));
+    ro.observe(list);
+    return () => ro.disconnect();
+  }, [animated, place]);
+  useEffect(() => {
+    if (!animated || activeRef.current === activeIndex) return;
+    activeRef.current = activeIndex;
+    place(true);
+  }, [animated, activeIndex, place]);
 
   // Keep the open tab in view when the row scrolls sideways. Scrolls the row
   // itself, never the page, so it is safe on load and on every switch.
@@ -100,8 +144,15 @@ export default function TabbedViews({ views, label, className = "" }: TabbedView
         // One row that swipes sideways on a narrow screen, never a wrap: a
         // wrapped pill row split "Sermons & worship" over three lines and left
         // one tab stranded on a row of its own.
-        className="mb-3 flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain rounded-full border border-line bg-panel p-1 [scrollbar-width:none] sm:w-fit [&::-webkit-scrollbar]:hidden"
+        className="group/tabs relative mb-3 flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain rounded-full border border-line bg-panel p-1 [scrollbar-width:none] sm:w-fit [&::-webkit-scrollbar]:hidden"
       >
+        {animated && (
+          <span
+            ref={pillRef}
+            aria-hidden
+            className="pointer-events-none absolute left-0 top-0 rounded-full bg-navy opacity-0 shadow-solid group-data-[pill=ready]/tabs:opacity-100"
+          />
+        )}
         {views.map((view, i) => {
           const on = active === view.id;
           return (
@@ -118,9 +169,9 @@ export default function TabbedViews({ views, label, className = "" }: TabbedView
               tabIndex={on ? 0 : -1}
               onClick={() => show(view.id)}
               onKeyDown={onKey(i)}
-              className={`flex min-h-10 shrink-0 grow items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-bold transition board:min-h-8 board:py-1 sm:min-h-9 sm:grow-0 ${
+              className={`relative flex min-h-10 shrink-0 grow items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-bold transition board:min-h-8 board:py-1 sm:min-h-9 sm:grow-0 ${animated ? "duration-300 " : ""}${
                 on
-                  ? "bg-navy text-fg-onSolid shadow-solid"
+                  ? `bg-navy text-fg-onSolid shadow-solid${animated ? " group-data-[pill=ready]/tabs:bg-transparent group-data-[pill=ready]/tabs:shadow-none" : ""}`
                   : "text-fg-soft hover:bg-panel-alt hover:text-accent-deep"
               }`}
             >
@@ -148,7 +199,19 @@ export default function TabbedViews({ views, label, className = "" }: TabbedView
           hidden={active !== view.id}
           tabIndex={0}
         >
-          {view.content}
+          {animated ? (
+            // Hidden views sit at their faded state, so the one just picked
+            // fades up from it. The first view is shown as-is on load.
+            <m.div
+              initial={false}
+              animate={active === view.id ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+              transition={{ duration: 0.35, ease: EASE }}
+            >
+              {view.content}
+            </m.div>
+          ) : (
+            view.content
+          )}
         </div>
       ))}
     </div>
