@@ -8,6 +8,7 @@ import PageHeader from "../components/page/PageHeader";
 import Panel from "../components/page/Panel";
 import PanelBoard from "../components/page/PanelBoard";
 import { PrimaryAction } from "../components/page/PageActions";
+import CountUp from "../components/fx/CountUp";
 
 /** Preview strip shared by the work categories. */
 function Thumbs({
@@ -150,7 +151,7 @@ export default function Projects() {
                 <p className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-fg-soft board:text-[0.68rem]">
                   {r.stats.slice(0, 2).map((s) => (
                     <span key={s.label}>
-                      <span className="font-display font-semibold text-accent-deep">{s.value}</span>{" "}
+                      <span className="font-display font-semibold text-accent-deep"><CountUp value={s.value} /></span>{" "}
                       {s.label}
                     </span>
                   ))}

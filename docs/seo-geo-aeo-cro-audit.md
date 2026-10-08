@@ -898,6 +898,54 @@ Both were caught by re-measuring rather than by reasoning:
 one-screen fit unchanged at 12/13 for 1280×800; tap targets unchanged at the same
 12 inline-exempt links.
 
+## Keyboard and non-text contrast — open findings (verified, not yet fixed)
+
+An earlier multi-agent pass raised 22 findings here, and its verifier agents
+all failed on a usage limit, so the result listed them as "rejected" with no
+reason. That label was wrong: they had not been tested. All of them were then
+re-checked against the current build by direct measurement (Playwright
+Chromium, rendered pixels, real Tab key presses, both themes). Each verdict
+below comes from that measurement, not from an agent's opinion.
+
+**Keyboard**
+
+| # | Finding | Verdict | Evidence |
+|---|---|---|---|
+| 1 | Homepage AI Lab marquee links take focus outside their clipped window | **Confirmed** | Focused links measured 0% and 14% visible. Which links are hidden changes as the marquee moves, so the "5 of 6" count can't be reproduced |
+| 2 | Portfolio lightbox has `aria-modal` but no focus management | **Confirmed, worse than reported** | Focus stays on the thumbnail. All 6 Tab presses land outside the dialog, and the page behind it is neither `inert` nor `aria-hidden`. `WorkGallery.tsx` does not use `Overlay`. Escape does work |
+| 3 | Fixed mobile bottom bar hides focused controls | **Partly confirmed** | There is no `scroll-padding-bottom` anywhere. No focused control was seen behind the bar in the homepage run |
+| 4 | Hub → view switch drops focus to `<body>` | **Confirmed** | After Enter on a `?cat=` link on /portfolio and /ai-lab, focus is on `<body>` |
+| 5 | Mobile snap rail does not follow focus | **Confirmed** | At 390px, focused cards measured 0%, 0%, 0%, 6% and 16% visible |
+| 6 | AI Lab search suppresses the focus ring | **Confirmed** | The outline is transparent. The only indicator is a border tint at 2.12:1 (light) and 2.58:1 (dark) |
+| 7 | Assistant composer has no real focus indicator | **Confirmed** | The outline is transparent. The tint measures 1.48:1 (light) and 1.62:1 (dark) |
+| 8 | Assistant panel is non-modal | **Confirmed** | `role=dialog` with no `aria-modal`. All 8 Tab presses leave the panel for page links underneath |
+| 9 | Consent "Accept" covered by the assistant button on phones | **Not tested** | The test setup pre-grants consent, so the banner never appears |
+| 10 | Demo run button drops focus to `<body>` | **Confirmed** | Two of three demo buttons: focus is on `<body>` from 150 ms to at least 3 s |
+| 11 | TabbedViews has no Home/End | **Confirmed** | /pricing and /about: Home and End do nothing, arrow keys work. This is an ARIA practice gap, not a WCAG AA failure |
+
+**Non-text contrast (WCAG 1.4.11, 3:1)**
+
+| # | Finding | Verdict | Evidence |
+|---|---|---|---|
+| 12 | Light-theme focus ring under 3:1 | **Confirmed** | Accent ring on canvas measures 2.57:1, and on white it is at most 2.85:1. Dark passes at 5.7:1. The skip link and brand link pass because they use the navy ring |
+| 13 | /contact field boundaries | **Confirmed** | 1.29:1 (light), 1.23:1 (dark) |
+| 14 | /ai-lab search border | **Confirmed** | 1.21:1 (light), 1.47:1 (dark) |
+| 15 | White glyphs on `bg-accent` tiles | **Ratio confirmed, mostly exempt** | 2.85:1. Most of these icons are `aria-hidden` and sit next to a text label, which 1.4.11 exempts. The assistant button glyph is not exempt |
+| 16 | `text-accent` icons in light | **Ratio confirmed, mostly exempt** | 2.55–2.85:1. Same exemption as #15 |
+| 17 | Service-page flow icon, peach on cream | **Confirmed** | 1.54:1 (`lucide-boxes`, /odoo-erp-dubai) |
+| 18 | CTA button edge on the accent band | **Confirmed** | 2.52:1 (light). Dark also fails, at about 1.7–2.1:1 |
+| 19 | Hero CTA arrow in dark | **Confirmed, exempt** | 2.86:1, but the arrow is `aria-hidden` next to the label |
+| 20 | Icon-only round buttons have no 3:1 boundary | **Mostly confirmed** | Social and theme buttons measure about 1.1:1 in both themes. The Email button passes (6.3:1 light, 9.2:1 dark) |
+| 21 | Assistant button fill against the page (light) | **Confirmed** | 2.55:1. Dark passes at 5.63:1 |
+| 22 | `border-line` card borders | **Ratio confirmed, mostly not required** | 1.0–1.5:1. 1.4.11 does not require a boundary on text links or on cards whose fill already differs from the page |
+
+**Summary:** 17 confirmed, 3 confirmed but largely exempt (#15, #16, #19),
+1 partly confirmed (#3), 1 untested (#9). None were refuted.
+
+**Highest-value fixes:** the focus-management defects (#2, #8, #4, #10, #5,
+#1), then the light-theme focus ring (#12), which would also fix #6 and #7.
+The field boundaries (#13, #14) come after those.
+
 ## Facts needed from the owner
 
 Nothing here is blocking a deploy. Each one is a claim the site makes, or a

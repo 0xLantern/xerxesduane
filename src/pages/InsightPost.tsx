@@ -1,9 +1,29 @@
+import { m, useScroll } from "framer-motion";
 import { ArrowLeft, Check } from "lucide-react";
 import { type InsightPost as Post, formatDate } from "../data/insights";
 import { INSIGHTS } from "../data/insights";
 import { getServicePage } from "../data/servicePages";
 import PageHeader from "../components/page/PageHeader";
 import { GhostAction, PrimaryAction } from "../components/page/PageActions";
+
+/**
+ * A thin accent bar along the top of the window that fills as the reader
+ * moves through the article. Scroll-linked, transform only (`scaleX`), and
+ * decorative, so it is hidden from assistive tech. Under
+ * `prefers-reduced-motion` it is not shown at all.
+ */
+function ReadingProgress() {
+  // Page progress, not the article's own: the article is nearly the whole
+  // page, and a target-based range never reached 100% at the bottom.
+  const { scrollYProgress } = useScroll();
+  return (
+    <m.div
+      aria-hidden
+      className="pointer-events-none fixed inset-x-0 top-0 z-[65] h-[3px] origin-left bg-accent motion-reduce:hidden"
+      style={{ scaleX: scrollYProgress }}
+    />
+  );
+}
 
 function Body({ blocks }: { blocks: Post["body"] }) {
   return (
@@ -56,6 +76,7 @@ export default function InsightPost({ post }: { post: Post }) {
 
   return (
     <>
+      <ReadingProgress />
       <article className="pb-12">
         <PageHeader
           eyebrow="Insights"
