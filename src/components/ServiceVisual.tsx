@@ -1,5 +1,27 @@
+import { m, type Variants } from "framer-motion";
 import type { ServicePageData } from "../data/servicePages";
+import { EASE } from "../lib/motion";
 import Reveal from "./ui/Reveal";
+
+/**
+ * The stages arrive in order, one after another, the first time the list
+ * scrolls into view: each card rises a little and fades in, and its number
+ * pops. Transform and opacity only. Under `prefers-reduced-motion`
+ * MotionConfig (App.tsx) keeps only the fade, and without JavaScript the
+ * reveal fallback in index.html shows everything.
+ */
+const stages: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.12, delayChildren: 0.15 } },
+};
+const stageCard: Variants = {
+  hidden: { opacity: 0, y: 14 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: EASE } },
+};
+const stageNumber: Variants = {
+  hidden: { opacity: 0, scale: 0.4 },
+  show: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: 420, damping: 16, delay: 0.1 } },
+};
 
 /**
  * The flow block under a service page header.
@@ -33,15 +55,27 @@ export default function ServiceVisual({ page }: { page: ServicePageData }) {
                 <h2 className="mt-3 max-w-sm text-3xl leading-tight !text-ink sm:text-4xl">{flow.title}</h2>
                 <p className="mt-4 max-w-md text-sm leading-relaxed text-ink/65">{flow.note}</p>
               </div>
-              <ol className="grid gap-3 rounded-2xl border border-ink/10 bg-ink p-4 sm:grid-cols-2 sm:p-5">
+              <m.ol
+                variants={stages}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, amount: 0.3 }}
+                className="grid gap-3 rounded-2xl border border-ink/10 bg-ink p-4 sm:grid-cols-2 sm:p-5"
+              >
                 {flow.stages.map((stage, index) => (
-                  <li key={stage.name} className="rounded-xl border border-cream/10 bg-cream/[0.04] p-4">
-                    <span className="font-mono text-[10px] text-gold">{String(index + 1).padStart(2, "0")}</span>
+                  <m.li
+                    key={stage.name}
+                    variants={stageCard}
+                    className="rounded-xl border border-cream/10 bg-cream/[0.04] p-4"
+                  >
+                    <m.span variants={stageNumber} className="inline-block origin-left font-mono text-[10px] text-gold">
+                      {String(index + 1).padStart(2, "0")}
+                    </m.span>
                     <p className="mt-2 text-sm font-semibold text-cream">{stage.name}</p>
                     <p className="mt-1.5 text-[0.8rem] leading-relaxed text-cream/75">{stage.detail}</p>
-                  </li>
+                  </m.li>
                 ))}
-              </ol>
+              </m.ol>
             </div>
           </div>
         </Reveal>

@@ -5,6 +5,7 @@ import PageHeader from "../components/page/PageHeader";
 import Panel from "../components/page/Panel";
 import PanelBoard from "../components/page/PanelBoard";
 import { GhostAction, PrimaryAction } from "../components/page/PageActions";
+import CountUp from "../components/fx/CountUp";
 
 export default function CaseStudyPage({ study }: { study: CaseStudy }) {
   const services = SERVICE_PAGES.filter((service) =>
@@ -78,7 +79,7 @@ export default function CaseStudyPage({ study }: { study: CaseStudy }) {
                     <dt className="sr-only">{stat.label}</dt>
                     <dd>
                       <span className="font-display text-2xl font-extrabold text-accent-deep">
-                        {stat.value}
+                        <CountUp value={stat.value} />
                       </span>
                       <span className="mt-1 block text-[0.7rem] leading-tight text-fg-soft">
                         {stat.label}
