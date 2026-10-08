@@ -267,25 +267,6 @@ html[data-theme-vt="active"]::view-transition-new(root) {
     background: rgb(var(--c-fg) / 0.36);
   }
 
-  /* Lenis inertia scrolling (mounted client-only on fine pointers).
-     When active it must own easing — neutralize native smooth scroll. */
-  html.lenis,
-  html.lenis body {
-    height: auto;
-  }
-  .lenis.lenis-smooth {
-    scroll-behavior: auto !important;
-  }
-  .lenis.lenis-stopped {
-    overflow: hidden;
-  }
-
-  /* Custom cursor active (fine pointer, motion-safe): hide the native cursor
-     except over text fields, where the I-beam affordance matters. */
-  .tw-cursor,
-  .tw-cursor *:not(input):not(textarea):not(select) {
-    cursor: none;
-  }
 }
 
 @layer components {
@@ -849,36 +830,6 @@ html[data-theme-vt="active"]::view-transition-new(root) {
   .animate-studio-marquee {
     animation: none;
   }
-}
-
-/* Canvas lines (CanvasLines.tsx). The drift is a transform on the <svg>, so
-   it stays on the compositor; it starts and ends at rest, so the reduced-motion
-   rule (which runs every animation once, instantly) leaves it untouched. The
-   sparks are dashes on paths normalised to pathLength="1". */
-@keyframes canvas-lines-drift {
-  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
-  50% { transform: translate3d(-1.4%, 1%, 0) rotate(0.8deg); }
-}
-/* A 0.08 dash in a 2.0 cycle: it crosses the line in the first half of the
-   cycle and waits off the end of the path for the second. */
-@keyframes canvas-lines-spark {
-  from { stroke-dashoffset: 0.08; }
-  to { stroke-dashoffset: -1.92; }
-}
-@keyframes canvas-lines-orbit {
-  from { stroke-dashoffset: 0; }
-  to { stroke-dashoffset: -1; }
-}
-.canvas-lines {
-  animation: canvas-lines-drift 48s ease-in-out infinite;
-}
-.canvas-lines-spark {
-  stroke-dasharray: 0.08 1.92;
-  animation: canvas-lines-spark 13s linear infinite;
-}
-.canvas-lines-orbit {
-  stroke-dasharray: 0.07 0.93;
-  animation: canvas-lines-orbit 26s linear infinite;
 }
 
 /* Partner-section cursor thumbnails: fade out + scale down over 1s */

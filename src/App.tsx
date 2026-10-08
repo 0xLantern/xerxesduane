@@ -6,10 +6,8 @@ import LeaderLayout from "./components/shell/LeaderLayout";
 import SiteAssistant from "./components/assistant/SiteAssistant";
 import MobileTabBar from "./components/shell/MobileTabBar";
 import ConsentBanner from "./components/ConsentBanner";
-import SmoothScroll from "./components/fx/SmoothScroll";
 import PageTransition from "./components/fx/PageTransition";
 import IntroSequence from "./components/fx/IntroSequence";
-import Cursor from "./components/fx/Cursor";
 
 // Route-level code splitting: each page ships as its own chunk, so a visitor
 // only downloads the JS for the route they're on. The streaming prerender
@@ -120,7 +118,6 @@ export default function App({ path = "/" }: { path?: string }) {
             <a href="#top" data-lenis-ignore className="skip-link">
               Skip to content
             </a>
-            <SmoothScroll />
             <HackLayout>
               <main className="relative z-10">
                 <Suspense fallback={null}>
@@ -145,7 +142,6 @@ export default function App({ path = "/" }: { path?: string }) {
             <a href="#top" data-lenis-ignore className="skip-link">
               Skip to content
             </a>
-            <SmoothScroll />
             <LeaderLayout>
               <main className="relative z-10">
                 <Suspense fallback={null}>
@@ -177,7 +173,6 @@ export default function App({ path = "/" }: { path?: string }) {
           {isArabic ? AR_CHROME.skipToContent : "Skip to content"}
         </a>
 
-        <SmoothScroll />
         <PageTransition />
         <IntroSequence />
 
@@ -203,7 +198,6 @@ export default function App({ path = "/" }: { path?: string }) {
           variant={slug === "ministry" ? "ministry" : "site"}
         />
         <MobileTabBar path={path} locale={isArabic ? "ar" : "en"} />
-        <Cursor />
       </div>
       </MotionConfig>
     </LazyMotion>

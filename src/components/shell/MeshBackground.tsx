@@ -1,11 +1,14 @@
 import { Component, lazy, Suspense, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useTheme } from "../../lib/useTheme";
-import { useReducedMotionPref } from "../../lib/usePrefs";
 import { afterPageSettles } from "../../lib/afterPageSettles";
 
 /**
- * A slow, brand-coloured mesh gradient behind every page (Paper Shaders).
+ * A still, brand-coloured mesh gradient behind every page (Paper Shaders).
+ *
+ * Still on purpose: animated, the shader re-rendered the full viewport every
+ * frame, and on desktops that was the main source of lag (measured ~8fps
+ * while scrolling, ~50fps with it frozen). One frame keeps the look for free.
  *
  * The palettes are not decorative guesses. The first version only used tints
  * lighter than the canvas (fg-faint was 4.71:1 on it, no headroom) and was too
@@ -22,8 +25,7 @@ import { afterPageSettles } from "../../lib/afterPageSettles";
  * - Paper pauses the render loop when the tab is hidden.
  * - Pixels are capped: the gradient is soft, so rendering it at a fraction of
  *   a high-DPI phone's resolution is invisible and saves the GPU.
- * - Reduced motion gets a still frame; Save-Data and browsers without WebGL2
- *   get the plain canvas colour, which is what the page had before.
+ * - Save-Data and browsers without WebGL2 get the plain canvas colour, which is what the page had before.
  */
 
 /**
@@ -75,7 +77,6 @@ function canRender(): boolean {
 
 export default function MeshBackground() {
   const { theme } = useTheme();
-  const reduced = useReducedMotionPref();
   const [ready, setReady] = useState(false);
   const [shown, setShown] = useState(false);
 
@@ -104,8 +105,8 @@ export default function MeshBackground() {
             colors={[...PALETTES[theme]]}
             distortion={0.8}
             swirl={0.12}
-            speed={reduced ? 0 : 0.35}
-            frame={reduced ? 12_000 : 0}
+            speed={0}
+            frame={12_000}
             minPixelRatio={1}
             maxPixelCount={MAX_PIXELS}
             style={{ width: "100%", height: "100%" }}

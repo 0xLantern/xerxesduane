@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useId, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
-import { getLenis } from "../../lib/lenisStore";
 
 interface OverlayProps {
   open: boolean;
@@ -77,8 +76,6 @@ export default function Overlay({
     if (!open) return;
 
     restoreTo.current = document.activeElement as HTMLElement | null;
-    const lenis = getLenis();
-    lenis?.stop();
 
     const scrollY = window.scrollY;
     const body = document.body;
@@ -125,7 +122,6 @@ export default function Overlay({
       body.style.width = previous.width;
       body.style.overflowY = previous.overflowY;
       window.scrollTo({ top: scrollY, behavior: "instant" });
-      lenis?.start();
       restoreTo.current?.focus({ preventScroll: true });
     };
   }, [open, onClose]);
