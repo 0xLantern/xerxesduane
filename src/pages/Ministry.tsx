@@ -3,6 +3,7 @@ import {
   ArrowUpRight,
   Award,
   Church,
+  FileText,
   ChevronDown,
   GraduationCap,
   HandHeart,
@@ -672,6 +673,10 @@ export default function Ministry() {
               icon={<WhatsAppGlyph size={15} className="text-[#1FA855]" />}
             >
               WhatsApp
+            </GhostAction>
+            {/* Absolute: on this host "/cv" would resolve to ministry.xerxesduane.com. */}
+            <GhostAction href="https://www.xerxesduane.com/cv" icon={<FileText size={15} aria-hidden />}>
+              CV
             </GhostAction>
           </>
         }
