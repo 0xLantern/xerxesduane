@@ -339,13 +339,13 @@ const ROAD: { years: string; title: string; body: string }[] = [
   },
   {
     years: "2018–2021",
-    title: "Youth pastor, Baguio",
-    body: "Youth pastor in a Southern Baptist church in Baguio, while studying at Philippine Baptist Theological Seminary: Master of Divinity, 2021.",
+    title: "Youth pastor, Faith in Christ Fellowship, Baguio",
+    body: "Led the youth leaders team across youth ministry, programmes and campus ministry, while studying at Philippine Baptist Theological Seminary: Master of Divinity, 2021.",
   },
   {
     years: "2021–2022",
-    title: "Digital-ministry pastor",
-    body: "During the pandemic, at a local Christian and Missionary Alliance church: an e-learning platform so discipleship could continue when gatherings could not.",
+    title: "Worship & digital ministry pastor, Bacolod City Alliance Church",
+    body: "During the pandemic: led the worship and Sunday service team of 12 volunteers, brought in Planning Center, and built an e-learning platform so discipleship could continue when gatherings could not.",
   },
   {
     years: "2022–2023",
@@ -894,8 +894,8 @@ export default function Ministry() {
                       <p>
                         Since 2017 I&rsquo;ve worked mostly with the young. My first full-time
                         ministry was as a campus missionary, from 2017 to 2018, and from 2018 to 2021
-                        I was a youth pastor in a Southern Baptist church in Baguio: developing youth,
-                        training leaders, and helping students grow into people who can disciple
+                        I was youth pastor at Faith in Christ Fellowship in Baguio, leading the youth
+                        leaders team: developing youth, training leaders, and helping students grow into people who can disciple
                         others. Across camps, conferences, and campuses I&rsquo;ve trained more than 10,000
                         youths and students, and watched many of them begin to lead on their own.
                         Alongside the youth ministry in Baguio I studied at Philippine Baptist
@@ -903,9 +903,10 @@ export default function Ministry() {
                       </p>
                       <p>
                         Along the way I kept finding myself where ministry meets technology. From 2021
-                        to 2022, during the pandemic, I served as a digital-ministry pastor in a local Christian and
-                        Missionary Alliance church, building an e-learning platform so discipleship
-                        could continue when gatherings could not. That season settled a conviction I
+                        to 2022, during the pandemic, I served as worship and digital ministry pastor
+                        at Bacolod City Alliance Church, leading the worship and Sunday service team
+                        and building an e-learning platform so discipleship could continue when
+                        gatherings could not. That season settled a conviction I
                         still hold: the tools of our age are meant to serve the mission of God.
                       </p>
                       <p>
@@ -1018,10 +1019,10 @@ export default function Ministry() {
                   <H3>From the Philippines to the nations</H3>
                   <p>
                     My first full-time ministry was on campus, as a campus missionary from 2017 to
-                    2018. From 2018 to 2021 I was a youth pastor in a Southern Baptist church in
+                    2018. From 2018 to 2021 I was youth pastor at Faith in Christ Fellowship in
                     Baguio, and in 2021 I completed my Master of Divinity at Philippine Baptist
-                    Theological Seminary there. Then, from 2021 to 2022, during the pandemic, I served as a
-                    digital-ministry pastor in a local Christian and Missionary Alliance church,
+                    Theological Seminary there. Then, from 2021 to 2022, during the pandemic, I
+                    served as worship and digital ministry pastor at Bacolod City Alliance Church,
                     and from 2022 to 2023 as Communications Officer at the National Office of
                     CMA-Philippines, where I started its digital ministry.
                   </p>
