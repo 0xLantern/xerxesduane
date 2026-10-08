@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
+import { m, useScroll, type Variants } from "framer-motion";
 import {
   ArrowUpRight,
   Award,
@@ -16,11 +17,15 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import PageHeader from "../components/page/PageHeader";
+import Kinetic from "../components/fx/Kinetic";
+import CountUp from "../components/fx/CountUp";
 import TabbedViews from "../components/page/TabbedViews";
 import { GhostAction, PrimaryAction } from "../components/page/PageActions";
 import { IconTile } from "../components/page/Panel";
 import WhatsAppGlyph from "../components/ui/WhatsAppGlyph";
 import { CONTACT, whatsappHref } from "../data/contact";
+import { EASE, VIEWPORT } from "../lib/motion";
+import { useReducedMotionPref } from "../lib/usePrefs";
 
 /**
  * `/ministry` — church and ministry background. UNLISTED on purpose.
@@ -87,6 +92,19 @@ function Reach({
   );
 }
 
+/**
+ * The page's one entrance: cards and section intros rise a little and fade in
+ * the first time they scroll into view. Kept small and quiet on purpose. A
+ * card in a tab that isn't showing plays when its tab is opened. Under
+ * `prefers-reduced-motion` only the fade is left (MotionConfig in App.tsx),
+ * and without JavaScript the reveal fallback in index.html shows everything.
+ */
+const rise: Variants = {
+  hidden: { opacity: 0, y: 14 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } },
+};
+const reveal = { variants: rise, initial: "hidden", whileInView: "show", viewport: VIEWPORT } as const;
+
 /** Eyebrow, heading and one line of context at the top of each section. */
 function SectionIntro({
   id,
@@ -100,7 +118,7 @@ function SectionIntro({
   lede?: ReactNode;
 }) {
   return (
-    <div className="mb-3 max-w-[68ch]">
+    <m.div {...reveal} className="mb-3 max-w-[68ch]">
       <span className="eyebrow">
         <span className="h-px w-6 bg-accent/60" aria-hidden />
         {eyebrow}
@@ -109,7 +127,7 @@ function SectionIntro({
         {title}
       </h2>
       {lede && <p className="mt-2 text-[0.95rem] leading-relaxed text-fg-soft">{lede}</p>}
-    </div>
+    </m.div>
   );
 }
 
@@ -131,9 +149,9 @@ function Ext({ href, children }: { href: string; children: ReactNode }) {
 
 function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-card border border-line bg-panel p-4 shadow-card sm:p-5 ${className}`}>
+    <m.div {...reveal} className={`rounded-card border border-line bg-panel p-4 shadow-card sm:p-5 ${className}`}>
       {children}
-    </div>
+    </m.div>
   );
 }
 
@@ -391,6 +409,56 @@ const TOPICS = [
   "Youth & leadership development",
   "Faith, work & technology",
 ];
+
+const step: Variants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } },
+};
+const dot: Variants = {
+  hidden: { scale: 0 },
+  show: { scale: 1, transition: { type: "spring", stiffness: 420, damping: 18 } },
+};
+
+/**
+ * The road, as a timeline: one line down the side, a dot per step. A brighter
+ * line grows down the faint one as the reader scrolls through it, and each
+ * step (and its dot) appears as the reader reaches it. Under
+ * `prefers-reduced-motion` the line is simply drawn in full.
+ */
+function Road() {
+  const ref = useRef<HTMLOListElement>(null);
+  const reduced = useReducedMotionPref();
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start 85%", "end 60%"] });
+  return (
+    <ol ref={ref} className="relative mt-4 space-y-4 border-s-2 border-accent/20 ps-5">
+      {/* Sits exactly over the border, which is outside the padding box. */}
+      <m.span
+        aria-hidden
+        className="absolute -start-0.5 top-0 h-full w-0.5 origin-top rounded-full bg-accent/70"
+        style={{ scaleY: reduced ? 1 : scrollYProgress }}
+      />
+      {ROAD.map((r) => (
+        <m.li
+          key={r.title}
+          variants={step}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.3 }}
+          className="relative"
+        >
+          <m.span
+            aria-hidden
+            variants={dot}
+            className="absolute -start-[1.72rem] top-[0.4rem] h-3 w-3 rounded-full border-2 border-panel bg-accent"
+          />
+          <p className="text-[0.8rem] font-bold uppercase tracking-wide text-accent-deep">{r.years}</p>
+          <H3>{r.title}</H3>
+          <p className="mt-0.5 max-w-[72ch] text-[0.95rem] leading-relaxed text-fg-soft">{r.body}</p>
+        </m.li>
+      ))}
+    </ol>
+  );
+}
 
 const PLACES: { name: string; year: string; href?: string; photo: Photo }[] = [
   {
@@ -656,7 +724,7 @@ export default function Ministry() {
       <PageHeader
         eyebrow="Ministry"
         icon={Church}
-        title="Making disciples in a digital age."
+        title={<Kinetic>Making disciples in a digital age.</Kinetic>}
         lede="I help churches, youth ministries, and nonprofits meet people where they already are, online, and walk with them toward Jesus. My work lives where faith, missions, and technology meet."
         meta={
           <span className="inline-flex items-center gap-1.5">
@@ -691,7 +759,7 @@ export default function Ministry() {
           >
             <dt className="mt-1 text-[0.72rem] leading-tight text-fg-soft sm:text-[0.85rem] sm:leading-snug">{s.label}</dt>
             <dd className="font-display text-[1.3rem] font-extrabold leading-none tracking-tight text-fg sm:text-[1.9rem]">
-              {s.value}
+              <CountUp value={s.value} />
             </dd>
           </div>
         ))}
@@ -907,22 +975,7 @@ export default function Ministry() {
                   </ul>
                   <Card>
                     <H2>Along the way</H2>
-                    {/* The road, as a timeline: one line down the side, a dot per step. */}
-                    <ol className="mt-4 space-y-4 border-s-2 border-accent/30 ps-5">
-                      {ROAD.map((m) => (
-                        <li key={m.title} className="relative">
-                          <span
-                            aria-hidden
-                            className="absolute -start-[1.72rem] top-[0.4rem] h-3 w-3 rounded-full border-2 border-panel bg-accent"
-                          />
-                          <p className="text-[0.8rem] font-bold uppercase tracking-wide text-accent-deep">
-                            {m.years}
-                          </p>
-                          <H3>{m.title}</H3>
-                          <p className="mt-0.5 max-w-[72ch] text-[0.95rem] leading-relaxed text-fg-soft">{m.body}</p>
-                        </li>
-                      ))}
-                    </ol>
+                    <Road />
                     <div className="mt-6">
                       <H3>Alongside the road</H3>
                     </div>
