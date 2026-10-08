@@ -12,7 +12,6 @@ import {
   Mic,
   MonitorSmartphone,
   Presentation,
-  Sprout,
   type LucideIcon,
 } from "lucide-react";
 import PageHeader from "../components/page/PageHeader";
@@ -40,9 +39,6 @@ import { CONTACT, whatsappHref } from "../data/contact";
 const mail = (subject: string, to: string = CONTACT.email) =>
   `mailto:${to}?subject=${encodeURIComponent(subject)}`;
 
-/** Giving enquiries go to their own inbox, not the business address. */
-const SUPPORT_EMAIL = "support@xerxesduane.com";
-
 /**
  * What each WhatsApp button opens with, so the message arrives already saying
  * what it is about. One per email action on the page.
@@ -50,7 +46,6 @@ const SUPPORT_EMAIL = "support@xerxesduane.com";
 const WA = {
   serve: "Hi Xerxes, I saw your ministry page and I'd love to talk about serving together.",
   pray: "Hi Xerxes, I saw your ministry page and I'd like to commit to praying for you and your ministry.",
-  give: "Hi Xerxes, I saw your ministry page and I'd like to ask about partnering financially.",
   discovery: "Hi Xerxes, I saw your ministry page and I'd like an intro or training on The Discovery Bible.",
 };
 
@@ -1411,7 +1406,7 @@ export default function Ministry() {
           title="The best of ministry is never done alone."
           lede="Whether you lead a church, a youth ministry, a campus, or an organization, I'd love to serve alongside you, and to have you pray alongside me. This is an invitation into koinonia, partnership in the gospel, where we carry the mission together."
         />
-        <div className="grid gap-2 lg:grid-cols-2">
+        <div className="grid gap-2">
           <Card className="flex h-full flex-col">
             <div className="flex items-center gap-3">
               <IconTile>
@@ -1434,38 +1429,9 @@ export default function Ministry() {
               <Reach subject="I will pray with you" whatsapp={WA.pray} email="I'll commit to pray" />
             </div>
           </Card>
-          <Card className="flex h-full flex-col">
-            <div className="flex items-center gap-3">
-              <IconTile>
-                <Sprout size={20} strokeWidth={2.2} aria-hidden />
-              </IconTile>
-              <H3>Support the wider work</H3>
-            </div>
-            <div className={`${prose} mt-3`}>
-              <p>
-                Some partners also help sustain the ministry financially, which frees me to serve
-                churches and leaders who could not otherwise bring me in. If you&rsquo;d like to give,
-                monthly or one time, I would be grateful.
-              </p>
-              <p className="text-fg-faint">
-                A note to my kababayan, and to anyone supporting family back home: please feel no
-                pressure to give. If your hands are full caring for those you love, your prayers are
-                full partnership, and they mean the world to me.
-              </p>
-            </div>
-            <div className="mt-auto pt-4">
-              <Reach
-                subject="Partnering financially"
-                to={SUPPORT_EMAIL}
-                whatsapp={WA.give}
-                email="Partner financially"
-              />
-            </div>
-          </Card>
         </div>
         <p className="mt-3 max-w-[60ch] rounded-card border border-line bg-panel p-4 font-display text-[1.05rem] italic leading-snug text-fg shadow-card">
-          Thank you for sharing in this with me. However we partner, in prayer, in ministry, or in
-          giving, you are a true partner in the gospel.
+          Thank you for sharing in this with me. However we partner, in prayer or in ministry, you are a true partner in the gospel.
         </p>
       </section>
     </>
