@@ -45,6 +45,8 @@ export function initCtaTracking(): void {
       track("email_click", { location: where, label, cta_slot: slot });
     } else if (href === "/contact" || href.startsWith("/contact?") || href.includes("#contact")) {
       track("cta_book_audit", { location: where, label, cta_slot: slot });
+    } else if (/\/cv\/[^/]+\.pdf$/.test(href)) {
+      track("cv_download", { location: where, label, cta_slot: slot });
     }
   });
 }

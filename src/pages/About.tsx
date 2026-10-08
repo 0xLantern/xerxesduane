@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, MapPin, UserRoundCheck } from "lucide-react";
+import { ArrowLeft, Check, FileDown, MapPin, UserRoundCheck } from "lucide-react";
 import AboutIntro from "../components/about/AboutIntro";
 import PageHeader from "../components/page/PageHeader";
 import TabbedViews from "../components/page/TabbedViews";
@@ -56,6 +56,14 @@ export default function About() {
         actions={
           <>
             <PrimaryAction href="/contact">Book a free audit</PrimaryAction>
+            <GhostAction
+              href="/cv/Xerxes_Magdaluyo_CV_Freelance_Dubai.pdf"
+              external
+              cta="about_cv"
+              icon={<FileDown size={15} strokeWidth={2.2} aria-hidden />}
+            >
+              Download CV
+            </GhostAction>
             <GhostAction href="/" icon={<ArrowLeft size={15} strokeWidth={2.2} aria-hidden />}>
               Home
             </GhostAction>
