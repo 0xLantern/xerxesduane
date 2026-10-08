@@ -1,5 +1,5 @@
-import { useRef, type ReactNode } from "react";
-import { m, useScroll, type Variants } from "framer-motion";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { m, useInView, useScroll, type Variants } from "framer-motion";
 import {
   ArrowUpRight,
   Award,
@@ -207,6 +207,80 @@ const DUBAI_PHOTOS: Photo[] = [
 ];
 
 /**
+ * A photo that eases in (a soft fade and a 2% settle) once it has both loaded
+ * and come into view, instead of popping in half-drawn. In a gallery strip,
+ * the photos off to the side ease in as they are swiped into view. A photo
+ * that finished loading before the page woke up is caught on mount, and one
+ * that fails to load is shown anyway, so nothing can stay invisible.
+ */
+function EaseImg({
+  src,
+  srcSet,
+  sizes,
+  alt,
+  width,
+  height,
+  className,
+}: {
+  src: string;
+  srcSet: string;
+  sizes: string;
+  alt: string;
+  width: number;
+  height: number;
+  className: string;
+}) {
+  const ref = useRef<HTMLImageElement>(null);
+  const seen = useInView(ref, { once: true, amount: 0.15 });
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    // The load event may have fired before hydration.
+    if (ref.current?.complete) setLoaded(true);
+  }, []);
+  return (
+    <m.img
+      ref={ref}
+      src={src}
+      srcSet={srcSet}
+      sizes={sizes}
+      alt={alt}
+      width={width}
+      height={height}
+      loading="lazy"
+      decoding="async"
+      onLoad={() => setLoaded(true)}
+      onError={() => setLoaded(true)}
+      initial={{ opacity: 0, scale: 1.02 }}
+      animate={seen && loaded ? { opacity: 1, scale: 1 } : undefined}
+      transition={{ duration: 0.8, ease: EASE }}
+      className={className}
+    />
+  );
+}
+
+/**
+ * A key line, underlined in the accent colour as it scrolls into view: the
+ * line draws left to right and carries on across wrapped lines. Decorative
+ * only; under `prefers-reduced-motion` it is simply there.
+ */
+function Drawn({ children }: { children: ReactNode }) {
+  const reduced = useReducedMotionPref();
+  const cls = "bg-gradient-to-r from-accent/70 to-accent/70 bg-no-repeat pb-0.5 [background-position:0_100%]";
+  if (reduced) return <span className={cls} style={{ backgroundSize: "100% 2px" }}>{children}</span>;
+  return (
+    <m.span
+      className={cls}
+      initial={{ backgroundSize: "0% 2px" }}
+      whileInView={{ backgroundSize: "100% 2px" }}
+      viewport={{ once: true, amount: 0.8 }}
+      transition={{ duration: 1.4, ease: EASE, delay: 0.2 }}
+    >
+      {children}
+    </m.span>
+  );
+}
+
+/**
  * A swipeable strip rather than an autoplaying slideshow: no JS, nothing
  * moving on its own, and every photo is in the prerendered HTML. Each keeps
  * its own proportions at a shared height, so the panorama is not cropped.
@@ -219,21 +293,24 @@ function Gallery({ photos, label, eager = false }: { photos: Photo[]; label: str
       tabIndex={0}
       className="flex snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain rounded-card pb-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
     >
-      {photos.map((p, i) => (
-        <li key={p.src} className="shrink-0 snap-start">
-          <img
-            src={`/ministry/${p.src}-800.webp`}
-            srcSet={`/ministry/${p.src}-800.webp 800w, /ministry/${p.src}-1600.webp 1600w`}
-            sizes="(min-width: 1024px) 480px, 80vw"
-            alt={p.alt}
-            width={p.w}
-            height={p.h}
-            loading={eager && i === 0 ? "eager" : "lazy"}
-            decoding="async"
-            className="h-48 w-auto max-w-none rounded-card border border-line object-cover shadow-card sm:h-64"
-          />
-        </li>
-      ))}
+      {photos.map((p, i) => {
+        const img = {
+          src: `/ministry/${p.src}-800.webp`,
+          srcSet: `/ministry/${p.src}-800.webp 800w, /ministry/${p.src}-1600.webp 1600w`,
+          sizes: "(min-width: 1024px) 480px, 80vw",
+          alt: p.alt,
+          width: p.w,
+          height: p.h,
+          className: "h-48 w-auto max-w-none rounded-card border border-line object-cover shadow-card sm:h-64",
+        };
+        return (
+          <li key={p.src} className="shrink-0 snap-start">
+            {/* The page's first photo loads at once and is shown at once: it
+                is often the largest thing on screen, so it never waits. */}
+            {eager && i === 0 ? <img {...img} loading="eager" decoding="async" /> : <EaseImg {...img} />}
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -241,15 +318,13 @@ function Gallery({ photos, label, eager = false }: { photos: Photo[]; label: str
 /** One photo at the top of a card, at its own proportions. */
 function Figure({ photo }: { photo: Photo }) {
   return (
-    <img
+    <EaseImg
       src={`/ministry/${photo.src}-800.webp`}
       srcSet={`/ministry/${photo.src}-800.webp 800w, /ministry/${photo.src}-1600.webp 1600w`}
       sizes="(min-width: 1024px) 460px, 90vw"
       alt={photo.alt}
       width={photo.w}
       height={photo.h}
-      loading="lazy"
-      decoding="async"
       className="mb-3 h-auto w-full rounded-card border border-line"
     />
   );
@@ -870,6 +945,7 @@ export default function Ministry() {
           title="Where I've served, and why"
         />
         <TabbedViews
+          animated
           label="Ministry background"
           views={[
             {
@@ -881,8 +957,10 @@ export default function Ministry() {
                     <div className={prose}>
                       <H2>For King and Kingdom</H2>
                       <p className="font-display italic text-fg">
-                        Resolved: to live in a way that consistently reflects King Jesus&rsquo; beauty
-                        and excellence in every part of life.
+                        <Drawn>
+                          Resolved: to live in a way that consistently reflects King Jesus&rsquo; beauty
+                          and excellence in every part of life.
+                        </Drawn>
                       </p>
                       <p>
                         I&rsquo;m Xerxes Duane Magdaluyo, a Filipino minister serving in Dubai, with a
@@ -1490,7 +1568,8 @@ export default function Ministry() {
           </Card>
         </div>
         <p className="mt-3 max-w-[60ch] rounded-card border border-line bg-panel p-4 font-display text-[1.05rem] italic leading-snug text-fg shadow-card">
-          Thank you for sharing in this with me. However we partner, in prayer or in ministry, you are a true partner in the gospel.
+          Thank you for sharing in this with me. However we partner, in prayer or in ministry,{" "}
+          <Drawn>you are a true partner in the gospel.</Drawn>
         </p>
       </section>
     </>
