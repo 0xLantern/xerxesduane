@@ -47,6 +47,8 @@ export function initCtaTracking(): void {
       track("cta_book_audit", { location: where, label, cta_slot: slot });
     } else if (/\/cv\/[^/]+\.pdf$/.test(href)) {
       track("cv_download", { location: where, label, cta_slot: slot });
+    } else if (/\/cv\/freelance\/?$/.test(href)) {
+      track("cv_view", { location: where, label, cta_slot: slot });
     }
   });
 }
