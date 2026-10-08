@@ -174,7 +174,9 @@ export default function App({ path = "/" }: { path?: string }) {
         </a>
 
         <PageTransition />
-        <IntroSequence />
+        {/* The business intro ("Bringing the systems online") is the wrong
+            first impression for a pastor opening the ministry link. */}
+        {slug !== "ministry" && <IntroSequence />}
 
         <ShellLayout path={path} lang={lang} locale={isArabic ? "ar" : "en"}>
           <main className="relative z-10">
