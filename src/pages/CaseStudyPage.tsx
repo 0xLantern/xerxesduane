@@ -139,10 +139,9 @@ export default function CaseStudyPage({ study }: { study: CaseStudy }) {
                   </div>
                 ))}
               </div>
-              <p className="mt-3 text-xs leading-relaxed text-fg-faint">
-                Repeat enquiries and the site visit confirmed by Xerxes Duane.
-                The enquiry message records ChatGPT as its attributed source.
-              </p>
+              {study.outcomesNote && (
+                <p className="mt-3 text-xs leading-relaxed text-fg-faint">{study.outcomesNote}</p>
+              )}
             </>
           )}
           <div className="mt-2 flex flex-wrap items-center gap-4">
