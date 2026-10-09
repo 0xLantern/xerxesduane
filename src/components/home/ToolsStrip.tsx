@@ -92,7 +92,7 @@ export default function ToolsStrip() {
       aria-label="Tools and platforms I work with"
       onFocusCapture={() => setInteracting(true)}
       onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setInteracting(false); }}
-      className="mb-4 board:mb-1 rounded-[2.1rem] bg-gradient-to-r from-canvas-sunk/30 via-wash/45 to-wash-strong/60 p-1.5 board:p-1"
+      className="tools-strip mb-4 board:mb-1 rounded-[2.1rem] bg-gradient-to-r from-canvas-sunk/30 via-wash/45 to-wash-strong/60 p-1.5 board:p-1"
     >
       <div className="flex items-stretch overflow-hidden rounded-[1.7rem] border border-line bg-panel shadow-card">
         {/* Fixed label */}

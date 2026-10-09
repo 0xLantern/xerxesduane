@@ -82,7 +82,7 @@ const LIFT_TRANSITION = { duration: 0.28, ease: [0.16, 1, 0.3, 1] as const };
 /** The orange tile. Lifts and tilts with the card. */
 export function IconTile({ children }: { children: ReactNode }) {
   return (
-    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[0.85rem] bg-accent text-accent-ink shadow-[0_6px_14px_-8px_rgb(var(--c-accent))] transition duration-300 ease-smooth group-hover:-translate-y-0.5 group-hover:-rotate-6 group-hover:shadow-[0_10px_20px_-8px_rgb(var(--c-accent))] group-focus-visible:-translate-y-0.5 group-focus-visible:-rotate-6">
+    <span className="icon-tile grid h-10 w-10 shrink-0 place-items-center rounded-[0.85rem] bg-accent text-accent-ink shadow-[0_6px_14px_-8px_rgb(var(--c-accent))] transition duration-300 ease-smooth group-hover:-translate-y-0.5 group-hover:-rotate-6 group-hover:shadow-[0_10px_20px_-8px_rgb(var(--c-accent))] group-focus-visible:-translate-y-0.5 group-focus-visible:-rotate-6">
       {children}
     </span>
   );
