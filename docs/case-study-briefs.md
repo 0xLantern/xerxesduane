@@ -145,3 +145,15 @@ started on WhatsApp, Messenger and Instagram.
 **Still to confirm:** bookings from the ads (number and period); cost per
 conversation; whether "Real growth" in the takeaway can be backed by a figure;
 OK to name AYA.
+
+---
+
+## 7. Website & client portal: Lessan Translation (published 9 Oct 2026)
+
+**Public** at `/case-studies/lessan-translation-website-portal`, confirmed by
+the owner: WordPress website, client portal, quote and order system, admin
+back office. Shown as proof on `/custom-software-development-dubai`.
+
+**Still to confirm:** the languages (the site is not called multilingual,
+since only English was confirmed); build timeline; one outcome Lessan agrees
+with; a screenshot or logo for the page; OK to name Lessan.

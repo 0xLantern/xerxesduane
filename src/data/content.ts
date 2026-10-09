@@ -396,6 +396,37 @@ export const CASE_STUDIES: CaseStudy[] = [
     ],
   },
   {
+    // Scope and platform confirmed by the owner, 9 Oct 2026. Not called
+    // multilingual: the only language confirmed is English. No timeline or
+    // outcome yet, and no image on file.
+    slug: "lessan-translation-website-portal",
+    client: "Lessan Translation",
+    location: "Dubai · Translation & Language",
+    category: "Website & Client Portal",
+    metaDescription:
+      "WordPress website, client portal, quote and order system and admin back office for Lessan Translation, a Dubai translation business.",
+    challenge:
+      "A Dubai translation business needed a website, a portal for its clients, a way to take quotes and orders online, and an admin back office for its team.",
+    summary:
+      "A WordPress website with a client portal, a quote and order system, and an admin back office for managing the work.",
+    approach: [
+      "Built the website on WordPress",
+      "Added a client portal",
+      "Built a quote and order system for incoming work",
+      "Set up an admin back office for the team",
+    ],
+    relatedServices: ["web-development-dubai", "custom-software-development-dubai"],
+    scope: [
+      "WordPress website",
+      "Client portal",
+      "Quote & order system",
+      "Admin back office",
+    ],
+    url: "https://lessantranslation.com/",
+    takeaway:
+      "The website, client portal, quotes, orders and admin in one WordPress system.",
+  },
+  {
     // Platform, scope and timeline confirmed by the owner, 9 Oct 2026. No
     // outcome yet: add `outcomes` once one is confirmed with the client.
     slug: "gilani-mobility-ecommerce",
