@@ -342,6 +342,7 @@ export const SERVICE_PAGES: ServicePageData[] = [
       "Businesses curious about AI but unsure where it's worth it",
       "Anyone who wants automation that's actually maintained",
     ],
+    caseStudyClient: "We Aspire",
     glance: {
       question: "What is AI automation for a small business?",
       answer:
@@ -350,6 +351,7 @@ export const SERVICE_PAGES: ServicePageData[] = [
         { label: "Who it's for", value: "Owners and small teams losing hours to repetitive admin, or losing leads because nobody replies fast enough." },
         { label: "What you get", value: "Mapped workflows, the automation built and connected to your existing tools, a hand-off to a person for edge cases, and maintenance after launch." },
         { label: "Starting price", value: `${cap(from("ai-automation-dubai"))} per project. ${NONPROFIT.label} for registered charities.` },
+        { label: "Proof", value: "We Aspire: an e-learning platform with automated registration, QuickBooks-integrated invoicing and AI in the workflow." },
         { label: "Try it first", value: "The AI Lab has working tools you can test without signing up." },
         { label: "Next step", value: "A free 60-minute audit maps your workflows and picks the highest-impact, lowest-risk step to automate first." },
       ],

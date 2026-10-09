@@ -390,6 +390,39 @@ export const CASE_STUDIES: CaseStudy[] = [
     ],
   },
   {
+    // Scope-only, like Blocktec: everything here is already stated elsewhere on
+    // the site (the industries list and the portfolio) or confirmed by the
+    // owner (that the build uses AI). No outcomes, timeline or tool names yet;
+    // they belong in `outcomes` once confirmed. See docs/case-study-briefs.md.
+    slug: "we-aspire-ai-automation",
+    client: "We Aspire",
+    location: "Dubai · Education & Training",
+    category: "AI Automation",
+    metaDescription:
+      "AI automation for We Aspire, a Dubai education and training business: an e-learning platform with automated registration and QuickBooks-integrated invoicing.",
+    challenge:
+      "An education and training business in Dubai needed its courses delivered online, with learner registration and invoicing handled by the system rather than by hand.",
+    summary:
+      "An e-learning platform with automated registration and invoicing connected to QuickBooks, with AI built into the workflow.",
+    approach: [
+      "Built a custom e-learning platform for the courses",
+      "Automated learner registration",
+      "Integrated invoicing with QuickBooks",
+      "Built AI into the workflow",
+    ],
+    relatedServices: ["ai-automation-dubai", "custom-software-development-dubai", "web-development-dubai"],
+    image: "/work/web/web-01-thumb.webp",
+    scope: [
+      "E-learning platform",
+      "Automated registration",
+      "QuickBooks-integrated invoicing",
+      "AI-assisted workflow",
+    ],
+    url: "https://www.weaspire.ae/",
+    takeaway:
+      "Courses online, with registration and QuickBooks invoicing automated and AI in the workflow.",
+  },
+  {
     slug: "blocktec-odoo-erp",
     metaDescription:
       "Odoo ERP for Blocktec Philippines, a construction materials business: enquiry, quotation, purchasing, inventory and project delivery in one system.",
