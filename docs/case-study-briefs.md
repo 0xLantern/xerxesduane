@@ -40,18 +40,18 @@ have one, answer the same questions for it.
 
 ---
 
-## 2. CRM: Saladmaster UAE (published, needs outcomes)
+## 2. CRM: Saladmaster UAE (updated 9 Oct 2026, outcome still open)
 
-**Already public** (`/case-studies/saladmaster-crm-web`): premium cookware,
-direct sales; lead capture, booking for cooking demos, CRM, website
-management, logo and brand identity, sales-process organisation.
+**Now public** (`/case-studies/saladmaster-crm-web`), confirmed by the owner:
+Odoo CRM; leads from the website, WhatsApp, cooking demos/events and
+referrals in one pipeline; a demo booking calendar tied to each lead; team
+reminders; WhatsApp and email follow-up sequences; pipeline and sales
+dashboards. Plus the original scope (website management, logo and brand
+identity, sales-process organisation).
 
-**To confirm**
+**Still to confirm**
 
-- [ ] Which CRM (Odoo CRM, HubSpot, Zoho, custom?)
-- [ ] Where leads come from now (website form, WhatsApp, events, referrals) and whether the source is recorded automatically
-- [ ] Pipeline stages you set up (enquiry → demo booked → demo held → sale, or similar)
-- [ ] Follow-up automation built (reminders, WhatsApp/email sequences)
+- [ ] Whether the CRM records each lead's source automatically
 - [ ] One before/after the client agrees with (for example, "every demo booking is now in one calendar", "no lead sits without an owner")
 - [ ] Timeline of the build
 - [ ] OK to keep naming Saladmaster UAE / Al Mumtaz?

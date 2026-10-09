@@ -799,7 +799,7 @@ export const SERVICE_PAGES: ServicePageData[] = [
         { label: "What you get", value: "Pipeline stages and ownership, website and WhatsApp lead capture with the source recorded, follow-up automation, dashboards, and clean-up of an existing CRM where there is one." },
         { label: "Starting price", value: `${cap(from("crm-development-dubai"))} for a CRM or dashboard build. ${NONPROFIT.label} for registered charities.` },
         { label: "Timeline", value: "A focused setup can take a few weeks; complex migrations are phased so the core pipeline is usable early." },
-        { label: "Proof", value: "Saladmaster UAE: a clearer lead-to-demo journey organised around how the sales team actually works." },
+        { label: "Proof", value: "Saladmaster UAE: Odoo CRM with website, WhatsApp, demo and referral leads in one pipeline, demo bookings, follow-up sequences and dashboards." },
         { label: "Next step", value: "A free 60-minute audit, then a written fixed-price proposal." },
       ],
     },
