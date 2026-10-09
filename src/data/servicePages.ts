@@ -13,6 +13,15 @@ import {
   Film,
   type LucideIcon,
 } from "lucide-react";
+import { NONPROFIT, RATE_CARD, STARTER, aed } from "./pricing";
+
+/** A page's published floor, read from the rate card so copy and offer agree. */
+const from = (slug: string): string => {
+  const point = RATE_CARD.find((p) => p.pageSlug === slug);
+  if (!point) throw new Error(`no published price for ${slug}`);
+  return `from ${aed(point.from)}`;
+};
+const cap = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
 
 export interface ServiceBullet {
   title: string;
@@ -90,6 +99,26 @@ export interface ServicePageData {
    * as though it had some.
    */
   caseStudyClient?: string;
+  /**
+   * A client whose documented *outcomes* (not just scope) are evidence for
+   * this page, shown as a "Client result" panel under the header. Separate
+   * from `caseStudyClient` so a page can carry both: /seo-dubai keeps its
+   * Google Ads study lower down and gains the Bee Thrive search work above it.
+   * Same join rule, checked in `npm run check:pricing`.
+   */
+  resultStudyClient?: string;
+  /**
+   * A direct answer to the question a buyer is really asking on this page,
+   * placed before the detail. Every row is a fact the page already states
+   * elsewhere (scope, price, timing, next step), gathered in one place so a
+   * person scanning, or a system summarising, gets it without assembling it.
+   * No row may introduce a claim the rest of the site does not make.
+   */
+  glance?: {
+    question: string;
+    answer: string;
+    rows: { label: string; value: string }[];
+  };
   /** Service-specific FAQs (rendered on the page + FAQPage JSON-LD). */
   faqs: { q: string; a: string }[];
 }
@@ -102,7 +131,7 @@ export const SERVICE_PAGES: ServicePageData[] = [
     icon: Boxes,
     metaTitle: "Odoo ERP Implementation in Dubai - Xerxes Duane",
     metaDescription:
-      "Odoo ERP setup and support in Dubai: inventory, sales, invoicing, CRM, and operations connected in one practical system. Book a free audit.",
+      "Odoo implementation in Dubai from AED 12,000: sales, inventory, invoicing and CRM configured around your workflow, data migrated, and supported after go-live.",
     ogTitle: "Odoo ERP Implementation in Dubai",
     jsonLdName: "Odoo ERP Implementation & Administration",
     eyebrow: "Odoo & ERP · Dubai",
@@ -147,6 +176,19 @@ export const SERVICE_PAGES: ServicePageData[] = [
       "Owners who want Odoo run for them, not dumped on them",
     ],
     caseStudyClient: "Blocktec Philippines",
+    glance: {
+      question: "What does Odoo implementation in Dubai involve?",
+      answer:
+        "Odoo implementation means configuring Odoo's apps (sales, inventory, purchasing, invoicing, CRM) around how your business already works, moving your existing data in, and supporting the system after go-live. I do it as an independent consultant: scoped in a free audit, quoted at a fixed price, and phased so your team keeps working.",
+      rows: [
+        { label: "Who it's for", value: "Small and growing UAE businesses, typically trading, retail and service companies, running on spreadsheets and apps that do not share data." },
+        { label: "What you get", value: "Only the modules you need, configured in order; data migrated and tested before launch; connections to your website and payment tools; ongoing administration." },
+        { label: "Starting price", value: `${cap(from("odoo-erp-dubai"))} for a rollout, plus Odoo's own licence where Enterprise is needed. ${NONPROFIT.label} for registered charities.` },
+        { label: "Timeline", value: "A focused rollout of the core modules usually takes a few weeks; larger scopes are phased." },
+        { label: "Proof", value: "Blocktec Philippines: enquiry, quotation, purchasing, inventory and project delivery in one Odoo system." },
+        { label: "Next step", value: "A free 60-minute systems audit, then a written fixed-price proposal." },
+      ],
+    },
     faqs: [
       {
         q: "How long does an Odoo implementation take?",
@@ -168,14 +210,14 @@ export const SERVICE_PAGES: ServicePageData[] = [
   },
   {
     slug: "web-development-dubai",
-    caseStudyClient: "Bee Thrive Cleaning",
+    resultStudyClient: "Bee Thrive Cleaning",
     related: ["landing-page-design-dubai", "ecommerce-development-dubai", "seo-dubai"],
     navLabel: "Web Development",
     icon: Code2,
-    metaTitle: "Web Development in Dubai - Xerxes Duane",
+    metaTitle: "Website Design & Development in Dubai - Xerxes Duane",
     metaDescription:
-      "Websites, web apps and landing pages for Dubai small businesses. Fast, mobile-first and search-ready, with fixed quotes and no lock-in. Book a free systems audit.",
-    ogTitle: "Web Development in Dubai",
+      "Website design and development for Dubai small businesses: fast, mobile-first sites wired to WhatsApp and forms. Fixed quotes from AED 2,500, no lock-in.",
+    ogTitle: "Website Design & Development in Dubai",
     jsonLdName: "Web Development & Web Applications",
     eyebrow: "Web Development · Dubai",
     h1Lead: "A website that brings in customers,",
@@ -218,10 +260,22 @@ export const SERVICE_PAGES: ServicePageData[] = [
       "Teams that need a web app or portal, not just a brochure site",
       "Anyone tired of agencies who lock them out of their own site",
     ],
+    glance: {
+      question: "What does a website project with me include?",
+      answer:
+        "I design and build the site, write it around the services you actually sell, and connect every enquiry route (form, WhatsApp, calendar) so a visitor can act and you can see where enquiries came from. You own the site, the code and the accounts from day one.",
+      rows: [
+        { label: "Who it's for", value: "Dubai small businesses whose current site brings in nothing, or who are launching a new service, location or product." },
+        { label: "What you get", value: "Mobile-first design and build, service pages with clear scope and proof, search-ready structure and metadata, and enquiry tracking you can check." },
+        { label: "Starting price", value: `${STARTER.name}: a complete one-page site at a fixed ${aed(STARTER.price)}. Landing pages ${from("landing-page-design-dubai")}, online stores ${from("ecommerce-development-dubai")}.` },
+        { label: "Proof", value: "Bee Thrive Cleaning: website, service pages and search work, with repeat enquiries and a lead that progressed to an on-site assessment." },
+        { label: "Next step", value: "A free 60-minute audit, then a written fixed-price proposal." },
+      ],
+    },
     faqs: [
       {
         q: "How much does a website cost?",
-        a: "Every project gets a fixed quote up front after a short scope call, no hourly surprises. Most small-business sites start from a defined package.",
+        a: `${STARTER.name}, a complete one-page site, is a fixed ${aed(STARTER.price)}. Landing pages start ${from("landing-page-design-dubai")} and online stores ${from("ecommerce-development-dubai")}; larger multi-page sites and web apps are quoted after a free audit. Every project gets a fixed quote up front, with no hourly billing.`,
       },
       {
         q: "Will I own the site and the code?",
@@ -242,10 +296,10 @@ export const SERVICE_PAGES: ServicePageData[] = [
     related: ["crm-development-dubai", "odoo-erp-dubai", "custom-software-development-dubai"],
     navLabel: "AI Automation",
     icon: Bot,
-    metaTitle: "AI Automation in Dubai - Xerxes Duane",
+    metaTitle: "AI & Business Automation in Dubai - Xerxes Duane",
     metaDescription:
-      "AI automation in Dubai for small businesses: chatbots, workflows, and assistants that qualify leads, answer questions, and remove busywork.",
-    ogTitle: "AI Automation in Dubai",
+      "AI and business automation in Dubai from AED 6,000: WhatsApp and website assistants, lead qualification, and workflows that move data between your tools.",
+    ogTitle: "AI & Business Automation in Dubai",
     jsonLdName: "AI Automation & Custom AI Workflows",
     eyebrow: "AI & Automation · Dubai",
     h1Lead: "Let AI do the repetitive work,",
@@ -288,6 +342,18 @@ export const SERVICE_PAGES: ServicePageData[] = [
       "Businesses curious about AI but unsure where it's worth it",
       "Anyone who wants automation that's actually maintained",
     ],
+    glance: {
+      question: "What is AI automation for a small business?",
+      answer:
+        "AI automation uses language models and workflow tools to handle repetitive steps that follow clear rules: answering common questions, qualifying enquiries, reading documents and moving the result into your CRM, sheet or inbox. Anything unclear is routed to a person. It is worth building only where a step repeats often enough to pay for itself.",
+      rows: [
+        { label: "Who it's for", value: "Owners and small teams losing hours to repetitive admin, or losing leads because nobody replies fast enough." },
+        { label: "What you get", value: "Mapped workflows, the automation built and connected to your existing tools, a hand-off to a person for edge cases, and maintenance after launch." },
+        { label: "Starting price", value: `${cap(from("ai-automation-dubai"))} per project. ${NONPROFIT.label} for registered charities.` },
+        { label: "Try it first", value: "The AI Lab has working tools you can test without signing up." },
+        { label: "Next step", value: "A free 60-minute audit maps your workflows and picks the highest-impact, lowest-risk step to automate first." },
+      ],
+    },
     faqs: [
       {
         q: "Is AI automation actually worth it for a small business?",
@@ -383,6 +449,7 @@ export const SERVICE_PAGES: ServicePageData[] = [
       "Anyone burned by SEO agencies that promised page one",
     ],
     caseStudyClient: "Wellington Cash for Cars",
+    resultStudyClient: "Bee Thrive Cleaning",
     faqs: [
       {
         q: "How long until SEO shows results?",
@@ -431,9 +498,9 @@ export const SERVICE_PAGES: ServicePageData[] = [
     },
     navLabel: "AEO",
     icon: ScanSearch,
-    metaTitle: "Answer Engine Optimization (AEO) in Dubai - Xerxes Duane",
+    metaTitle: "AEO Services in Dubai - Answer Engine Optimization",
     metaDescription:
-      "AEO in Dubai: get quoted by Google AI Overviews, voice assistants, and featured snippets with answer-first content and structured data.",
+      "AEO services in Dubai: answer-first pages, accurate structured data and clear business facts, so search answers and AI tools can describe you correctly.",
     ogTitle: "Answer Engine Optimization (AEO) in Dubai",
     jsonLdName: "Answer Engine Optimization (AEO)",
     eyebrow: "AEO · Dubai",
@@ -459,7 +526,7 @@ export const SERVICE_PAGES: ServicePageData[] = [
       },
       {
         title: "Structured data that matches the page",
-        body: "I mark up what the page actually shows, so an engine can parse your answers rather than guess at them. Note that FAQ rich results have been limited to well-known government and health sites since Google's August 2023 change, so FAQ markup here is for machine readability, not a snippet tactic.",
+        body: "I mark up what the page actually shows, so an engine can parse your answers rather than guess at them. Google stopped showing FAQ rich results altogether in May 2026, so FAQ markup here is for machine readability, not a snippet tactic.",
       },
       {
         title: "Topic & entity authority",
@@ -475,12 +542,17 @@ export const SERVICE_PAGES: ServicePageData[] = [
       "Businesses losing clicks to Google's AI answer boxes",
       "Service providers people find by asking questions",
       "Owners who want to show up in voice search",
-      "Anyone whose FAQs could be earning snippets",
+      "Anyone whose answers are buried where no engine can lift them",
     ],
+    resultStudyClient: "Bee Thrive Cleaning",
     faqs: [
       {
+        q: "What is answer engine optimization (AEO)?",
+        a: "AEO is the work of making your pages easy for search features and assistants to extract an accurate answer from: the question as a heading, a complete answer in the first sentence, and structured data that matches what the page shows. It builds on SEO rather than replacing it.",
+      },
+      {
         q: "What's the difference between SEO and AEO?",
-        a: "SEO gets you ranked in the list of links. AEO gets you quoted as the answer above them, in featured snippets, voice results, and Google's AI Overviews. They work best together.",
+        a: "SEO is about ranking in the list of links. AEO is about being a candidate for the answer shown above them, in featured snippets, voice results and Google's AI Overviews. Whether an engine uses your answer is its decision, so the two work best together.",
       },
       {
         q: "How is AEO different from GEO?",
@@ -492,7 +564,7 @@ export const SERVICE_PAGES: ServicePageData[] = [
       },
       {
         q: "How do you measure AEO results?",
-        a: "I track snippet and 'People Also Ask' wins, Search Console impressions, and where your answers appear, all in plain reporting.",
+        a: "With Search Console, including its generative AI performance report for AI Overviews and AI Mode impressions, plus the real questions re-run over time to see whose answer appears. Reported in plain numbers, including when nothing moved.",
       },
     ],
   },
@@ -571,10 +643,11 @@ export const SERVICE_PAGES: ServicePageData[] = [
       "Brands that want to be the AI-recommended option",
       "Anyone future-proofing beyond traditional search",
     ],
+    resultStudyClient: "Bee Thrive Cleaning",
     faqs: [
       {
         q: "Is GEO real, or just hype?",
-        a: "It's early but real: a growing share of buyers ask AI tools for recommendations before they ever Google. GEO makes sure you're in those answers. I'm honest that it's an emerging channel, not a magic switch.",
+        a: "It's early but real: some buyers now ask AI tools for recommendations before they search. GEO makes sure accurate information about you exists where those tools read. I'm honest that it's an emerging channel, not a magic switch.",
       },
       {
         q: "How is GEO different from SEO and AEO?",
@@ -582,7 +655,7 @@ export const SERVICE_PAGES: ServicePageData[] = [
       },
       {
         q: "Can you guarantee ChatGPT will recommend me?",
-        a: "No one credible can guarantee what a model outputs. What I can do is meaningfully improve how often and how accurately the major engines surface you, and report on it.",
+        a: "No one credible can guarantee what a model outputs. What I can do is make the facts about your business clear, consistent and easy to find, then test real prompts and report how often and how accurately you are mentioned, including when you are not.",
       },
       {
         q: "How do you measure GEO?",
@@ -665,10 +738,10 @@ export const SERVICE_PAGES: ServicePageData[] = [
     related: ["odoo-erp-dubai", "ai-automation-dubai", "custom-software-development-dubai"],
     navLabel: "CRM & Dashboards",
     icon: LayoutDashboard,
-    metaTitle: "CRM Development & Setup in Dubai - Xerxes Duane",
+    metaTitle: "CRM Development & Implementation in Dubai - Xerxes Duane",
     metaDescription:
-      "CRM setup and development in Dubai: connected lead pipelines, customer databases, dashboards, and follow-up automation for growing small businesses.",
-    ogTitle: "CRM Development & Setup in Dubai",
+      "CRM setup and development in Dubai from AED 4,000: one pipeline for website, WhatsApp and referral leads, follow-up automation and dashboards your team uses.",
+    ogTitle: "CRM Development & Implementation in Dubai",
     jsonLdName: "CRM Development, Setup & Dashboards",
     eyebrow: "CRM & Dashboards · Dubai",
     h1Lead: "Know every lead, customer, and next step,",
@@ -715,6 +788,19 @@ export const SERVICE_PAGES: ServicePageData[] = [
     // way the sales team actually works" is this page's promise, written down
     // by a client. It was reachable only from /case-studies.
     caseStudyClient: "Saladmaster UAE",
+    glance: {
+      question: "What does CRM implementation in Dubai involve?",
+      answer:
+        "A CRM implementation sets up one system where every lead and customer is recorded, with clear pipeline stages, an owner for each deal and follow-up that does not depend on memory. I start from your sales process, then recommend Odoo, HubSpot, Zoho or a focused custom build, whichever fits, and connect your enquiry sources to it.",
+      rows: [
+        { label: "Who it's for", value: "Teams losing leads between WhatsApp, email and spreadsheets, and businesses with a CRM nobody consistently uses." },
+        { label: "What you get", value: "Pipeline stages and ownership, website and WhatsApp lead capture with the source recorded, follow-up automation, dashboards, and clean-up of an existing CRM where there is one." },
+        { label: "Starting price", value: `${cap(from("crm-development-dubai"))} for a CRM or dashboard build. ${NONPROFIT.label} for registered charities.` },
+        { label: "Timeline", value: "A focused setup can take a few weeks; complex migrations are phased so the core pipeline is usable early." },
+        { label: "Proof", value: "Saladmaster UAE: a clearer lead-to-demo journey organised around how the sales team actually works." },
+        { label: "Next step", value: "A free 60-minute audit, then a written fixed-price proposal." },
+      ],
+    },
     faqs: [
       {
         q: "Which CRM should my business use?",

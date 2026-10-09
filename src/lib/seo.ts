@@ -209,9 +209,11 @@ export const PRICING_FAQS: { q: string; a: string }[] = [
 ];
 
 const HOME_META: PageMeta = {
-  title: "Xerxes Duane - Independent Systems Consultant in Dubai",
+  // Leads with the four services the business is built around; the brand
+  // keeps the name queries the home page already wins.
+  title: "Websites, CRM, Odoo & AI Automation in Dubai | Xerxes Duane",
   description:
-    "Websites, CRM, Odoo/ERP, WhatsApp, automation, ads, and AI connected into one practical operating system for small businesses.",
+    "Independent consultant in Dubai building websites, CRM, Odoo ERP and AI automation for small businesses. Published starting prices and a free 60-minute audit.",
   canonical: `${SITE_ORIGIN}/`,
   // The search title keeps its keywords; the share title is the headline the
   // page and its card lead with.
@@ -359,7 +361,7 @@ const STARTER_META: PageMeta = {
 };
 
 const ABOUT_META: PageMeta = {
-  title: "About - Xerxes Duane",
+  title: "About Xerxes Duane - Independent Systems Consultant, Dubai",
   description:
     "Independent systems consultant in Dubai helping small businesses connect websites, CRM, Odoo/ERP, automation, ads, WhatsApp, and AI.",
   canonical: `${SITE_ORIGIN}/about`,
@@ -401,9 +403,9 @@ const PROJECTS_META: PageMeta = {
 };
 
 const CASE_STUDIES_META: PageMeta = {
-  title: "Work - Xerxes Duane",
+  title: "Case Studies: Websites, Odoo, CRM & Search - Xerxes Duane",
   description:
-    "Real examples of websites, systems, automations, SEO, AI tools, and business workflows built to save time and increase leads.",
+    "Documented client work: Bee Thrive Cleaning's website and search, Blocktec's Odoo ERP, Saladmaster's CRM, and Meta and Google Ads campaigns.",
   canonical: `${SITE_ORIGIN}/case-studies`,
   ogTitle: "Work - Xerxes Duane",
   ogImage: ogCard("case-studies"),
@@ -632,9 +634,17 @@ export function getPageMeta(path: string): PageMeta {
             "@type": "Article",
             headline: `${study.client}: ${study.category}`,
             description: study.summary,
+            image: ogCard(`case-${study.slug}`),
             author: { "@id": `${SITE_ORIGIN}/#xerxes` },
             publisher: { "@id": `${SITE_ORIGIN}/#org` },
             mainEntityOfPage: canonical,
+            // The client, named and linked as on the page, so the study is
+            // tied to a real business rather than a bare string.
+            about: {
+              "@type": "Organization",
+              name: study.client,
+              ...(study.url ? { url: study.url } : {}),
+            },
           },
           breadcrumb([
             HOME_CRUMB,

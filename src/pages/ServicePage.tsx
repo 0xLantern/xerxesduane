@@ -24,6 +24,9 @@ export default function ServicePage({ page }: { page: ServicePageData }) {
   const proof = page.caseStudyClient
     ? CASE_STUDIES.find((c) => c.client === page.caseStudyClient)
     : undefined;
+  const result = page.resultStudyClient
+    ? CASE_STUDIES.find((c) => c.client === page.resultStudyClient)
+    : undefined;
   const relatedPosts = INSIGHTS.filter((p) =>
     p.relatedServices?.includes(page.slug),
   ).slice(0, 3);
@@ -90,18 +93,47 @@ export default function ServicePage({ page }: { page: ServicePageData }) {
         }
       />
 
-      {proof?.outcomes && (
+      {result && (
         <div className="mb-6">
-          <Panel label="Client result: Bee Thrive Cleaning" labelHref={`/case-studies/${proof.slug}`}>
+          <Panel label={`Client result: ${result.client}`} labelHref={`/case-studies/${result.slug}`}>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="max-w-2xl">
-                <p className="font-display text-xl font-bold text-fg">{proof.takeaway}</p>
-                <p className="mt-2 text-sm leading-relaxed text-fg-soft">{proof.summary}</p>
+                <p className="font-display text-xl font-bold text-fg">{result.takeaway}</p>
+                <p className="mt-2 text-sm leading-relaxed text-fg-soft">{result.summary}</p>
               </div>
-              <GhostAction href={`/case-studies/${proof.slug}`}>Read the case study</GhostAction>
+              <GhostAction href={`/case-studies/${result.slug}`}>Read the case study</GhostAction>
             </div>
           </Panel>
         </div>
+      )}
+
+      {/*
+        The short answer, before the detail. A buyer comparing three tabs, or
+        an engine summarising the page, gets who it is for, what is delivered,
+        the published price and the next step in one place. Every row restates
+        something the page or the rate card already says.
+      */}
+      {page.glance && (
+        <section className="mb-6" aria-labelledby="glance-heading">
+          <div className="rounded-card border border-line bg-panel p-5 shadow-card sm:p-7">
+            <h2 id="glance-heading" className="font-display text-2xl font-semibold text-fg sm:text-3xl">
+              {page.glance.question}
+            </h2>
+            <p className="mt-3 max-w-3xl text-[15px] leading-relaxed text-fg-soft sm:text-base">
+              {page.glance.answer}
+            </p>
+            <dl className="mt-5 grid gap-x-8 gap-y-4 border-t border-line pt-5 sm:grid-cols-2">
+              {page.glance.rows.map((row) => (
+                <div key={row.label}>
+                  <dt className="font-technical text-[0.62rem] font-bold uppercase tracking-[0.16em] text-accent-deep">
+                    {row.label}
+                  </dt>
+                  <dd className="mt-1 text-sm leading-relaxed text-fg-soft">{row.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </section>
       )}
 
       <ServiceVisual page={page} />
@@ -180,7 +212,7 @@ export default function ServicePage({ page }: { page: ServicePageData }) {
           </Reveal>
 
           {/* Proof */}
-          {proof && !proof.outcomes && (
+          {proof && (
             <Reveal delay={0.15} className="mx-auto mt-6 max-w-2xl">
               <div className="glass border-glow rounded-2xl p-7">
                 <span className="font-mono text-xs uppercase tracking-wider text-gold">

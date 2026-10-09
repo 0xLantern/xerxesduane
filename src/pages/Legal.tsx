@@ -7,13 +7,13 @@ import { CONTACT } from "../data/content";
 
 const LAST_UPDATED = "2 June 2026";
 
-function LegalLayout({ title, children }: { title: string; children: ReactNode }) {
+function LegalLayout({ title, updated = LAST_UPDATED, children }: { title: string; updated?: string; children: ReactNode }) {
   return (
     <section className="pb-16">
       <PageHeader
         eyebrow="Legal"
         title={title}
-        meta={<span>Last updated: {LAST_UPDATED}</span>}
+        meta={<span>Last updated: {updated}</span>}
         actions={
           <GhostAction href="/" icon={<ArrowLeft size={15} strokeWidth={2.2} aria-hidden />}>
             Home
@@ -42,7 +42,7 @@ const linkCls = "text-accent underline-offset-2 hover:underline";
 
 export function Privacy() {
   return (
-    <LegalLayout title="Privacy Policy">
+    <LegalLayout title="Privacy Policy" updated="9 October 2026">
       <p>
         This Privacy Policy explains how Xerxes Duane
         ("Xerxes Duane", "we", "us") collects and uses information when you
@@ -66,7 +66,11 @@ export function Privacy() {
         the contact form or message us, we collect the details you provide (such
         as your name, business, email, phone number, and message) so we can
         respond and follow up. The form is handled by Formspree, which delivers
-        it to us by email.
+        it to us by email. With it we receive the page you sent it from, the
+        first page of your visit, and how you reached the site (for example
+        "Google" or "direct"), so we know which pages bring enquiries. When you
+        tap a WhatsApp button, the message opens with a short line naming the
+        page and that source; you can edit or delete it before sending.
       </p>
       <p>
         <strong className="font-bold text-fg">Analytics.</strong> With your consent,
@@ -88,9 +92,11 @@ export function Privacy() {
       </p>
       <p>
         <strong className="font-bold text-fg">Cookies &amp; local storage.</strong>{" "}
-        We store your cookie choice on your device so we don't ask again, and a
-        session flag for the visit counter above. Analytics providers set their
-        own cookies only after you accept.
+        We store your cookie choice on your device so we don't ask again, a
+        session flag for the visit counter above, and, for the length of the
+        tab session, the first page of your visit and how you arrived, used
+        only in the enquiry details described above. Analytics providers set
+        their own cookies only after you accept.
       </p>
 
       <H2>Who we share it with</H2>

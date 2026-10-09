@@ -4,12 +4,13 @@ import { useForm, ValidationError } from "@formspree/react";
 import { ArrowUpRight, CalendarCheck, Check, Mail, MapPin, MessageCircle } from "lucide-react";
 import { CONTACT, AUDIT_STEPS, AUDIT_DELIVERABLES } from "../data/content";
 import { track } from "../lib/analytics";
+import { getLanding } from "../lib/attribution";
 import Reveal from "./ui/Reveal";
 import GoogleRating from "./GoogleRating";
 
 export default function Contact({ compact = false }: { compact?: boolean } = {}) {
   const [form, setForm] = useState({ name: "", business: "", email: "", phone: "", note: "" });
-  const [source, setSource] = useState({ page: "", referrer: "" });
+  const [source, setSource] = useState({ page: "", referrer: "", landingPage: "", landingSource: "" });
   const [state, handleSubmit] = useForm(CONTACT.formspreeId);
 
   const update = (k: keyof typeof form) => (e: { target: { value: string } }) =>
@@ -17,10 +18,16 @@ export default function Contact({ compact = false }: { compact?: boolean } = {})
 
   // Capture where the lead came from, so every enquiry is attributable.
   useEffect(() => {
+    // `referrer` is usually this site's previous page, since every page is a
+    // full load. The landing page and its source are the first page of the
+    // visit and where that came from, which is what the enquiry needs.
+    const landing = getLanding();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot client-only init; intentional SSR-safe pattern
     setSource({
       page: window.location.pathname + window.location.search,
       referrer: document.referrer || "direct",
+      landingPage: landing?.page ?? "",
+      landingSource: landing ? [landing.source, landing.referrer].filter((v, i, a) => v && a.indexOf(v) === i).join(" · ") : "",
     });
   }, []);
 
@@ -234,6 +241,8 @@ export default function Contact({ compact = false }: { compact?: boolean } = {})
               {/* Lead attribution: which page + referrer the enquiry came from */}
               <input type="hidden" name="page" value={source.page} />
               <input type="hidden" name="referrer" value={source.referrer} />
+              <input type="hidden" name="landing_page" value={source.landingPage} />
+              <input type="hidden" name="source" value={source.landingSource} />
               {/* Honeypot: bots fill this; Formspree drops the submission. Hidden from humans + a11y tree. */}
               <input
                 type="text"
