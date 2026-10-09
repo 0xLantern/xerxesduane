@@ -19,7 +19,7 @@ export default function HeroBlock() {
       variants={stagger}
       initial="hidden"
       animate="show"
-      className="mb-6 board:mb-1 flex flex-col gap-3 sm:grid sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-x-10 sm:gap-y-0"
+      className="home-hero mb-6 board:mb-1 flex flex-col gap-3 sm:grid sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-x-10 sm:gap-y-0"
     >
       <m.h1
         variants={riseIn}
