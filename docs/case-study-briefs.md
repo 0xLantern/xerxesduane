@@ -143,7 +143,7 @@ the campaigns (Meta Ads Manager); conversations are messaging conversations
 started on WhatsApp, Messenger and Instagram.
 
 **Still to confirm:** bookings from the ads (number and period); cost per
-conversation; whether "Real growth" in the takeaway can be backed by a figure;
+conversation; 
 OK to name AYA.
 
 ---

@@ -634,7 +634,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     // not published.
     statsNote:
       "Lifetime of the campaigns, from Meta Ads Manager. Conversations are messaging conversations started on WhatsApp, Messenger and Instagram.",
-    takeaway: "Real visibility. Real conversations. Real growth.",
+    takeaway: "Real visibility. Real conversations, started on WhatsApp, Messenger and Instagram.",
     url: "https://www.ayahomespa.ae/",
   },
   {
@@ -667,7 +667,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     // supplied, so neither is on the page.
     statsNote:
       "Account lifetime, from Google Ads. Conversions are phone calls and quote-form submissions tracked in the account. CPC in New Zealand dollars.",
-    takeaway: "Real ad spend, real ROI, managed internationally from Dubai.",
+    takeaway: "Real ad spend, measured in calls and quote requests, managed internationally from Dubai.",
     url: "https://wellingtoncashforcars.co.nz/",
   },
 ];
