@@ -397,7 +397,8 @@ export const CASE_STUDIES: CaseStudy[] = [
   },
   {
     // Scope, platform and languages (English and Arabic) confirmed by the
-    // owner, 9 Oct 2026. No timeline or outcome yet, and no image on file.
+    // owner, 9 Oct 2026; homepage screenshot supplied by the owner. No
+    // timeline or outcome yet.
     slug: "lessan-translation-website-portal",
     client: "Lessan Translation",
     location: "Dubai · Translation & Language",
@@ -415,6 +416,7 @@ export const CASE_STUDIES: CaseStudy[] = [
       "Set up an admin back office for the team",
     ],
     relatedServices: ["web-development-dubai", "custom-software-development-dubai"],
+    image: "/work/web/lessan-translation-thumb.webp",
     scope: [
       "Bilingual WordPress website (English & Arabic)",
       "Client portal",

@@ -157,4 +157,4 @@ back office. Shown as proof on `/custom-software-development-dubai`.
 **Languages:** English and Arabic (confirmed 9 Oct 2026).
 
 **Still to confirm:** build timeline; one outcome Lessan agrees
-with; a screenshot or logo for the page; OK to name Lessan.
+with; OK to name Lessan.
