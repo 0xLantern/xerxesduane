@@ -154,6 +154,7 @@ OK to name AYA.
 the owner: WordPress website, client portal, quote and order system, admin
 back office. Shown as proof on `/custom-software-development-dubai`.
 
-**Still to confirm:** the languages (the site is not called multilingual,
-since only English was confirmed); build timeline; one outcome Lessan agrees
+**Languages:** English and Arabic (confirmed 9 Oct 2026).
+
+**Still to confirm:** build timeline; one outcome Lessan agrees
 with; a screenshot or logo for the page; OK to name Lessan.
