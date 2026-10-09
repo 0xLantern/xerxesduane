@@ -53,13 +53,17 @@ identity, sales-process organisation).
 
 ---
 
-## 3. AI automation: We Aspire (published 9 Oct 2026, scope only)
+## 3. AI automation: We Aspire (updated 9 Oct 2026, outcome still open)
 
-**Published** at `/case-studies/we-aspire-ai-automation` from the facts already
-on the site (e-learning platform, automated registration, QuickBooks-integrated
-invoicing) plus the owner's confirmation that AI is part of the workflow. It
-says nothing about *what* the AI does, which tools are used, timing or results,
-because none of that is confirmed yet. Answer the questions below to complete it.
+**Public** at `/case-studies/we-aspire-ai-automation`, confirmed by the owner:
+e-learning platform; Google Gemini answers course and registration enquiries,
+reads registration details, drafts learner messages and helps produce course
+content; a no-code automation platform (Zapier, Make or n8n, not specified)
+joins registration, the AI steps and QuickBooks invoicing.
+
+**Still to confirm:** which automation platform; what still goes to a person;
+one outcome We Aspire agrees with (time saved, response time); the channel the
+assistant runs on (website chat, WhatsApp); OK to name them.
 
 Candidates considered:
 
@@ -103,3 +107,18 @@ Candidates considered:
 
 Once a study is added, it gets linked from its service page with
 `resultStudyClient` (the "Client result" panel) and its `relatedServices`.
+
+---
+
+## 4. E-commerce: Gilani Mobility (published 9 Oct 2026, outcome still open)
+
+**Public** (`/case-studies/gilani-mobility-ecommerce`), confirmed by the owner:
+WooCommerce store; UAE online payments; inventory and orders connected to the
+back office; customer CRM; WhatsApp enquiries; built over more than three
+months. Shown as proof on `/ecommerce-development-dubai`.
+
+**Still to confirm**
+
+- [ ] One outcome the client agrees with (for example, "customers can now order online instead of calling")
+- [ ] Which payment gateway and back-office system (if they can be named)
+- [ ] OK to name Gilani Mobility?
