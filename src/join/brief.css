@@ -29,6 +29,9 @@
 .wb b, .wb strong { color: var(--ink); font-weight: 650; }
 .wb ul, .wb ol { padding-left: 1.25em; margin: 0 0 16px; }
 .wb li { margin: 0 0 9px; }
+/* Tailwind's base strips list markers; plain lists in the briefing want them back. */
+.wb ul:not([class]) { list-style: disc; }
+.wb ul:not([class]) li::marker { color: var(--gold); }
 .wb img { max-width: 100%; }
 
 /* Top strip and greeting, drawn by the page itself. */
