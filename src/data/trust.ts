@@ -37,7 +37,7 @@ export const TRUST: TrustConfig = {
   google: {
     rating: 5,
     reviewCount: 5,
-    url: "https://maps.app.goo.gl/NnSU1FNaZKF2EJE99",
+    url: "https://maps.app.goo.gl/PkEG4G2868SfcfGw8",
   },
   logos: [
     { name: "Gilani Mobility", src: "/brand/clients/gilani-mobility.png" },
