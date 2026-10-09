@@ -107,6 +107,9 @@ export default function CaseStudyPage({ study }: { study: CaseStudy }) {
                   </div>
                 ))}
               </dl>
+              {study.statsNote && (
+                <p className="mt-3 text-xs leading-relaxed text-fg-faint">{study.statsNote}</p>
+              )}
             </Panel>
           )}
 

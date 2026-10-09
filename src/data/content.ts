@@ -344,6 +344,8 @@ export interface CaseStudy {
   image?: string;
   /** Metric-based proof (ad campaigns). Mutually exclusive with `scope`. */
   stats?: { value: string; label: string }[];
+  /** What the stats measure: period, definitions, currency. Shown under them. */
+  statsNote?: string;
   /** Scope-based proof (implementations) when there aren't vanity metrics. */
   scope?: string[];
   takeaway: string;
@@ -601,7 +603,7 @@ export const CASE_STUDIES: CaseStudy[] = [
   {
     slug: "wellington-cash-for-cars-google-ads",
     metaDescription:
-      "Google Ads for Wellington Cash for Cars, an automotive business: a search campaign built around high-intent queries, disciplined spend and conversions.",
+      "Google Ads for Wellington Cash for Cars, a New Zealand vehicle-removal business: 610 calls and quote requests at an average CPC of NZ$6.89 over the account.",
     client: "Wellington Cash for Cars",
     location: "New Zealand · Automotive",
     category: "Google Ads",
@@ -621,8 +623,13 @@ export const CASE_STUDIES: CaseStudy[] = [
       { value: "1,530+", label: "Clicks" },
       { value: "610", label: "Conversions" },
       { value: "8.28%", label: "Top-ad CTR" },
-      { value: "$6.89", label: "Avg. CPC" },
+      { value: "NZ$6.89", label: "Avg. CPC" },
     ],
+    // Period, conversion definition and currency confirmed by the owner,
+    // 9 Oct 2026. Cost per conversion and SEO work were mentioned but not
+    // supplied, so neither is on the page.
+    statsNote:
+      "Account lifetime, from Google Ads. Conversions are phone calls and quote-form submissions tracked in the account. CPC in New Zealand dollars.",
     takeaway: "Real ad spend, real ROI, managed internationally from Dubai.",
     url: "https://wellingtoncashforcars.co.nz/",
   },

@@ -122,3 +122,14 @@ months. Shown as proof on `/ecommerce-development-dubai`.
 - [ ] One outcome the client agrees with (for example, "customers can now order online instead of calling")
 - [ ] Which payment gateway and back-office system (if they can be named)
 - [ ] OK to name Gilani Mobility?
+
+---
+
+## 5. Google Ads: Wellington Cash for Cars (updated 9 Oct 2026)
+
+**Now public:** the four figures cover the account's lifetime; conversions are
+phone calls and quote-form submissions tracked in Google Ads; CPC is in NZD.
+
+**Still to confirm:** cost per conversion (the NZD figure from the account);
+what SEO work was done, if any (it would make this proof for `/seo-dubai`);
+whether you still manage the account; OK to name Wellington.
