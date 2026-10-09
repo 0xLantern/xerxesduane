@@ -288,7 +288,7 @@ export const CHALLENGES: Challenge[] = [
   {
     n: 5,
     track: "apps",
-    title: "Serve",
+    title: "Skills",
     tag: "Serve and find help",
     build:
       "One app, two sides. Ministries post needs such as posters, videos, websites or music, and skilled Christians offer to help. And a members-only directory by skill and profession, from accountants to physios, so members can find trusted help. Church leaders verify everyone, and contact is shared only when both sides agree. Free for churches to use.",
