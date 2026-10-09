@@ -36,7 +36,7 @@ export const TRUST: TrustConfig = {
   since: 2019,
   google: {
     rating: 5,
-    reviewCount: 5,
+    reviewCount: 6,
     url: "https://maps.app.goo.gl/PkEG4G2868SfcfGw8",
   },
   logos: [
