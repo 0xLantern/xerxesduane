@@ -109,6 +109,9 @@
     <link rel="preload" href="/fonts/plus-jakarta-sans-var.woff2" as="font" type="font/woff2" crossorigin />
 
     <!-- Structured data: organisation, site, founder.
+         The business is an Organization, not a LocalBusiness: there is no
+         customer-facing premises, so no PostalAddress, map or price range.
+         Where it works is carried by areaServed instead.
          This @graph is injected into every prerendered page, so the WebSite
          node's inLanguage lists both languages. As "en" it was telling /ar and
          the four Arabic service pages that the site they are on is English. -->
@@ -117,7 +120,7 @@
         "@context": "https://schema.org",
         "@graph": [
           {
-            "@type": ["ProfessionalService", "LocalBusiness"],
+            "@type": "Organization",
             "@id": "https://www.xerxesduane.com/#org",
             "name": "Xerxes Duane",
             "alternateName": "Xerxes Duane",
@@ -128,15 +131,8 @@
             "slogan": "Big-company systems for small businesses that can't afford a tech team.",
             "telephone": "+971543281995",
             "email": "hi@xerxesduane.com",
-            "priceRange": "$$",
             "foundingDate": "2019",
             "founder": { "@id": "https://www.xerxesduane.com/#xerxes" },
-            "address": {
-              "@type": "PostalAddress",
-              "addressLocality": "Dubai",
-              "addressRegion": "Dubai",
-              "addressCountry": "AE"
-            },
             "areaServed": [
               { "@type": "City", "name": "Dubai" },
               { "@type": "City", "name": "Sharjah" },
@@ -164,7 +160,6 @@
               "https://www.instagram.com/xerxes.duane",
               "https://share.google/NnTk20j0eMZkMeFXz"
             ],
-            "hasMap": "https://share.google/NnTk20j0eMZkMeFXz",
             "hasOfferCatalog": {
               "@type": "OfferCatalog",
               "name": "Services",
