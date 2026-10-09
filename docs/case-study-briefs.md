@@ -133,3 +133,15 @@ phone calls and quote-form submissions tracked in Google Ads; CPC is in NZD.
 **Still to confirm:** cost per conversion (the NZD figure from the account);
 what SEO work was done, if any (it would make this proof for `/seo-dubai`);
 whether you still manage the account; OK to name Wellington.
+
+---
+
+## 6. Website & Meta Ads: AYA Home Spa (updated 9 Oct 2026)
+
+**Now public:** you built the website; the four figures cover the lifetime of
+the campaigns (Meta Ads Manager); conversations are messaging conversations
+started on WhatsApp, Messenger and Instagram.
+
+**Still to confirm:** bookings from the ads (number and period); cost per
+conversation; whether "Real growth" in the takeaway can be backed by a figure;
+OK to name AYA.

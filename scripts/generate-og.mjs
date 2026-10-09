@@ -141,7 +141,7 @@ const CARDS = [
   { file: "case-we-aspire-ai-automation", icon: "briefcase", eyebrow: "Case study · AI automation", title: ["We", "Aspire."], subtitle: "Gemini answers enquiries, reads registrations and drafts messages.", cta: "Read the case study" },
   { file: "case-blocktec-odoo-erp", icon: "briefcase", eyebrow: "Case study · Odoo ERP", title: ["Blocktec", "Philippines."], subtitle: "Sales, inventory, purchasing and projects on one Odoo system.", cta: "Read the case study" },
   { file: "case-saladmaster-crm-web", icon: "briefcase", eyebrow: "Case study · Odoo CRM, web & brand", title: ["Saladmaster", "UAE."], subtitle: "Every lead in one Odoo pipeline, from first enquiry to cooking demo.", cta: "Read the case study" },
-  { file: "case-aya-home-spa-meta-ads", icon: "briefcase", eyebrow: "Case study · Meta Ads", title: ["AYA", "Home Spa."], subtitle: "A focused paid-social campaign that turned creative into conversations.", cta: "Read the case study" },
+  { file: "case-aya-home-spa-meta-ads", icon: "briefcase", eyebrow: "Case study · Website & Meta Ads", title: ["AYA", "Home Spa."], subtitle: "A website and a paid-social campaign that turned creative into conversations.", cta: "Read the case study" },
   { file: "case-wellington-cash-for-cars-google-ads", icon: "briefcase", eyebrow: "Case study · Google Ads", title: ["Wellington", "Cash for Cars."], subtitle: "A search campaign built around high-intent queries and disciplined spend.", cta: "Read the case study" },
 
   // Insight posts (file = post slug).

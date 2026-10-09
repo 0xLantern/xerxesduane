@@ -575,21 +575,22 @@ export const CASE_STUDIES: CaseStudy[] = [
   {
     slug: "aya-home-spa-meta-ads",
     metaDescription:
-      "Meta Ads for AYA Home Spa, a Dubai wellness business: a focused paid-social campaign built around strong creative, measured on reach and enquiries.",
+      "Website and Meta Ads for AYA Home Spa, a Dubai wellness business: 791 WhatsApp, Messenger and Instagram conversations and 54K people reached over the campaigns.",
     client: "AYA Home Spa",
     location: "Dubai · Wellness",
-    category: "Meta Ads",
+    category: "Website & Meta Ads",
     challenge:
       "A growing Dubai wellness brand needed real digital visibility in a crowded market.",
     summary:
-      "A focused paid-social campaign that translated strong creative into measurable reach, video attention, and customer conversations.",
+      "A website for the business and a focused paid-social campaign that translated strong creative into measurable reach, video attention, and customer conversations.",
     approach: [
+      "Built the AYA Home Spa website",
       "Built campaign creative around the service experience rather than generic offers",
       "Tested audience and message combinations against real response",
       "Optimized toward conversations instead of vanity engagement",
       "Used campaign learning to improve the next creative cycle",
     ],
-    relatedServices: ["landing-page-design-dubai", "video-editing-dubai"],
+    relatedServices: ["web-development-dubai", "landing-page-design-dubai", "video-editing-dubai"],
     image: "/work/web/web-03-thumb.webp",
     stats: [
       { value: "54K", label: "People reached" },
@@ -597,6 +598,11 @@ export const CASE_STUDIES: CaseStudy[] = [
       { value: "791", label: "Conversations" },
       { value: "117K", label: "Ad views" },
     ],
+    // Period, conversation definition and the website build confirmed by the
+    // owner, 9 Oct 2026. Bookings were mentioned without a figure, so they are
+    // not published.
+    statsNote:
+      "Lifetime of the campaigns, from Meta Ads Manager. Conversations are messaging conversations started on WhatsApp, Messenger and Instagram.",
     takeaway: "Real visibility. Real conversations. Real growth.",
     url: "https://www.ayahomespa.ae/",
   },
