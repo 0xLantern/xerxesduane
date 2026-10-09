@@ -54,9 +54,10 @@ export default function BentoBoard() {
         iconNode={<FolderGlyph size={20} />}
         label="Projects"
         blurb="Websites, ERP rollouts and campaigns built for real businesses."
-        href="/case-studies"
+        labelHref="/case-studies"
         span="sm:col-span-2"
         className="home-projects"
+        footer={<MoreLink href="/case-studies/bee-thrive-cleaning-web-search">Also: Bee Thrive Cleaning · SEO, AEO &amp; GEO</MoreLink>}
       >
         <div className="grid min-h-0 flex-1 items-center gap-3 sm:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
           <ul className="flex flex-col justify-center gap-3">

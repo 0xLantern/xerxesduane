@@ -349,9 +349,46 @@ export interface CaseStudy {
   takeaway: string;
   /** Public client site to link out to, if any. */
   url?: string;
+  /** Qualitative outcomes confirmed by the project owner, without invented metrics. */
+  outcomes?: { title: string; detail: string }[];
+  /** The enquiry journey, when it is documented for this project. */
+  journey?: { title: string; detail: string }[];
 }
 
 export const CASE_STUDIES: CaseStudy[] = [
+  {
+    slug: "bee-thrive-cleaning-web-search",
+    client: "Bee Thrive Cleaning",
+    location: "Dubai & Sharjah · Cleaning Services",
+    category: "Web & Search",
+    metaDescription:
+      "Bee Thrive Cleaning website case study: service pages, SEO, AEO, GEO and WhatsApp enquiries, with repeat enquiries and a lead progressing to a site visit.",
+    challenge:
+      "Bee Thrive needed a website that made its cleaning services easy to find and understand, with a direct way for prospective customers in Dubai and Sharjah to request a quote.",
+    summary:
+      "Designed and built the website, developed its service pages and search presence through SEO, AEO and GEO, and connected the buying journey to WhatsApp enquiries.",
+    approach: [
+      "Designed the website around specific cleaning services and the areas served",
+      "Built dedicated service pages with clear scope, client proof and quote options",
+      "Worked on SEO, AEO and GEO so customers could discover and assess the business",
+      "Added WhatsApp enquiry context identifying the service, page, CTA and attributed source",
+    ],
+    scope: ["Website design & development", "Dedicated cleaning-service pages", "SEO, AEO & GEO", "WhatsApp enquiry attribution"],
+    relatedServices: ["web-development-dubai", "seo-dubai", "answer-engine-optimization-dubai", "generative-engine-optimization-dubai"],
+    url: "https://www.beethrivecleaning.com/",
+    takeaway:
+      "Repeat enquiries, with one lead progressing to an on-site assessment.",
+    outcomes: [
+      { title: "Repeat enquiries", detail: "Enquiries have continued beyond the first reported enquiry." },
+      { title: "A site visit", detail: "Bee Thrive attended an ocular visit: an on-site assessment of the prospective customer's cleaning requirements." },
+      { title: "ChatGPT attribution", detail: "One received office-cleaning enquiry was tagged with ChatGPT as its source by the website's tracking." },
+    ],
+    journey: [
+      { title: "Office-cleaning page", detail: "The received enquiry identifies the office-cleaning page's header as the starting point." },
+      { title: "WhatsApp enquiry", detail: "The message carries the requested service and the website's attributed source." },
+      { title: "On-site assessment", detail: "The client followed up with a site visit to assess the lead's cleaning requirements." },
+    ],
+  },
   {
     slug: "blocktec-odoo-erp",
     metaDescription:

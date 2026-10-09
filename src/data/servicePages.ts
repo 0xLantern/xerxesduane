@@ -168,6 +168,7 @@ export const SERVICE_PAGES: ServicePageData[] = [
   },
   {
     slug: "web-development-dubai",
+    caseStudyClient: "Bee Thrive Cleaning",
     related: ["landing-page-design-dubai", "ecommerce-development-dubai", "seo-dubai"],
     navLabel: "Web Development",
     icon: Code2,
