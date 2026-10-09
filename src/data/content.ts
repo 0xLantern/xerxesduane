@@ -457,10 +457,10 @@ export const CASE_STUDIES: CaseStudy[] = [
   {
     slug: "saladmaster-crm-web",
     metaDescription:
-      "CRM, web and brand work for Saladmaster UAE, a premium cookware business: a clearer lead-to-demo journey built around how the sales team actually works.",
+      "Odoo CRM for Saladmaster UAE, a premium cookware business: website, WhatsApp, demo and referral leads in one pipeline, with follow-up automation and dashboards.",
     client: "Saladmaster UAE",
     location: "UAE · Premium Cookware",
-    category: "CRM, Web & Brand",
+    category: "Odoo CRM, Web & Brand",
     // Not a mismatch: Saladmaster UAE trades as Al Mumtaz, and this is their
     // mark — the same pairing the portfolio uses for the brand-identity piece
     // ("Saladmaster UAE (Al Mumtaz)", saladmasteruae.me) in data/workItems.ts.
@@ -468,12 +468,16 @@ export const CASE_STUDIES: CaseStudy[] = [
     challenge:
       "A premium cookware and direct-sales brand needed a smoother customer journey, from first inquiry through cooking demo to sale, with real visibility into follow-ups.",
     summary:
-      "A clearer lead-to-demo journey, with customer information and follow-up activity organized around the way the sales team actually works.",
+      "Odoo CRM set up as one pipeline for leads from the website, WhatsApp, cooking demos and referrals, with demo bookings, team reminders, follow-up sequences and dashboards built around how the sales team works.",
+    // Platform, lead sources and automation confirmed by the owner (9 Oct
+    // 2026). No outcome or timeline yet: add `outcomes` when there is one the
+    // client agrees with. See docs/case-study-briefs.md.
     approach: [
-      "Mapped the journey from enquiry to cooking demo and sale",
-      "Structured lead capture and follow-up around real sales conversations",
-      "Connected the website and booking experience to customer management",
-      "Created clearer visibility for the team without adding admin overhead",
+      "Set up Odoo CRM as the one record for every lead and customer",
+      "Brought website, WhatsApp, cooking-demo and event, and referral leads into the same pipeline",
+      "Tied cooking-demo bookings to a calendar linked to each lead",
+      "Automated reminders for the team and WhatsApp and email follow-up sequences for leads",
+      "Built pipeline and sales dashboards for the owner",
     ],
     relatedServices: [
       "crm-development-dubai",
@@ -481,16 +485,19 @@ export const CASE_STUDIES: CaseStudy[] = [
       "branding-graphic-design-dubai",
     ],
     scope: [
-      "Lead capture & inquiries",
-      "Booking for cooking demos",
-      "Customer relationship management",
+      "Odoo CRM",
+      "Leads from website, WhatsApp, demos & referrals",
+      "Cooking-demo booking calendar",
+      "Team reminders",
+      "WhatsApp & email follow-up sequences",
+      "Pipeline & sales dashboards",
       "Website management",
       "Logo & brand identity design",
       "Sales process organization",
       "Marketing & engagement",
     ],
     takeaway:
-      "Centralized lead management and a clearer path from inquiry to demo to conversion across sales and engagement.",
+      "Every lead in one Odoo pipeline, with demo bookings, follow-ups and reporting attached to it.",
   },
   /* HIDDEN (re-add later): Fellowship Dubai case study
   {
