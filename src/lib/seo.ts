@@ -84,6 +84,18 @@ function breadcrumb(trail: { name: string; url: string }[]): Record<string, unkn
   };
 }
 
+/**
+ * Google cuts the SERP title at roughly 600px, which is about 60 characters at
+ * typical widths. Where "<page> - Xerxes Duane" would run past that, the brand
+ * suffix is the half worth dropping: the domain is already shown beside the
+ * title, so the suffix is the only redundant part.
+ */
+const TITLE_MAX = 60;
+function brandedTitle(title: string): string {
+  const full = `${title} - Xerxes Duane`;
+  return full.length <= TITLE_MAX ? full : title;
+}
+
 const HOME_CRUMB = { name: "Home", url: `${SITE_ORIGIN}/` };
 
 /**
@@ -547,18 +559,6 @@ const AI_LAB_META: PageMeta = {
   ogImage: ogCard("ai-lab"),
   jsonLd: [breadcrumb([HOME_CRUMB, { name: "AI Lab", url: `${SITE_ORIGIN}/ai-lab` }])],
 };
-
-/**
- * Google cuts the SERP title at roughly 600px, which is about 60 characters at
- * typical widths. Where "<page> - Xerxes Duane" would run past that, the brand
- * suffix is the half worth dropping: the domain is already shown beside the
- * title, so the suffix is the only redundant part.
- */
-const TITLE_MAX = 60;
-function brandedTitle(title: string): string {
-  const full = `${title} - Xerxes Duane`;
-  return full.length <= TITLE_MAX ? full : title;
-}
 
 /**
  * Descriptions past ~160 characters get cut mid-word in the SERP. Cutting here
