@@ -115,7 +115,7 @@ routes. It survived because it is a meta tag rather than schema, and the origina
 check only looked at JSON-LD. **Now removed.** `geo.region` (`AE-DU`) and
 `geo.placename` (`Dubai`) stay: they are locality-level and true.
 
-⚠️ **Owner decision still needed** — see [Facts needed from the owner](#facts-needed-from-the-owner), item 1. The entity is still
+✅ **Resolved 9 Oct 2026:** the owner confirmed there is no customer-facing address, so the entity is now `Organization` with no `PostalAddress`, `hasMap` or `priceRange`. The original note follows. The entity was still
 typed `ProfessionalService + LocalBusiness`, which implies a visitable premises. If
 there is no customer-facing address, this should become `Organization` +
 `ProfessionalService` without `PostalAddress`. I did not change it unilaterally
@@ -955,7 +955,7 @@ site is correct as it stands — these would make it sharper, or confirm it shou
 stay as it is.
 
 **1. Is there a customer-facing address in Dubai?** *(the one with real SEO
-consequences)*
+consequences)* **Answered: no. Retyped to `Organization` on 9 Oct 2026.**
 
 `index.html` types the entity `["ProfessionalService", "LocalBusiness"]` with a
 locality-level `PostalAddress` (Dubai, AE). `LocalBusiness` tells Google there is

@@ -176,8 +176,10 @@ itself, robots rules, noindex rules, redirects, sitemap coverage, Arabic pages.
   Insights, or Search Console → Core Web Vitals) before changing the
   architecture.
 - Bundle-size warning (chunk > 500 kB) in the build.
-- The organisation is typed `LocalBusiness` with a city-level address; this
-  is still an open owner decision (earlier audit, item 1).
+- ~~The organisation is typed `LocalBusiness` with a city-level address.~~
+  **Resolved 9 Oct 2026:** no customer-facing address, so it is now an
+  `Organization` with no `PostalAddress`, map link or price range; `areaServed`
+  carries the geography.
 - `/cv` (church communications CV) and `/leader-in-you` (a third party's
   course) are indexable on the business domain. That is your call, but they
   blur what the domain is about for search engines and AI summaries.
@@ -198,8 +200,9 @@ itself, robots rules, noindex rules, redirects, sitemap coverage, Arabic pages.
 4. Google Business Profile: make sure name, phone and website match the site
    exactly, list services that link to the matching service pages, and post
    the Bee Thrive case study. Ask recent clients for **genuine** reviews.
-5. Tell me whether there is a customer-facing address (decides
-   `LocalBusiness` versus `Organization`).
+5. ~~Decide `LocalBusiness` versus `Organization`.~~ Done: `Organization`.
+   Keep the Google Business Profile as a service-area business with the
+   address hidden, so the profile and the site agree.
 
 **Days 31–60: proof and authority for the core four**
 1. Ask clients whose sites you built for a "Website by Xerxes Duane" credit
@@ -265,7 +268,7 @@ layer to the next, and which pages produced the qualified leads.
 | Site changes 22–27 Sep | **None.** Treat the drop as Google-side until GSC shows otherwise |
 | Case studies for CRM, Odoo, AI automation | Fact sheets prepared in [`case-study-briefs.md`](case-study-briefs.md); they need the client facts marked *to confirm* before anything is published |
 | Client credit links | Outreach plan and draft messages in [`client-credit-links.md`](client-credit-links.md); nothing has been sent |
-| Customer-facing address in Dubai (schema typing) | Still open |
+| Customer-facing address in Dubai (schema typing) | **None.** Entity retyped to `Organization`, no `PostalAddress` |
 
 ---
 
