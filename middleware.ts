@@ -23,7 +23,7 @@ import { APEX_HOST, MINISTRY_HOST, MINISTRY_ORIGIN, SITE_HOST, WORK_HOST, WORK_O
  * every other route, on either host — is untouched and never reaches here.
  */
 export const config = {
-  matcher: ["/", "/ministry", "/hack", "/robots.txt", "/work", "/r/:path*", "/gcn", "/letters", "/l/:path*", "/pray/:path*", "/hp", "/hp/:path*", "/partners"],
+  matcher: ["/", "/ministry", "/hack", "/robots.txt", "/work", "/r/:path*", "/gcn", "/letters", "/l/:path*", "/pray/:path*", "/hp", "/hp/:path*", "/partners", "/join"],
   // The edge runtime is deprecated for middleware; the build warns on it.
   // Nothing here needs an edge-only API — it reads a header and returns.
   runtime: "nodejs",
@@ -81,6 +81,8 @@ export default function middleware(request: Request): Response {
     // So is the #HACK partner page.
     if (url.pathname === "/hp" || url.pathname.startsWith("/hp/")) return Response.redirect(`${MINISTRY_ORIGIN}${url.pathname}`, 308);
     if (url.pathname === "/partners") return Response.redirect(`${MINISTRY_ORIGIN}/hp`, 308);
+    // And the password-protected briefing for prospective team members.
+    if (host !== MINISTRY_HOST && url.pathname === "/join") return Response.redirect(`${MINISTRY_ORIGIN}/join`, 308);
   } else if (url.pathname === "/hp" || url.pathname.startsWith("/hp/")) {
     // Previews and localhost: the partner page, so it can be tried before release.
     return rewrite(new URL("/partners", url));
