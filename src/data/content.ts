@@ -396,28 +396,27 @@ export const CASE_STUDIES: CaseStudy[] = [
     ],
   },
   {
-    // Scope and platform confirmed by the owner, 9 Oct 2026. Not called
-    // multilingual: the only language confirmed is English. No timeline or
-    // outcome yet, and no image on file.
+    // Scope, platform and languages (English and Arabic) confirmed by the
+    // owner, 9 Oct 2026. No timeline or outcome yet, and no image on file.
     slug: "lessan-translation-website-portal",
     client: "Lessan Translation",
     location: "Dubai · Translation & Language",
     category: "Website & Client Portal",
     metaDescription:
-      "WordPress website, client portal, quote and order system and admin back office for Lessan Translation, a Dubai translation business.",
+      "English and Arabic WordPress website, client portal, quote and order system and admin back office for Lessan Translation, a Dubai translation business.",
     challenge:
       "A Dubai translation business needed a website, a portal for its clients, a way to take quotes and orders online, and an admin back office for its team.",
     summary:
-      "A WordPress website with a client portal, a quote and order system, and an admin back office for managing the work.",
+      "An English and Arabic WordPress website with a client portal, a quote and order system, and an admin back office for managing the work.",
     approach: [
-      "Built the website on WordPress",
+      "Built the website on WordPress, in English and Arabic",
       "Added a client portal",
       "Built a quote and order system for incoming work",
       "Set up an admin back office for the team",
     ],
     relatedServices: ["web-development-dubai", "custom-software-development-dubai"],
     scope: [
-      "WordPress website",
+      "Bilingual WordPress website (English & Arabic)",
       "Client portal",
       "Quote & order system",
       "Admin back office",
