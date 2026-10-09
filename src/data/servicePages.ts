@@ -717,6 +717,7 @@ export const SERVICE_PAGES: ServicePageData[] = [
       "Owners who need a portal, internal tool, or connected platform",
       "Growing companies ready to replace manual work properly",
     ],
+    caseStudyClient: "Lessan Translation",
     faqs: [
       {
         q: "How do I know if I need custom software?",
