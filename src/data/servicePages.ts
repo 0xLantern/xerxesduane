@@ -175,7 +175,8 @@ export const SERVICE_PAGES: ServicePageData[] = [
       "Teams that need inventory, invoicing, and CRM in one place",
       "Owners who want Odoo run for them, not dumped on them",
     ],
-    caseStudyClient: "Blocktec Philippines",
+    // A documented outcome now, so it leads as a "Client result" panel.
+    resultStudyClient: "Blocktec Philippines",
     glance: {
       question: "What does Odoo implementation in Dubai involve?",
       answer:
@@ -184,8 +185,8 @@ export const SERVICE_PAGES: ServicePageData[] = [
         { label: "Who it's for", value: "Small and growing UAE businesses, typically trading, retail and service companies, running on spreadsheets and apps that do not share data." },
         { label: "What you get", value: "Only the modules you need, configured in order; data migrated and tested before launch; connections to your website and payment tools; ongoing administration." },
         { label: "Starting price", value: `${cap(from("odoo-erp-dubai"))} for a rollout, plus Odoo's own licence where Enterprise is needed. ${NONPROFIT.label} for registered charities.` },
-        { label: "Timeline", value: "A focused rollout of the core modules usually takes a few weeks; larger scopes are phased." },
-        { label: "Proof", value: "Blocktec Philippines: enquiry, quotation, purchasing, inventory and project delivery in one Odoo system." },
+        { label: "Timeline", value: "A focused rollout of the core modules usually takes a few weeks; larger scopes are phased (Blocktec's full rollout ran over more than four months)." },
+        { label: "Proof", value: "Blocktec Philippines: Odoo Enterprise rolled out in phases, with sales, inventory, purchasing and projects on the same records, then handed over to their team." },
         { label: "Next step", value: "A free 60-minute systems audit, then a written fixed-price proposal." },
       ],
     },

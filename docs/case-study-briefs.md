@@ -17,26 +17,21 @@ Rules, the same as the rest of the site:
 
 ---
 
-## 1. Odoo: Blocktec Philippines (published, needs outcomes)
+## 1. Odoo: Blocktec Philippines (updated 9 Oct 2026)
 
-**Already public** (`/case-studies/blocktec-odoo-erp`): construction materials
-and AAC wall systems; moved from spreadsheets and manual tracking to one Odoo
-platform covering CRM, sales/quotations, inventory, purchasing, accounting
-integration, project management, website/e-commerce and marketing automation;
-phased rollout.
+**Now public** (`/case-studies/blocktec-odoo-erp`), confirmed by the owner:
+Odoo Enterprise; a multi-phase rollout of more than four months; handed over
+to Blocktec's own team after go-live; outcome: sales, inventory, purchasing and
+projects now work from the same records. Shown as the "Client result" on
+`/odoo-erp-dubai`.
 
-**To confirm**
+**Still to confirm (optional)**
 
-- [ ] Odoo version and edition (Community or Enterprise), and the year it went live
-- [ ] How long the rollout took, from kickoff to go-live
-- [ ] Number of users / departments now in the system
-- [ ] What happened to the spreadsheets: retired entirely, or only for some processes?
-- [ ] One concrete before/after the client would agree with (for example, "quotes now come from the system instead of Excel", or time to prepare a quotation)
-- [ ] Are you still supporting the system? (Supports the "run and supported, not abandoned" claim on `/odoo-erp-dubai`)
+- [ ] Year it went live and Odoo version
+- [ ] Number of users / departments in the system
 - [ ] OK to keep naming Blocktec?
 
-**Better still for Dubai buyers:** a UAE Odoo client, even anonymised. If you
-have one, answer the same questions for it.
+**Better still for Dubai buyers:** a UAE Odoo client, even anonymised.
 
 ---
 

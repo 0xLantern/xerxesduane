@@ -63,7 +63,7 @@ const DEFAULT_OG_IMAGE = ogCard("home");
  * OG image by URL for weeks, so a versioned query string forces them to fetch
  * the current image instead of serving a stale (or wrong) cached one.
  */
-const OG_IMAGE_VERSION = "10";
+const OG_IMAGE_VERSION = "11";
 
 /** Absolute, cache-busted share-image URL for a page. */
 function ogImageUrl(image?: string): string {

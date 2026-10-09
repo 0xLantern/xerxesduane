@@ -351,6 +351,8 @@ export interface CaseStudy {
   url?: string;
   /** Qualitative outcomes confirmed by the project owner, without invented metrics. */
   outcomes?: { title: string; detail: string }[];
+  /** Where the outcomes come from, shown under them. Per study, so one client's caveat never appears on another's page. */
+  outcomesNote?: string;
   /** The enquiry journey, when it is documented for this project. */
   journey?: { title: string; detail: string }[];
 }
@@ -383,6 +385,8 @@ export const CASE_STUDIES: CaseStudy[] = [
       { title: "A site visit", detail: "Bee Thrive attended an ocular visit: an on-site assessment of the prospective customer's cleaning requirements." },
       { title: "ChatGPT attribution", detail: "One received office-cleaning enquiry was tagged with ChatGPT as its source by the website's tracking." },
     ],
+    outcomesNote:
+      "Repeat enquiries and the site visit confirmed by Xerxes Duane. The enquiry message records ChatGPT as its attributed source.",
     journey: [
       { title: "Office-cleaning page", detail: "The received enquiry identifies the office-cleaning page's header as the starting point." },
       { title: "WhatsApp enquiry", detail: "The message carries the requested service and the website's attributed source." },
@@ -425,14 +429,14 @@ export const CASE_STUDIES: CaseStudy[] = [
   {
     slug: "blocktec-odoo-erp",
     metaDescription:
-      "Odoo ERP for Blocktec Philippines, a construction materials business: enquiry, quotation, purchasing, inventory and project delivery in one system.",
+      "Odoo Enterprise for Blocktec Philippines, a construction materials business: sales, inventory, purchasing and projects on one system, rolled out in phases.",
     client: "Blocktec Philippines",
     location: "Philippines · Construction Materials",
     category: "Odoo ERP",
     challenge:
       "A construction materials and AAC wall-systems company ran on disconnected spreadsheets, manual tracking, and fragmented communication between departments. The goal: one platform for the whole operation.",
     summary:
-      "A connected Odoo operating system designed around the flow from first enquiry through quotation, purchasing, inventory, project delivery, and online sales.",
+      "A connected Odoo Enterprise system designed around the flow from first enquiry through quotation, purchasing, inventory, project delivery, and online sales, rolled out in phases over more than four months and then handed over to Blocktec's team.",
     approach: [
       "Mapped the existing handoffs and duplicate work before configuring any modules",
       "Phased the rollout around the team's day-to-day operations",
@@ -452,7 +456,15 @@ export const CASE_STUDIES: CaseStudy[] = [
       "Marketing automation",
     ],
     takeaway:
-      "Customer inquiries, quotations, inventory, purchasing, and online operations, run from one unified Odoo platform.",
+      "Sales, inventory, purchasing and projects working from the same records, in one Odoo system the team now runs.",
+    // Edition, timeline, handover and the outcome confirmed by the owner,
+    // 9 Oct 2026. No metrics: none were supplied.
+    outcomes: [
+      { title: "One system across teams", detail: "Sales, inventory, purchasing and projects now work from the same Odoo records instead of separate spreadsheets." },
+      { title: "Phased rollout", detail: "Odoo Enterprise went live in phases over more than four months." },
+      { title: "Handed over", detail: "Once live, the system was handed over to Blocktec's own team to run." },
+    ],
+    outcomesNote: "Edition, timeline, handover and outcome confirmed by Xerxes Duane.",
   },
   {
     slug: "saladmaster-crm-web",
