@@ -58,10 +58,15 @@ management, logo and brand identity, sales-process organisation.
 
 ---
 
-## 3. AI automation (no published study yet)
+## 3. AI automation: We Aspire (published 9 Oct 2026, scope only)
 
-There is no client AI-automation study on the site, so this one needs a real
-project. Candidates from work the site already mentions:
+**Published** at `/case-studies/we-aspire-ai-automation` from the facts already
+on the site (e-learning platform, automated registration, QuickBooks-integrated
+invoicing) plus the owner's confirmation that AI is part of the workflow. It
+says nothing about *what* the AI does, which tools are used, timing or results,
+because none of that is confirmed yet. Answer the questions below to complete it.
+
+Candidates considered:
 
 | Candidate | What the site already says | Fit |
 | --- | --- | --- |
