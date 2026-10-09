@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { AnimatePresence, m } from "framer-motion";
+import { m } from "framer-motion";
 import { Plus } from "lucide-react";
 import { FAQS } from "../data/content";
 import { EASE, fadeUp, stagger, VIEWPORT } from "../lib/motion";
@@ -85,29 +85,31 @@ export default function FAQ({ compact = false }: { compact?: boolean }) {
                   </m.span>
                 </button>
               </h3>
-              <AnimatePresence initial={false}>
-                {isOpen && (
-                  <m.div
-                    key="panel"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.32, ease: EASE }}
-                    className="overflow-hidden"
-                  >
-                    <div
-                      id={panelId}
-                      role="region"
-                      aria-labelledby={buttonId}
-                      className="px-5 pb-5 sm:px-6"
-                    >
-                      <p className="max-w-prose text-[0.95rem] leading-relaxed text-fg-soft">
-                        {faq.a}
-                      </p>
-                    </div>
-                  </m.div>
-                )}
-              </AnimatePresence>
+              {/*
+                Always in the document, collapsed to zero height when closed.
+                It used to be mounted only while open, so the prerendered page
+                carried nine questions and none of their answers: a crawler
+                that does not click, or does not run JavaScript, saw only the
+                FAQPage markup claim answers the HTML never contained.
+              */}
+              <m.div
+                initial={false}
+                animate={isOpen ? { height: "auto", opacity: 1 } : { height: 0, opacity: 0 }}
+                transition={{ duration: 0.32, ease: EASE }}
+                className="overflow-hidden"
+                aria-hidden={!isOpen}
+              >
+                <div
+                  id={panelId}
+                  role="region"
+                  aria-labelledby={buttonId}
+                  className="px-5 pb-5 sm:px-6"
+                >
+                  <p className="max-w-prose text-[0.95rem] leading-relaxed text-fg-soft">
+                    {faq.a}
+                  </p>
+                </div>
+              </m.div>
             </div>
           );
         })}

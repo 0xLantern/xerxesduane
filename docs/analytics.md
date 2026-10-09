@@ -11,28 +11,50 @@ delegated click tracking + the contact form:
 
 | Event | When it fires | Params |
 |-------|---------------|--------|
-| `generate_lead` | Contact form submitted successfully | `method` (`formspree`), `page` |
-| `cta_book_audit` | Any "Book a free audit" / `#contact` link clicked | `location`, `label` |
-| `whatsapp_click` | Any WhatsApp link/button tapped | `location`, `label` |
+| `generate_lead` | Contact form accepted by Formspree (`method: formspree`), or the AI Lab capture form (`method: ai_lab_capture`) | `method`, `page` / `demo` |
+| `form_start` / `form_submit` / `form_error` | First focus, submit attempt, validation failure on the audit form | `form_id`, `page`, field names and error codes only |
+| `cta_book_audit` | Any link to `/contact` clicked | `location`, `label`, `cta_slot` |
+| `whatsapp_click` | Any WhatsApp link/button tapped (opens WhatsApp; nothing is known to be sent) | `location`, `label`, `cta_slot` |
+| `calendar_click` / `email_click` | Booking link / `mailto:` clicked | `location`, `label`, `cta_slot` |
 | `demo_engage` | First interaction with an AI Lab demo widget | `demo` |
 | `demo_cta` | "Build this for my business" clicked on a demo card | `demo` |
 | `ai_lab_filter` | AI Lab category filter changed | `category` |
 | `email_copy` | Hero email address copied to clipboard | `location` |
 
-`generate_lead` is the real conversion. `cta_book_audit` and `whatsapp_click`
-are intent signals (top of the funnel).
+`generate_lead` is the only event that means an enquiry was actually received.
+`whatsapp_click`, `cta_book_audit`, `calendar_click` and `email_click` are
+**clicks**: someone opened a channel, which is intent, not a lead. Never add
+them to `generate_lead` in a report.
 
-The contact form now also sends two hidden fields to Formspree on every lead —
-`page` and `referrer` — so each enquiry email tells you which page and source it
-came from.
+### Enquiry attribution (added October 2026)
+
+Every page is a full page load, so `document.referrer` on `/contact` is almost
+always this site's previous page, and the original source was being lost.
+`src/lib/attribution.ts` now records, once per tab session, the first page of
+the visit and its external source (`Google`, `ChatGPT`, `Bing`, `direct`, …;
+`utm_source` wins when present). It is kept in `sessionStorage`, is never sent
+to analytics, and is used in two places only:
+
+- **Contact form** — hidden fields `page`, `referrer`, `landing_page` and
+  `source` arrive in every Formspree email.
+- **WhatsApp** — a bare `wa.me` link gets a pre-filled opening line ending in
+  `(Ref: page /crm-development-dubai, via Google)` at the moment it is tapped.
+  The visitor sees it and can edit it before sending. Links that already carry
+  their own text (contact form, assistant, case-study and Arabic CTAs) are not
+  changed, and the ministry pages are excluded.
+
+So a WhatsApp message that arrives carrying a `Ref:` line can be logged as a
+confirmed enquiry with its page and source, which GA4 can never do on its own.
 
 ## One-time GA4 setup (≈10 minutes)
 
 GA4 property: `G-N8FX3F1CZ1` (loaded in `index.html`, consent-gated).
 
-1. **Mark key events** — GA4 → *Admin → Events → Key events*. Toggle
-   `generate_lead`, `cta_book_audit`, and `whatsapp_click` to "Mark as key event".
-   (Allow ~24h for them to appear after the first occurrences.)
+1. **Mark key events** — GA4 → *Admin → Events → Key events*. Mark
+   `generate_lead` only. Do **not** mark `whatsapp_click` or `cta_book_audit`:
+   a key event is counted as a conversion everywhere in GA4 (and in Google Ads
+   if imported), and a tap that opens WhatsApp is not an enquiry. Report the
+   clicks in an exploration beside the leads instead.
 2. **Build the funnel** — *Explore → Funnel exploration*. Steps:
    `page_view` → `cta_book_audit` → `generate_lead`. Add `whatsapp_click` as an
    alternative final step. This shows where people drop off.

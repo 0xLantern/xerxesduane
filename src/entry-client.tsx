@@ -4,8 +4,12 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import "./index.css";
 import App from "./App";
 import { initCtaTracking } from "./lib/analytics";
+import { captureLanding } from "./lib/attribution";
 import { routePath } from "./lib/host";
 
+// Before anything can navigate away: the first page of the visit and where it
+// came from, for the enquiry form and WhatsApp (see lib/attribution.ts).
+captureLanding();
 initCtaTracking();
 
 // Disarm the pre-hydration reveal fallback (see the inline <style> in

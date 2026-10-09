@@ -151,12 +151,13 @@ for (const [where, text] of prose) {
   const content = read("src/data/content.ts");
   const services = read("src/data/servicePages.ts");
   const clients = new Set([...content.matchAll(/^    client: "([^"]+)"/gm)].map((m) => m[1]));
-  const referenced = [...services.matchAll(/caseStudyClient: "([^"]+)"/g)].map((m) => m[1]);
+  // resultStudyClient is the same join, for the "Client result" panel.
+  const referenced = [...services.matchAll(/(?:caseStudyClient|resultStudyClient): "([^"]+)"/g)].map((m) => m[1]);
   check(clients.size > 0, "no CASE_STUDIES clients found — has content.ts moved?");
   for (const name of referenced) {
     check(
       clients.has(name),
-      `a service page names caseStudyClient "${name}", which is not a CASE_STUDIES client — that page will render no proof`,
+      `a service page names case study client "${name}", which is not a CASE_STUDIES client — that page will render no proof`,
     );
   }
   var caseStudyJoins = referenced.length;

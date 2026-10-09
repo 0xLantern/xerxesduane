@@ -3,6 +3,7 @@ import { ArrowLeft, Check } from "lucide-react";
 import { type InsightPost as Post, formatDate } from "../data/insights";
 import { INSIGHTS } from "../data/insights";
 import { getServicePage } from "../data/servicePages";
+import { CASE_STUDIES } from "../data/content";
 import PageHeader from "../components/page/PageHeader";
 import { GhostAction, PrimaryAction } from "../components/page/PageActions";
 
@@ -70,6 +71,9 @@ function Body({ blocks }: { blocks: Post["body"] }) {
 
 export default function InsightPost({ post }: { post: Post }) {
   const others = INSIGHTS.filter((p) => p.slug !== post.slug).slice(0, 2);
+  const example = post.caseStudy
+    ? CASE_STUDIES.find((c) => c.slug === post.caseStudy)
+    : undefined;
   const related = (post.relatedServices ?? [])
     .map((slug) => getServicePage(slug))
     .filter((p): p is NonNullable<typeof p> => Boolean(p));
@@ -126,6 +130,24 @@ export default function InsightPost({ post }: { post: Post }) {
             
 
             <Body blocks={post.body} />
+
+            {example && (
+              <div className="mt-10 rounded-card border border-line bg-canvas-sunk/40 p-6">
+                <p className="font-technical text-[0.62rem] font-bold uppercase tracking-[0.16em] text-accent-deep">
+                  Worked example
+                </p>
+                <p className="mt-2 text-[15px] leading-relaxed text-muted">
+                  <a
+                    href={`/case-studies/${example.slug}`}
+                    className="font-semibold text-fg-soft underline decoration-accent/40 underline-offset-4 transition hover:text-accent-deep hover:decoration-accent"
+                  >
+                    {example.client}: {example.category.toLowerCase()} case study
+                  </a>
+                  {". "}
+                  {example.summary}
+                </p>
+              </div>
+            )}
 
             <div className="mt-10 rounded-card border border-accent/25 bg-accent/[0.07] p-6">
               <p className="font-display text-xl font-semibold text-fg">

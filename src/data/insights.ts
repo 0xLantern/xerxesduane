@@ -34,11 +34,18 @@ export interface InsightPost {
    * citation for an opinion is worse than having none.
    */
   sources?: { label: string; url: string; note?: string }[];
+  /**
+   * Slug of a case study where the post's advice was actually applied for a
+   * client. Rendered as a "Worked example" link, so the post points at evidence
+   * rather than only restating the method.
+   */
+  caseStudy?: string;
 }
 
 export const INSIGHTS: InsightPost[] = [
   {
     slug: "aeo-seo-geo-dubai",
+    caseStudy: "bee-thrive-cleaning-web-search",
     title: "AEO vs SEO vs GEO: how Dubai businesses get found",
     description:
       "SEO, AEO, and GEO explained in plain English for Dubai businesses: what each one does, where they overlap, and what an SME should do first.",
@@ -171,6 +178,7 @@ export const INSIGHTS: InsightPost[] = [
   },
   {
     slug: "get-cited-by-chatgpt-perplexity-dubai",
+    caseStudy: "bee-thrive-cleaning-web-search",
     title: "How to get cited by ChatGPT and Perplexity",
     description:
       "How AI engines decide what to cite, what Dubai businesses can do to get recommended, and how to check whether you already show up.",
@@ -606,6 +614,7 @@ export const INSIGHTS: InsightPost[] = [
   },
   {
     slug: "choosing-a-web-developer-dubai",
+    caseStudy: "bee-thrive-cleaning-web-search",
     title: "How to choose a web developer in Dubai",
     description:
       "The questions to ask, the red flags to avoid, and what good looks like when hiring a web developer in Dubai, so you own your site and it actually performs.",
