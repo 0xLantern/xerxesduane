@@ -556,13 +556,13 @@ export const CASE_STUDIES: CaseStudy[] = [
     challenge:
       "A premium cookware and direct-sales brand needed a smoother customer journey, from first inquiry through cooking demo to sale, with real visibility into follow-ups.",
     summary:
-      "Odoo CRM set up as one pipeline for leads from the website, WhatsApp, cooking demos and referrals, with demo bookings, team reminders, follow-up sequences and dashboards built around how the sales team works.",
-    // Platform, lead sources and automation confirmed by the owner (9 Oct
-    // 2026). No outcome or timeline yet: add `outcomes` when there is one the
-    // client agrees with. See docs/case-study-briefs.md.
+      "Odoo CRM set up as one pipeline for leads from the website, WhatsApp, cooking demos and referrals, each tagged with its source automatically, with demo bookings, team reminders, follow-up sequences and dashboards, built over more than three months.",
+    // Platform, lead sources, automation, automatic source tagging, timeline
+    // (over three months) and the three outcomes confirmed by the owner, 9 Oct
+    // 2026. A measured figure was mentioned without a number, so none is shown.
     approach: [
       "Set up Odoo CRM as the one record for every lead and customer",
-      "Brought website, WhatsApp, cooking-demo and event, and referral leads into the same pipeline",
+      "Brought website, WhatsApp, cooking-demo and event, and referral leads into the same pipeline, each tagged with its source automatically",
       "Tied cooking-demo bookings to a calendar linked to each lead",
       "Automated reminders for the team and WhatsApp and email follow-up sequences for leads",
       "Built pipeline and sales dashboards for the owner",
@@ -586,6 +586,12 @@ export const CASE_STUDIES: CaseStudy[] = [
     ],
     takeaway:
       "Every lead in one Odoo pipeline, with demo bookings, follow-ups and reporting attached to it.",
+    outcomes: [
+      { title: "Every lead in one place", detail: "Website, WhatsApp, demo and referral leads now land in one Odoo pipeline instead of separate inboxes and chats." },
+      { title: "Demo bookings centralised", detail: "Every cooking-demo booking sits on one calendar, tied to the lead it belongs to." },
+      { title: "No lead without an owner", detail: "Each lead is assigned to someone on the team and carries a next step." },
+    ],
+    outcomesNote: "Outcomes, timeline and automatic source tagging confirmed by Xerxes Duane.",
   },
   /* HIDDEN (re-add later): Fellowship Dubai case study
   {
