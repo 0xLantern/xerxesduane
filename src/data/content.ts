@@ -428,8 +428,10 @@ export const CASE_STUDIES: CaseStudy[] = [
       "The website, client portal, quotes, orders and admin in one WordPress system.",
   },
   {
-    // Platform, scope and timeline confirmed by the owner, 9 Oct 2026. No
-    // outcome yet: add `outcomes` once one is confirmed with the client.
+    // Platform, scope and timeline confirmed by the owner, 9 Oct 2026; the
+    // three outcomes confirmed the same day. A measured figure was mentioned
+    // without a number, so none is shown. Payment gateway and back-office
+    // system are left generic at the owner's request.
     slug: "gilani-mobility-ecommerce",
     client: "Gilani Mobility",
     location: "Dubai · Healthcare Mobility",
@@ -459,16 +461,27 @@ export const CASE_STUDIES: CaseStudy[] = [
     url: "https://www.gilanimobility.ae/",
     takeaway:
       "An online store for assistive products, with payments, orders, stock and customer records working together.",
+    outcomes: [
+      {
+        title: "Customers order online",
+        detail: "Customers can buy assistive products online instead of only calling or visiting.",
+      },
+      {
+        title: "Stock stays accurate",
+        detail: "Online orders and stock levels update together, so the store doesn't sell what isn't there.",
+      },
+      {
+        title: "Enquiries in one CRM",
+        detail: "Website and WhatsApp enquiries land in the CRM with the customer record.",
+      },
+    ],
+    outcomesNote: "Outcomes, platform and timeline confirmed by Xerxes Duane.",
   },
   {
-    // AI details (Gemini; enquiries, registrations, messages, course content;
-    // a no-code automation platform joining it up) confirmed by the owner,
-    // 9 Oct 2026. Which platform (Zapier, Make or n8n) was not specified, so it
-    // is not named. Originally scope-only, like Blocktec: everything here was
-    // already stated elsewhere on
-    // the site (the industries list and the portfolio) or confirmed by the
-    // owner (that the build uses AI). No outcomes, timeline or tool names yet;
-    // they belong in `outcomes` once confirmed. See docs/case-study-briefs.md.
+    // AI details (Gemini; enquiries, registrations, messages, course content)
+    // and the platform joining it up (n8n) confirmed by the owner, 9 Oct 2026,
+    // with the three outcomes the same day. A measured figure was mentioned
+    // without a number, so none is shown. See docs/case-study-briefs.md.
     slug: "we-aspire-ai-automation",
     client: "We Aspire",
     location: "Dubai · Education & Training",
@@ -478,14 +491,14 @@ export const CASE_STUDIES: CaseStudy[] = [
     challenge:
       "An education and training business in Dubai needed its courses delivered online, with learner registration and invoicing handled by the system rather than by hand.",
     summary:
-      "An e-learning platform where Google Gemini answers enquiries, reads registrations, drafts learner messages and helps produce course content, joined to registration and QuickBooks invoicing through a no-code automation platform.",
+      "An e-learning platform where Google Gemini answers enquiries, reads registrations, drafts learner messages and helps produce course content, joined to registration and QuickBooks invoicing with n8n.",
     approach: [
       "Built a custom e-learning platform for the courses",
       "Set up an AI assistant, on Google Gemini, that answers course and registration enquiries",
       "Used Gemini to read registration details into the system",
       "Set up Gemini to draft welcome, reminder and follow-up messages for learners",
       "Used Gemini to help produce course material such as quizzes and summaries",
-      "Connected registration, the AI steps and QuickBooks invoicing with a no-code automation platform",
+      "Connected registration, the AI steps and QuickBooks invoicing with n8n workflows",
     ],
     relatedServices: ["ai-automation-dubai", "custom-software-development-dubai", "web-development-dubai"],
     image: "/work/web/web-01-thumb.webp",
@@ -496,11 +509,26 @@ export const CASE_STUDIES: CaseStudy[] = [
       "AI-drafted learner messages",
       "AI-assisted course content",
       "QuickBooks-integrated invoicing",
-      "No-code automation workflows",
+      "n8n automation workflows",
     ],
     url: "https://www.weaspire.ae/",
     takeaway:
       "Enquiries, registrations, learner messages and invoicing handled by one Gemini-powered workflow.",
+    outcomes: [
+      {
+        title: "Enquiries answered faster",
+        detail: "Gemini answers course and registration questions, so learners get a reply without waiting for a person.",
+      },
+      {
+        title: "No manual registration",
+        detail: "Registration details are read into the system automatically instead of being typed in by hand.",
+      },
+      {
+        title: "Invoices go out automatically",
+        detail: "Each registration creates its QuickBooks invoice without anyone keying it in.",
+      },
+    ],
+    outcomesNote: "Outcomes, AI details and platform confirmed by Xerxes Duane.",
   },
   {
     slug: "blocktec-odoo-erp",

@@ -49,17 +49,18 @@ conversion, with the period); OK to keep naming Saladmaster UAE / Al Mumtaz.
 
 ---
 
-## 3. AI automation: We Aspire (updated 9 Oct 2026, outcome still open)
+## 3. AI automation: We Aspire (updated 9 Oct 2026)
 
 **Public** at `/case-studies/we-aspire-ai-automation`, confirmed by the owner:
 e-learning platform; Google Gemini answers course and registration enquiries,
 reads registration details, drafts learner messages and helps produce course
-content; a no-code automation platform (Zapier, Make or n8n, not specified)
-joins registration, the AI steps and QuickBooks invoicing.
+content; n8n joins registration, the AI steps and QuickBooks invoicing.
+Outcomes: enquiries answered faster, no manual registration, invoices go out
+automatically. Shown as the "Client result" on `/ai-automation-dubai`.
 
-**Still to confirm:** which automation platform; what still goes to a person;
-one outcome We Aspire agrees with (time saved, response time); the channel the
-assistant runs on (website chat, WhatsApp); OK to name them.
+**Still to confirm:** a measured figure (time saved per week or response time,
+with the period); what still goes to a person; the channel the assistant runs
+on (website chat, WhatsApp); OK to keep naming We Aspire.
 
 Candidates considered:
 
@@ -106,18 +107,19 @@ Once a study is added, it gets linked from its service page with
 
 ---
 
-## 4. E-commerce: Gilani Mobility (published 9 Oct 2026, outcome still open)
+## 4. E-commerce: Gilani Mobility (updated 9 Oct 2026)
 
 **Public** (`/case-studies/gilani-mobility-ecommerce`), confirmed by the owner:
 WooCommerce store; UAE online payments; inventory and orders connected to the
 back office; customer CRM; WhatsApp enquiries; built over more than three
-months. Shown as proof on `/ecommerce-development-dubai`.
+months. Outcomes: customers order online, stock stays accurate, enquiries in
+one CRM. Shown as the "Client result" on `/ecommerce-development-dubai`.
 
 **Still to confirm**
 
-- [ ] One outcome the client agrees with (for example, "customers can now order online instead of calling")
-- [ ] Which payment gateway and back-office system (if they can be named)
-- [ ] OK to name Gilani Mobility?
+- [ ] A measured figure (online orders, share of sales online, or enquiries), with the period
+- [ ] Payment gateway and back-office system, only if they can be named
+- [ ] OK to keep naming Gilani Mobility?
 
 ---
 
