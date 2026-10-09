@@ -140,7 +140,7 @@ export default function Owner() {
     <Shell wide>
       <h1 className="font-display text-[1.5rem] font-bold" style={{ color: INK }}>Private briefing links</h1>
       <p className="mt-1 text-[0.9rem] text-[#4a5468]">
-        One private link per person you'd like to invite onto the team. Each opens on up to two devices and works until you revoke it. You get an email when a link is first opened, when someone answers, and when a link is tried on a third device.
+        One private link per person you'd like to invite onto the team. Each opens on one device only, the first one to open it, and works until you revoke it. You get an email when a link is first opened, when someone answers, and when a link is tried on another device.
       </p>
       {list && !list.ready && (
         <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[0.85rem] text-red-800">
@@ -189,7 +189,7 @@ export default function Owner() {
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <p className="font-display text-[1.05rem] font-bold">{r.name}</p>
               <p className="text-[0.78rem] text-[#6a6a6a]">
-                {r.openedAt ? `Opened ${when(r.openedAt)}` : "Not opened yet"} · {r.devices} of 2 devices
+                {r.openedAt ? `Opened ${when(r.openedAt)}` : "Not opened yet"} · {r.devices ? "Device in use" : "No device yet"}
                 {r.countries.length ? ` · ${r.countries.join(", ")}` : ""}
               </p>
             </div>

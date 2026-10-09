@@ -3,7 +3,7 @@
 // No login. The code finds the invite; the device id is checked against the
 // devices the code has already opened on. The briefing's key comes back only
 // when both pass, and the page then opens public/jb/brief.dat with it. A
-// revoked code is a 404, a third device a 403. The signed-in owner can open
+// revoked code is a 404, any other device a 403. The signed-in owner can open
 // any code to check it without using a device slot.
 import { greetName } from "../../src/hackpartners/greet";
 import {
@@ -32,7 +32,7 @@ export const config = { runtime: "edge" };
 
 const GONE = "This link has expired or was withdrawn. If you think that's a mistake, message the person who sent it.";
 const LOCKED =
-  "This link is already open on two other devices, so it can't open here. If this is your new phone or computer, message the person who sent it and they'll let it in.";
+  "This link is already open on another device, so it can't open here. If this is your new phone or computer, message the person who sent it and they'll let it in.";
 
 export default handle(async (req) => {
   if (req.method !== "GET") return errorResponse("Method not allowed.", 405);
@@ -66,7 +66,7 @@ export default handle(async (req) => {
         `locked:${c}`,
         12,
         `${invite.name}'s private briefing link was tried on another device`,
-        `<p>Someone tried to open <strong>${esc(invite.name)}</strong>'s private briefing on a third device${country ? ` in ${esc(countryName(country))}` : ""}. It didn't open.</p><p>If it was them on a new phone, let the device in from /join. If it wasn't, revoke their link.</p>`,
+        `<p>Someone tried to open <strong>${esc(invite.name)}</strong>'s private briefing on another device${country ? ` in ${esc(countryName(country))}` : ""}. It didn't open.</p><p>If it was them on a new phone, let the device in from /join. If it wasn't, revoke their link.</p>`,
       );
       return reply({ error: LOCKED, locked: true }, 403);
     }

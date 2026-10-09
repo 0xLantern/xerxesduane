@@ -10,8 +10,8 @@
 //     let in.
 //   - Each person gets their own code, made by the owner on /join. A code
 //     can be revoked at any time.
-//   - A code opens on at most MAX_DEVICES devices, the first ones to open it.
-//     A forwarded link fails on a third device, and the owner gets an email.
+//   - A code opens on one device only (MAX_DEVICES), the first to open it.
+//     A forwarded link fails anywhere else, and the owner gets an email.
 //   - Guessing is pointless (144-bit codes) and rate limited anyway.
 //
 // Storage is the site's Redis, under join:v1:
@@ -25,8 +25,8 @@ import { OWNER_EMAIL, redis } from "../work/_lib";
 export const K = "join:v1:";
 export const ORIGIN = "https://ministry.xerxesduane.com";
 
-/** A phone and a laptop, say. */
-export const MAX_DEVICES = 2;
+/** One device per person: a forwarded link opens nowhere else. */
+export const MAX_DEVICES = 1;
 
 export const CODE = /^[A-Za-z0-9_-]{20,32}$/;
 export const DEVICE_ID = /^[A-Za-z0-9_-]{16,64}$/;
