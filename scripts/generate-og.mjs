@@ -137,6 +137,7 @@ const CARDS = [
 
   // Case studies.
   { file: "case-bee-thrive-cleaning-web-search", icon: "briefcase", eyebrow: "Case study · Web & search", title: ["Bee Thrive", "Cleaning."], subtitle: "A website enquiry that progressed to an on-site assessment.", cta: "Read the case study" },
+  { file: "case-gilani-mobility-ecommerce", icon: "briefcase", eyebrow: "Case study · E-commerce", title: ["Gilani", "Mobility."], subtitle: "A WooCommerce store with payments, orders and CRM connected.", cta: "Read the case study" },
   { file: "case-we-aspire-ai-automation", icon: "briefcase", eyebrow: "Case study · AI automation", title: ["We", "Aspire."], subtitle: "E-learning with automated registration and QuickBooks invoicing.", cta: "Read the case study" },
   { file: "case-blocktec-odoo-erp", icon: "briefcase", eyebrow: "Case study · Odoo ERP", title: ["Blocktec", "Philippines."], subtitle: "Sales, inventory, purchasing and projects on one Odoo system.", cta: "Read the case study" },
   { file: "case-saladmaster-crm-web", icon: "briefcase", eyebrow: "Case study · Odoo CRM, web & brand", title: ["Saladmaster", "UAE."], subtitle: "Every lead in one Odoo pipeline, from first enquiry to cooking demo.", cta: "Read the case study" },

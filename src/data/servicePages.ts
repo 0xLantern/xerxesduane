@@ -944,6 +944,7 @@ export const SERVICE_PAGES: ServicePageData[] = [
       "Teams manually processing online orders",
       "Brands that need better checkout conversion and reporting",
     ],
+    caseStudyClient: "Gilani Mobility",
     faqs: [
       {
         q: "Which e-commerce platform should I use?",

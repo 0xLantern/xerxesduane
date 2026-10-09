@@ -394,6 +394,39 @@ export const CASE_STUDIES: CaseStudy[] = [
     ],
   },
   {
+    // Platform, scope and timeline confirmed by the owner, 9 Oct 2026. No
+    // outcome yet: add `outcomes` once one is confirmed with the client.
+    slug: "gilani-mobility-ecommerce",
+    client: "Gilani Mobility",
+    location: "Dubai · Healthcare Mobility",
+    category: "E-commerce",
+    metaDescription:
+      "WooCommerce store for Gilani Mobility, a Dubai healthcare-mobility business: UAE payments, connected inventory and orders, customer CRM and WhatsApp enquiries.",
+    challenge:
+      "A Dubai healthcare-mobility business needed an online store for its assistive products, with payments, stock, orders and customer records connected to it.",
+    summary:
+      "A WooCommerce store with UAE online payments, inventory and orders connected to the back office, a customer CRM and WhatsApp enquiries, built over more than three months.",
+    approach: [
+      "Designed and built the store on WooCommerce",
+      "Added online payments for UAE customers at checkout",
+      "Connected inventory and orders to the back office",
+      "Set up a CRM for customer records and follow-up",
+      "Added WhatsApp enquiries from the site",
+    ],
+    relatedServices: ["ecommerce-development-dubai", "web-development-dubai", "crm-development-dubai"],
+    image: "/work/web/web-02-thumb.webp",
+    scope: [
+      "WooCommerce store design & build",
+      "UAE online payments",
+      "Connected inventory & orders",
+      "Customer CRM",
+      "WhatsApp enquiries",
+    ],
+    url: "https://www.gilanimobility.ae/",
+    takeaway:
+      "An online store for assistive products, with payments, orders, stock and customer records working together.",
+  },
+  {
     // Scope-only, like Blocktec: everything here is already stated elsewhere on
     // the site (the industries list and the portfolio) or confirmed by the
     // owner (that the build uses AI). No outcomes, timeline or tool names yet;
