@@ -791,7 +791,8 @@ export const SERVICE_PAGES: ServicePageData[] = [
     // "CRM, Web & Brand ... a clearer lead-to-demo journey, organised around the
     // way the sales team actually works" is this page's promise, written down
     // by a client. It was reachable only from /case-studies.
-    caseStudyClient: "Saladmaster UAE",
+    // Documented outcomes now, so it leads as a "Client result" panel.
+    resultStudyClient: "Saladmaster UAE",
     glance: {
       question: "What does CRM implementation in Dubai involve?",
       answer:
