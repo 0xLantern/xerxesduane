@@ -77,7 +77,7 @@ type Contact = (typeof CHAMPION_CONTACTS)[number];
 const waLink = (c: Contact, topic: Topic) =>
   `https://wa.me/${c.whatsapp}?text=${encodeURIComponent(`Hi ${c.first}, ${WA[topic]}`)}`;
 
-/** One per challenge, in order: the three kit parts, then Sojourn, Serve (with the member directory), Steady, Provision. */
+/** One per challenge, in order: the three kit parts, then Sojourn, Skills (serve the church and the member directory), Steady, Provision. */
 const CHALLENGE_ICONS: LucideIcon[] = [Compass, MessageSquareLock, ShieldCheck, House, HandHeart, HeartPulse, BriefcaseBusiness];
 
 const prose = "max-w-[72ch] space-y-3 text-[0.95rem] leading-relaxed text-fg-soft";
