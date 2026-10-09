@@ -49,17 +49,18 @@ conversion, with the period); OK to keep naming Saladmaster UAE / Al Mumtaz.
 
 ---
 
-## 3. AI automation: We Aspire (updated 9 Oct 2026, outcome still open)
+## 3. AI automation: We Aspire (updated 9 Oct 2026)
 
 **Public** at `/case-studies/we-aspire-ai-automation`, confirmed by the owner:
 e-learning platform; Google Gemini answers course and registration enquiries,
 reads registration details, drafts learner messages and helps produce course
-content; a no-code automation platform (Zapier, Make or n8n, not specified)
-joins registration, the AI steps and QuickBooks invoicing.
+content; n8n joins registration, the AI steps and QuickBooks invoicing.
+Outcomes: enquiries answered faster, no manual registration, invoices go out
+automatically. Shown as the "Client result" on `/ai-automation-dubai`.
 
-**Still to confirm:** which automation platform; what still goes to a person;
-one outcome We Aspire agrees with (time saved, response time); the channel the
-assistant runs on (website chat, WhatsApp); OK to name them.
+**Still to confirm:** a measured figure (time saved per week or response time,
+with the period); what still goes to a person; the channel the assistant runs
+on (website chat, WhatsApp); OK to keep naming We Aspire.
 
 Candidates considered:
 
