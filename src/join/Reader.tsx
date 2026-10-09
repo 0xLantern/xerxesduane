@@ -231,7 +231,7 @@ export default function Reader({ code }: { code: string }) {
       <div className="wb">
         <Answers code={code} data={data} />
         <p className="wb-foot" style={{ color: "#7a8296" }}>
-          🔒 This page is just for you. It opens on up to two of your devices and can't be printed. Please don't forward the link or share anything from it online, and to protect the people we serve, please don't mention the ministry's name in public.
+          🔒 This page is just for you. It opens on this device only and can't be printed. Please don't forward the link or share anything from it online, and to protect the people we serve, please don't mention the ministry's name in public.
         </p>
       </div>
     </div>
