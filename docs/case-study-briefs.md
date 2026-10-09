@@ -106,18 +106,19 @@ Once a study is added, it gets linked from its service page with
 
 ---
 
-## 4. E-commerce: Gilani Mobility (published 9 Oct 2026, outcome still open)
+## 4. E-commerce: Gilani Mobility (updated 9 Oct 2026)
 
 **Public** (`/case-studies/gilani-mobility-ecommerce`), confirmed by the owner:
 WooCommerce store; UAE online payments; inventory and orders connected to the
 back office; customer CRM; WhatsApp enquiries; built over more than three
-months. Shown as proof on `/ecommerce-development-dubai`.
+months. Outcomes: customers order online, stock stays accurate, enquiries in
+one CRM. Shown as the "Client result" on `/ecommerce-development-dubai`.
 
 **Still to confirm**
 
-- [ ] One outcome the client agrees with (for example, "customers can now order online instead of calling")
-- [ ] Which payment gateway and back-office system (if they can be named)
-- [ ] OK to name Gilani Mobility?
+- [ ] A measured figure (online orders, share of sales online, or enquiries), with the period
+- [ ] Payment gateway and back-office system, only if they can be named
+- [ ] OK to keep naming Gilani Mobility?
 
 ---
 

@@ -428,8 +428,10 @@ export const CASE_STUDIES: CaseStudy[] = [
       "The website, client portal, quotes, orders and admin in one WordPress system.",
   },
   {
-    // Platform, scope and timeline confirmed by the owner, 9 Oct 2026. No
-    // outcome yet: add `outcomes` once one is confirmed with the client.
+    // Platform, scope and timeline confirmed by the owner, 9 Oct 2026; the
+    // three outcomes confirmed the same day. A measured figure was mentioned
+    // without a number, so none is shown. Payment gateway and back-office
+    // system are left generic at the owner's request.
     slug: "gilani-mobility-ecommerce",
     client: "Gilani Mobility",
     location: "Dubai · Healthcare Mobility",
@@ -459,6 +461,21 @@ export const CASE_STUDIES: CaseStudy[] = [
     url: "https://www.gilanimobility.ae/",
     takeaway:
       "An online store for assistive products, with payments, orders, stock and customer records working together.",
+    outcomes: [
+      {
+        title: "Customers order online",
+        detail: "Customers can buy assistive products online instead of only calling or visiting.",
+      },
+      {
+        title: "Stock stays accurate",
+        detail: "Online orders and stock levels update together, so the store doesn't sell what isn't there.",
+      },
+      {
+        title: "Enquiries in one CRM",
+        detail: "Website and WhatsApp enquiries land in the CRM with the customer record.",
+      },
+    ],
+    outcomesNote: "Outcomes, platform and timeline confirmed by Xerxes Duane.",
   },
   {
     // AI details (Gemini; enquiries, registrations, messages, course content;

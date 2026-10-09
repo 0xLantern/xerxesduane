@@ -946,7 +946,9 @@ export const SERVICE_PAGES: ServicePageData[] = [
       "Teams manually processing online orders",
       "Brands that need better checkout conversion and reporting",
     ],
-    caseStudyClient: "Gilani Mobility",
+    // Documented outcomes now, so it leads as a "Client result" panel, as
+    // Blocktec does on /odoo-erp-dubai and Saladmaster on /crm-development-dubai.
+    resultStudyClient: "Gilani Mobility",
     faqs: [
       {
         q: "Which e-commerce platform should I use?",
