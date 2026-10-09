@@ -769,7 +769,7 @@ html[data-theme-vt="active"]::view-transition-new(root) {
      strip do not. `vh` lets the board give height back on a shorter screen
      instead of pushing the fold off the bottom. */
   .home-board > div { grid-template-rows: repeat(2, minmax(clamp(142px, 29vh, 316px), auto)); }
-  .home-projects > div:first-child, .home-projects > p, .home-projects ul { width: 47%; }
+  .home-projects > div:first-child, .home-projects > p, .home-projects ul, .home-projects > div:last-child { width: 47%; }
   .home-projects > div:nth-of-type(2) { display: contents; }
   .home-projects .project-track { position: absolute; inset: 18px 18px 18px 52%; height: auto; }
   .home-projects > div:nth-of-type(2) > ul { margin-top: auto; margin-bottom: auto; }

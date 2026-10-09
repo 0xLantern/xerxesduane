@@ -84,8 +84,9 @@ export default function Projects() {
           icon={FolderOpen}
           label="Case studies"
           blurb={`${CASE_STUDIES.length} documented builds, with the problem, the work and the outcome.`}
-          href="/case-studies"
+          labelHref="/case-studies"
           span="sm:col-span-2"
+          footer={<a href="/case-studies/bee-thrive-cleaning-web-search" className="text-sm font-bold text-accent-deep underline underline-offset-4">New: Bee Thrive Cleaning — website, SEO, AEO &amp; GEO</a>}
         >
           <Thumbs contain items={CASE_STUDIES.map((c) => ({ src: c.image, alt: c.client }))} />
         </Panel>

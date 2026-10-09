@@ -6,11 +6,13 @@ import Panel from "../components/page/Panel";
 import PanelBoard from "../components/page/PanelBoard";
 import { GhostAction, PrimaryAction } from "../components/page/PageActions";
 import CountUp from "../components/fx/CountUp";
+import { whatsappHref } from "../data/contact";
 
 export default function CaseStudyPage({ study }: { study: CaseStudy }) {
   const services = SERVICE_PAGES.filter((service) =>
     study.relatedServices.includes(service.slug),
   );
+  const projectHref = whatsappHref(`Hi Xerxes, I read your ${study.client} case study. I'd like to discuss a website for my business.`);
 
   return (
     <>
@@ -21,7 +23,11 @@ export default function CaseStudyPage({ study }: { study: CaseStudy }) {
         meta={<span>{study.location}</span>}
         actions={
           <>
-            <PrimaryAction href="/contact">Book a free audit</PrimaryAction>
+            {study.journey ? (
+              <PrimaryAction href={projectHref}>Discuss a website for your business</PrimaryAction>
+            ) : (
+              <PrimaryAction href="/contact">Book a free audit</PrimaryAction>
+            )}
             <GhostAction
               href="/case-studies"
               icon={<ArrowLeft size={15} strokeWidth={2.2} aria-hidden />}
@@ -33,6 +39,19 @@ export default function CaseStudyPage({ study }: { study: CaseStudy }) {
       />
 
       <PanelBoard>
+        {study.journey && (
+          <Panel icon={TrendingUp} label="From discovery to a site visit" span="lg:col-span-12">
+            <ol className="grid gap-3 sm:grid-cols-3">
+              {study.journey.map((step, index) => (
+                <li key={step.title} className="rounded-xl border border-line bg-panel-alt p-4">
+                  <span className="font-technical text-xs font-bold text-accent-deep">0{index + 1}</span>
+                  <h3 className="mt-2 font-display text-base font-bold text-fg">{step.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-fg-soft">{step.detail}</p>
+                </li>
+              ))}
+            </ol>
+          </Panel>
+        )}
         {/* The problem and the work */}
         <Panel icon={Target} label="What needed to change" span="lg:col-span-7">
           <p className="text-[0.95rem] leading-relaxed text-fg-soft">{study.challenge}</p>
@@ -110,12 +129,29 @@ export default function CaseStudyPage({ study }: { study: CaseStudy }) {
           <p className="font-display text-xl italic leading-relaxed text-fg sm:text-2xl">
             {study.takeaway}
           </p>
+          {study.outcomes && (
+            <>
+              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                {study.outcomes.map((outcome) => (
+                  <div key={outcome.title} className="rounded-xl border border-line bg-panel-alt p-4">
+                    <h3 className="font-display text-base font-bold text-fg">{outcome.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-fg-soft">{outcome.detail}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-xs leading-relaxed text-fg-faint">
+                Repeat enquiries and the site visit confirmed by Xerxes Duane.
+                The enquiry message records ChatGPT as its attributed source.
+              </p>
+            </>
+          )}
           <div className="mt-2 flex flex-wrap items-center gap-4">
             <a
-              href="/contact"
+              href={study.journey ? projectHref : "/contact"}
+              data-cta="case-study-outcome"
               className="inline-flex items-center gap-1.5 rounded py-1 text-sm font-semibold text-accent-deep transition hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
             >
-              Want a result like this? Book your free audit
+              {study.journey ? "Discuss a website for your business" : "Want a result like this? Book your free audit"}
               <ArrowUpRight size={15} strokeWidth={2.3} aria-hidden />
             </a>
             {study.url && (

@@ -15,6 +15,7 @@ import { GhostAction, PrimaryAction } from "../components/page/PageActions";
 import ServiceVisual from "../components/ServiceVisual";
 import ServiceCompare from "../components/ServiceCompare";
 import ServicePackages from "../components/ServicePackages";
+import Panel from "../components/page/Panel";
 
 export default function ServicePage({ page }: { page: ServicePageData }) {
   const Icon = page.icon;
@@ -60,7 +61,9 @@ export default function ServicePage({ page }: { page: ServicePageData }) {
         }
         actions={
           <>
-            <PrimaryAction href="/contact">Book a free audit</PrimaryAction>
+            <PrimaryAction href="/contact">
+              Book a free audit
+            </PrimaryAction>
             {/*
               WhatsApp is the stated second conversion path, and on a phone it
               was two navigations from here: Contact, then scroll, then tap. The
@@ -86,6 +89,20 @@ export default function ServicePage({ page }: { page: ServicePageData }) {
           </>
         }
       />
+
+      {proof?.outcomes && (
+        <div className="mb-6">
+          <Panel label="Client result: Bee Thrive Cleaning" labelHref={`/case-studies/${proof.slug}`}>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="max-w-2xl">
+                <p className="font-display text-xl font-bold text-fg">{proof.takeaway}</p>
+                <p className="mt-2 text-sm leading-relaxed text-fg-soft">{proof.summary}</p>
+              </div>
+              <GhostAction href={`/case-studies/${proof.slug}`}>Read the case study</GhostAction>
+            </div>
+          </Panel>
+        </div>
+      )}
 
       <ServiceVisual page={page} />
 
@@ -163,7 +180,7 @@ export default function ServicePage({ page }: { page: ServicePageData }) {
           </Reveal>
 
           {/* Proof */}
-          {proof && (
+          {proof && !proof.outcomes && (
             <Reveal delay={0.15} className="mx-auto mt-6 max-w-2xl">
               <div className="glass border-glow rounded-2xl p-7">
                 <span className="font-mono text-xs uppercase tracking-wider text-gold">

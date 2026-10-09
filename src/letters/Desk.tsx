@@ -17,7 +17,7 @@ import LetterDetail, { type Fresh } from "./LetterDetail";
 import { fmtShort, local, msg, statusOf } from "./local";
 import Partners from "./Partners";
 import PrayerTab from "./PrayerTab";
-import Publish from "./Publish";
+import Publish from "./Publish.tsx";
 import SettingsTab from "./SettingsTab";
 import { ACCENT, Box, Btn, Err, INK, PAPER, Pill, SERIF, SOFT, inputCls } from "./ui";
 import { LIFESPAN_DAYS } from "./shared";
