@@ -23,7 +23,7 @@ import { APEX_HOST, MINISTRY_HOST, MINISTRY_ORIGIN, SITE_HOST, WORK_HOST, WORK_O
  * every other route, on either host — is untouched and never reaches here.
  */
 export const config = {
-  matcher: ["/", "/ministry", "/hack", "/robots.txt", "/work", "/r/:path*", "/gcn", "/letters", "/l/:path*", "/pray/:path*", "/hp", "/hp/:path*", "/partners", "/join", "/join/:path*"],
+  matcher: ["/", "/ministry", "/hack", "/robots.txt", "/work", "/r/:path*", "/gcn", "/letters", "/l/:path*", "/pray/:path*", "/hp", "/hp/:path*", "/partners", "/join", "/join/:path*", "/ht", "/ht/:path*", "/teams"],
   // The edge runtime is deprecated for middleware; the build warns on it.
   // Nothing here needs an edge-only API — it reads a header and returns.
   runtime: "nodejs",
@@ -57,6 +57,12 @@ export default function middleware(request: Request): Response {
     if (url.pathname === "/hp" || url.pathname.startsWith("/hp/")) return rewrite(new URL("/partners", url));
     if (url.pathname === "/partners") return Response.redirect(new URL("/hp", url), 308);
 
+    // #HACK2026 Dubai team pages: /ht is the Champions' panel, /ht/<code> one
+    // participant's page. Both are teams.html, which holds no brief; the
+    // briefs come from api/hack-teams/me for a member of that team only.
+    if (url.pathname === "/ht" || url.pathname.startsWith("/ht/")) return rewrite(new URL("/teams", url));
+    if (url.pathname === "/teams") return Response.redirect(new URL("/ht", url), 308);
+
     // Private briefing: /join is the owner's panel, /join/<code> one person's
     // page. Both are join.html, which holds no content (see api/join/_lib.ts).
     if (url.pathname.startsWith("/join/")) return rewrite(new URL("/join", url));
@@ -85,11 +91,17 @@ export default function middleware(request: Request): Response {
     // So is the #HACK partner page.
     if (url.pathname === "/hp" || url.pathname.startsWith("/hp/")) return Response.redirect(`${MINISTRY_ORIGIN}${url.pathname}`, 308);
     if (url.pathname === "/partners") return Response.redirect(`${MINISTRY_ORIGIN}/hp`, 308);
+    // And the #HACK team pages.
+    if (url.pathname === "/ht" || url.pathname.startsWith("/ht/")) return Response.redirect(`${MINISTRY_ORIGIN}${url.pathname}`, 308);
+    if (url.pathname === "/teams") return Response.redirect(`${MINISTRY_ORIGIN}/ht`, 308);
     // And the private briefing.
     if (host !== MINISTRY_HOST && (url.pathname === "/join" || url.pathname.startsWith("/join/"))) return Response.redirect(`${MINISTRY_ORIGIN}${url.pathname}`, 308);
   } else if (url.pathname.startsWith("/join/")) {
     // Previews and localhost: the briefing page, so it can be tried before release.
     return rewrite(new URL("/join", url));
+  } else if (url.pathname === "/ht" || url.pathname.startsWith("/ht/")) {
+    // Previews and localhost: the team pages, so they can be tried before release.
+    return rewrite(new URL("/teams", url));
   } else if (url.pathname === "/hp" || url.pathname.startsWith("/hp/")) {
     // Previews and localhost: the partner page, so it can be tried before release.
     return rewrite(new URL("/partners", url));
