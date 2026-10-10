@@ -21,6 +21,17 @@
 //   checkins:<n>       list, newest first: CheckIn JSON for challenge n's team
 //   summary:<n>        Summary JSON: challenge n's one-page summary for showcase night
 //   show               Show JSON: the 21 November running order and timings
+//   links:<n>          TeamLink[] JSON: the links challenge n's team has pinned
+//   safety:<n>         Safety JSON: the team's safety checklist and the reviewer's verdict
+//   guests             hash, code -> Guest JSON: security reviewer, mentors and judges
+//   gseen:<code>       Seen JSON for a guest link
+//   scores             hash, judge code -> { [n]: Score } JSON
+//   reminded:<date>    set once the check-in reminders for that date have gone out
+//
+// Guests open /ht/g/<code>. A security reviewer sees every team's checklist
+// and marks it passed or needing fixes; a mentor sees only the teams they were
+// given (brief, check-ins, links, one-pager); a judge scores every team on the
+// four criteria. None of them ever sees a phone number or an email address.
 //
 // Who may run the panel: the owner (the /letters login), or a co-Champion by
 // the same secret as their partner panel (HACKP_CHAMPIONS), at
@@ -28,6 +39,8 @@
 // participant: forming teams is shared work.
 export { errorResponse, handle, isOwner, json, randomToken, readJson, redis, requireOwner, sameOrigin, underLimit } from "../work/_lib";
 export { alertOwner, championFor, countryName, deviceHash, esc, parse, type Seen } from "../hack-partners/_lib";
+import { deviceHash, parse, type Seen } from "../hack-partners/_lib";
+import { redis } from "../work/_lib";
 import { CHALLENGES } from "../../src/data/hack";
 
 export const K = "hackt:v1:";
@@ -76,7 +89,63 @@ export type Person = {
   team?: number;
   /** Their role in the team, as a Champion wrote it, e.g. "Developer". */
   role?: string;
+  /** For the Wednesday check-in reminder only. Never shown on any page but the panel. */
+  email?: string;
 };
+
+export type TeamLink = { id: string; label: string; url: string; by: string; at: number };
+
+export type Safety = {
+  /** Item index -> who ticked it. */
+  ticks: Record<string, { by: string; at: number }>;
+  review?: { status: "passed" | "fixes"; note: string; by: string; at: number };
+};
+
+export const GUEST_KINDS = ["security", "mentor", "judge"] as const;
+export type GuestKind = (typeof GUEST_KINDS)[number];
+export type Guest = {
+  code: string;
+  name: string;
+  kind: GuestKind;
+  /** A mentor's teams. Empty means every team (the reviewer and judges). */
+  teams: number[];
+  createdAt: number;
+  openedAt: number | null;
+  by: string;
+};
+
+/** One judge's marks for one team: the four criteria, 1 to 5 each, and a comment. */
+export type Score = { s: number[]; note: string; at: number };
+
+export const EMAIL = /^[^\s@<>]{1,64}@[^\s@<>]{1,190}\.[A-Za-z]{2,24}$/;
+
+/** A pinned link must be an ordinary web address. */
+export function webUrl(v: unknown): string | null {
+  try {
+    const u = new URL(String(v ?? "").trim());
+    return u.protocol === "https:" || u.protocol === "http:" ? u.toString().slice(0, 500) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * A device check for any private link: lets a new device in while there is
+ * room, refuses the rest. Returns true when this device may open the link.
+ */
+export async function letDeviceIn(req: Request, seenKey: string, d: string, max: number): Promise<{ ok: boolean; first: boolean }> {
+  if (!DEVICE_ID.test(d)) return { ok: false, first: false };
+  const [raw] = await redis([["GET", seenKey]]);
+  const seen: Seen = parse<Seen>(raw) ?? { devices: [], countries: [] };
+  const h = await deviceHash(d);
+  if (seen.devices.some((x) => x.h === h)) return { ok: true, first: false };
+  if (req.method !== "GET" || seen.devices.length >= max) return { ok: false, first: false };
+  const country = req.headers.get("x-vercel-ip-country") ?? "";
+  seen.devices.push({ h, at: Date.now(), country });
+  if (country && !seen.countries.includes(country)) seen.countries.push(country);
+  await redis([["SET", seenKey, JSON.stringify(seen)]]);
+  return { ok: true, first: seen.devices.length === 1 };
+}
 
 export type CheckIn = {
   /** Who posted it, by the name they're greeted by. */

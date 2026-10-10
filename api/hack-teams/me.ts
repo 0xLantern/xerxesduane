@@ -11,7 +11,7 @@
 // and POST "checkin" adds one. The signed-in owner can open any link to
 // check it, without using a device slot, and nothing they do is saved.
 import { greetName } from "../../src/hackpartners/greet";
-import { briefFor } from "./_briefs";
+import { briefFor, safetyItems } from "./_briefs";
 import {
   CODE,
   DEVICE_ID,
@@ -41,6 +41,10 @@ import {
   type Seen,
   type Skill,
   type Summary,
+  type Safety,
+  type TeamLink,
+  randomToken,
+  webUrl,
 } from "./_lib";
 
 export const config = { runtime: "edge" };
@@ -103,10 +107,12 @@ async function view(person: Person, owner: boolean) {
   if (!announced || !person.team) return { ...base, team: null };
 
   const n = person.team;
-  const [all, rawCheckins, rawSummary] = await redis([
+  const [all, rawCheckins, rawSummary, rawLinks, rawSafety] = await redis([
     ["HGETALL", `${K}people`],
     ["LRANGE", `${K}checkins:${n}`, 0, 49],
     ["GET", `${K}summary:${n}`],
+    ["GET", `${K}links:${n}`],
+    ["GET", `${K}safety:${n}`],
   ]);
   const flat = Array.isArray(all) ? (all as string[]) : [];
   const members: { name: string; role: string; you: boolean }[] = [];
@@ -116,7 +122,20 @@ async function view(person: Person, owner: boolean) {
   }
   members.sort((a, b) => Number(b.you) - Number(a.you) || a.name.localeCompare(b.name));
   const checkins = (Array.isArray(rawCheckins) ? rawCheckins : []).map((r) => parse<CheckIn>(r)).filter((x): x is CheckIn => !!x);
-  return { ...base, team: { n, role: person.role ?? "", members, brief: briefFor(n), checkins, summary: parse<Summary>(rawSummary) } };
+  const safety = parse<Safety>(rawSafety) ?? { ticks: {} };
+  return {
+    ...base,
+    team: {
+      n,
+      role: person.role ?? "",
+      members,
+      brief: briefFor(n),
+      checkins,
+      summary: parse<Summary>(rawSummary),
+      links: parse<TeamLink[]>(rawLinks) ?? [],
+      safety: { items: safetyItems(n), ticks: safety.ticks, review: safety.review ?? null },
+    },
+  };
 }
 
 export default handle(async (req) => {
@@ -184,6 +203,40 @@ export default handle(async (req) => {
         PANEL,
       );
     }
+    return reply(await view(person, false));
+  }
+
+  // Everything below is team work: it needs a team.
+  if (["addLink", "removeLink", "safetyTick"].includes(String(b.action)) && (!announced || !person.team)) {
+    return reply({ error: "That opens once you're in a team." }, 409);
+  }
+  const team = person.team ?? 0;
+
+  if (b.action === "addLink" || b.action === "removeLink") {
+    const [raw] = await redis([["GET", `${K}links:${team}`]]);
+    let links = parse<TeamLink[]>(raw) ?? [];
+    if (b.action === "addLink") {
+      const url = webUrl(b.url);
+      const label = clean(b.label, 40);
+      if (!url) return reply({ error: "Paste a full web address, starting with https://" }, 400);
+      if (!label) return reply({ error: "Give the link a name, e.g. GitHub or Figma." }, 400);
+      if (links.length >= 12) return reply({ error: "Twelve links is the limit. Remove one first." }, 400);
+      links = [...links, { id: randomToken(6), label, url, by: greetName(person.name), at: Date.now() }];
+    } else {
+      links = links.filter((l) => l.id !== String(b.id ?? ""));
+    }
+    await redis([["SET", `${K}links:${team}`, JSON.stringify(links)]]);
+    return reply(await view(person, false));
+  }
+
+  if (b.action === "safetyTick") {
+    const i = Math.round(Number(b.i));
+    if (!(i >= 0 && i < safetyItems(team).length)) return reply({ error: "That item isn't on the list." }, 400);
+    const [raw] = await redis([["GET", `${K}safety:${team}`]]);
+    const safety = parse<Safety>(raw) ?? { ticks: {} };
+    if (b.on) safety.ticks[String(i)] = { by: greetName(person.name), at: Date.now() };
+    else delete safety.ticks[String(i)];
+    await redis([["SET", `${K}safety:${team}`, JSON.stringify(safety)]]);
     return reply(await view(person, false));
   }
 

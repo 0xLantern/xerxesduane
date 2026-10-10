@@ -411,3 +411,17 @@ export const BRIEFS: Brief[] = [
 ];
 
 export const briefFor = (n: number): Brief | null => BRIEFS.find((b) => b.n === n) ?? null;
+
+/**
+ * The safety checklist for a team: its own brief's ground rules, plus the two
+ * things every team owes the reviewer. Ticks are stored by position, so add
+ * new items at the end.
+ */
+export function safetyItems(n: number): string[] {
+  const b = briefFor(n);
+  return [
+    ...(b?.rules.map((r) => `${r.rule}. ${r.detail}`) ?? []),
+    "Test or sample data only: no real person's words, details or photos anywhere in the project.",
+    "A data map is written down: every field we store, why we need it, and how long we keep it.",
+  ];
+}

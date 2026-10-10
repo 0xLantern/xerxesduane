@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { CHALLENGES, CHAMPION_CONTACTS, CHECK_IN_GOALS, EVENTS, GROUND_RULES, JUDGING, TRACKS } from "../data/hack";
 import { HOURS, SKILLS, type Hours, type Skill } from "./shared";
+import ThankYouCard from "./ThankYouCard";
+import { deviceId, watermark } from "./device";
 
 /**
  * One participant's private page, /ht/<code>.
@@ -17,6 +19,12 @@ import { HOURS, SKILLS, type Hours, type Skill } from "./shared";
 type Prefs = { first: number; second: number | null; skills: Skill[]; hours: Hours; dinner: "yes" | "no"; note: string; at: number };
 type CheckIn = { by: string; did: string; next: string; help: string; at: number };
 type Summary = { built: string; helps: string; works: string; next: string; public: string; by: string; at: number };
+type TeamLink = { id: string; label: string; url: string; by: string; at: number };
+type SafetyView = {
+  items: string[];
+  ticks: Record<string, { by: string; at: number }>;
+  review: { status: "passed" | "fixes"; note: string; by: string; at: number } | null;
+};
 type Brief = {
   n: number;
   title: string;
@@ -47,6 +55,8 @@ type Payload = {
     brief: Brief | null;
     checkins: CheckIn[];
     summary: Summary | null;
+    links: TeamLink[];
+    safety: SafetyView;
   };
 };
 
@@ -57,36 +67,6 @@ const two = (n: number) => String(n).padStart(2, "0");
 const challenge = (n: number) => CHALLENGES.find((c) => c.n === n);
 const when = (t: number) =>
   new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Asia/Dubai" }).format(new Date(t));
-
-/** This browser's id for the device lock: random, kept on the device. */
-function deviceId(): string {
-  const KEY = "hackt-device";
-  const make = () =>
-    Array.from(crypto.getRandomValues(new Uint8Array(18)), (b) => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"[b & 63]).join("");
-  try {
-    const have = localStorage.getItem(KEY);
-    if (have && /^[A-Za-z0-9_-]{16,64}$/.test(have)) return have;
-    const made = make();
-    localStorage.setItem(KEY, made);
-    return made;
-  } catch {
-    try {
-      const s = sessionStorage.getItem(KEY) ?? make();
-      sessionStorage.setItem(KEY, s);
-      return s;
-    } catch {
-      return "";
-    }
-  }
-}
-
-/** A tiled "For <name> · <date> · private", so a screenshot that travels says whose page it was. */
-function watermark(name: string): string {
-  const day = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "Asia/Dubai" }).format(new Date());
-  const text = `For ${name} · ${day} · private`.replace(/[<>&"']/g, "");
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='340' height='180'><text x='10' y='100' transform='rotate(-24 170 90)' font-family='sans-serif' font-size='15' fill='#131313' fill-opacity='0.045'>${text}</text></svg>`;
-  return `url("data:image/svg+xml;utf8,${svg.replace(/#/g, "%23")}")`;
-}
 
 export default function Member({ code }: { code: string }) {
   const [data, setData] = useState<Payload | null>(null);
@@ -175,7 +155,7 @@ export default function Member({ code }: { code: string }) {
   );
 }
 
-function Frame({ children, name }: { children: ReactNode; name?: string }) {
+export function Frame({ children, name }: { children: ReactNode; name?: string }) {
   return (
     <div className="min-h-dvh" style={{ background: INK }}>
       <main className="relative mx-auto max-w-2xl px-4 py-8 sm:py-12">
@@ -186,11 +166,11 @@ function Frame({ children, name }: { children: ReactNode; name?: string }) {
   );
 }
 
-function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
+export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <section className={`rounded-3xl bg-white p-5 text-[#131313] sm:p-6 ${className}`}>{children}</section>;
 }
 
-function Champions() {
+export function Champions() {
   return (
     <div className="mt-4 flex flex-wrap gap-2">
       {CHAMPION_CONTACTS.map((c) => (
@@ -401,9 +381,12 @@ function TeamView({
         <p className="mt-3 text-[0.82rem] text-[#6a6a6a]">Swap numbers at the dinner and make a team chat. Phone numbers are never shown here.</p>
       </Card>
 
+      <ThankYouCard name={data.name} challenge={c?.title ?? ""} role={team.role} preview={data.owner} />
+      <Links links={team.links} owner={data.owner} post={post} />
       {b && <BriefView b={b} />}
       <Dates n={team.n} />
       <CheckIns team={team} owner={data.owner} post={post} />
+      <SafetyCheck safety={team.safety} owner={data.owner} post={post} />
       <OnePager summary={team.summary} owner={data.owner} post={post} />
 
       <Card>
@@ -455,7 +438,7 @@ const List = ({ items, ordered = false }: { items: string[]; ordered?: boolean }
   );
 };
 
-function BriefView({ b }: { b: Brief }) {
+export function BriefView({ b }: { b: Brief }) {
   return (
     <Card>
       <h2 className="font-display text-[1.2rem] font-bold">Your brief</h2>
@@ -571,6 +554,112 @@ function Dates({ n }: { n: number }) {
       </ol>
       {kit && <p className="mt-3 text-[0.82rem] text-[#6a6a6a]">Website kit teams: Team 01's page structure is settled by the 29 October check-in, so Teams 02 and 03 can build on it.</p>}
       {n === 7 && <p className="mt-3 text-[0.82rem] text-[#6a6a6a]">Provision: get the legal question answered in week 1.</p>}
+    </Card>
+  );
+}
+
+/** The team's working links, pinned in one place: GitHub, Figma, Canva, the team chat. */
+function Links({ links, owner, post }: { links: TeamLink[]; owner: boolean; post: (b: Record<string, unknown>) => Promise<string | null> }) {
+  const [label, setLabel] = useState("");
+  const [url, setUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const add = async () => {
+    setBusy(true);
+    const err = await post({ action: "addLink", label, url });
+    setBusy(false);
+    if (err) return setMsg(err);
+    setLabel("");
+    setUrl("");
+    setMsg("");
+  };
+  return (
+    <Card>
+      <h2 className="font-display text-[1.2rem] font-bold">Team links</h2>
+      <p className="mt-1 text-[0.85rem] text-[#6a6a6a]">Pin your shared project, designs and team chat here so everyone, and your Champions, can find them.</p>
+      {links.length > 0 && (
+        <ul className="mt-3 space-y-2">
+          {links.map((l) => (
+            <li key={l.id} className="flex items-center justify-between gap-2 rounded-2xl px-4 py-2.5" style={{ background: "#f6f3ee" }}>
+              <a href={l.url} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 truncate font-semibold underline-offset-2 hover:underline">
+                {l.label} <span className="font-normal text-[#8a7f75]">· {new URL(l.url).hostname.replace(/^www\./, "")}</span>
+              </a>
+              <button
+                type="button"
+                disabled={owner}
+                className="text-[0.78rem] text-[#9A3412] underline disabled:opacity-40"
+                onClick={() => window.confirm(`Remove "${l.label}" for the whole team?`) && post({ action: "removeLink", id: l.id })}
+              >
+                remove
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Name, e.g. GitHub" maxLength={40} className="w-36 rounded-full border-2 border-[#d9d4c8] px-3 py-2 text-[0.9rem] focus:border-[#131313] focus:outline-none" />
+        <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://" inputMode="url" className="min-w-0 flex-1 rounded-full border-2 border-[#d9d4c8] px-3 py-2 text-[0.9rem] focus:border-[#131313] focus:outline-none" />
+        <button type="button" onClick={add} disabled={busy || owner || !label.trim() || !url.trim()} className="rounded-full px-4 py-2 font-bold disabled:opacity-50" style={{ background: Y, color: INK }}>
+          Pin it
+        </button>
+      </div>
+      {msg && <p className="mt-2 text-[0.88rem] font-semibold text-[#9A3412]">{msg}</p>}
+      <p className="mt-2 text-[0.78rem] text-[#8a7f75]">Use your personal accounts, and keep shared files private to the team.</p>
+    </Card>
+  );
+}
+
+/**
+ * The safety check due by 5 November: the team's own ground rules as a
+ * checklist, then the security reviewer's verdict, which shows here too.
+ */
+function SafetyCheck({ safety, owner, post }: { safety: SafetyView; owner: boolean; post: (b: Record<string, unknown>) => Promise<string | null> }) {
+  // Ticks show at once and settle when the server answers, so a slow phone never looks stuck.
+  const [pending, setPending] = useState<Record<number, boolean>>({});
+  const toggle = (i: number, on: boolean) => {
+    setPending((p) => ({ ...p, [i]: on }));
+    post({ action: "safetyTick", i, on }).finally(() =>
+      setPending((p) => {
+        const next = { ...p };
+        delete next[i];
+        return next;
+      }),
+    );
+  };
+  const isOn = (i: number) => pending[i] ?? !!safety.ticks[String(i)];
+  const done = safety.items.filter((_, i) => isOn(i)).length;
+  const r = safety.review;
+  return (
+    <Card>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="font-display text-[1.2rem] font-bold">Safety check</h2>
+        <span className="text-[0.85rem] font-bold" style={{ color: done === safety.items.length ? "#15803d" : O }}>
+          {done} of {safety.items.length} ticked
+        </span>
+      </div>
+      <p className="mt-1 text-[0.85rem] text-[#6a6a6a]">Tick each one when it's true for your whole project. The security reviewer checks your work against this list by 5 November.</p>
+      {r && (
+        <p className="mt-3 rounded-2xl px-4 py-3 text-[0.9rem] font-semibold" style={r.status === "passed" ? { background: "#dcfce7", color: "#14532d" } : { background: "#fde4dc", color: "#7a2410" }}>
+          {r.status === "passed" ? "✓ Passed the safety check" : "Needs fixes"} · {r.by}, {when(r.at)}
+          {r.note && <span className="mt-1 block font-normal">{r.note}</span>}
+        </p>
+      )}
+      <ul className="mt-3 space-y-2">
+        {safety.items.map((item, i) => {
+          const tick = safety.ticks[String(i)];
+          return (
+            <li key={item}>
+              <label className="flex cursor-pointer gap-3 rounded-2xl px-3 py-2.5" style={{ background: isOn(i) ? "#f0fdf4" : "#f6f3ee" }}>
+                <input type="checkbox" checked={isOn(i)} disabled={owner} onChange={(e) => toggle(i, e.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-[#131313]" />
+                <span className="text-[0.9rem] leading-snug">
+                  {item}
+                  {tick && <span className="mt-0.5 block text-[0.75rem] text-[#6a6a6a]">Ticked by {tick.by}</span>}
+                </span>
+              </label>
+            </li>
+          );
+        })}
+      </ul>
     </Card>
   );
 }

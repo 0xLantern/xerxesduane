@@ -71,20 +71,37 @@ export default function Showcase({ list, owner, busy, act, setNote }: { list: Pa
     ...sums.map(({ n, s }) => `${ch(n)?.title}: ${ch(n)?.build}${s?.public ? `\n${s.public}` : ""}\n`),
   ].join("\n");
 
+  /**
+   * The final report partners were promised: what each team built, in their
+   * own words, and the money in one paragraph. Posted as an update on every
+   * partner's page, and the line-by-line statement is switched on beside it.
+   */
   const postToPartners = async () => {
-    if (!window.confirm("Post every team's summary as an update on all partners' pages?")) return;
-    const res = await fetch("/api/hack-partners/invites", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        action: "update",
-        title: "What the teams built",
-        body: `On 21 November every team showed what they built over five weeks. Here is each one, in their own words.\n\n${forPartners}\n\nThank you for carrying this with us.`,
-      }),
+    if (!window.confirm("Post the final report on every partner's page, and show them the money statement?")) return;
+    const send = (body: unknown) =>
+      fetch("/api/hack-partners/invites", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    const got = await fetch("/api/hack-partners/invites", { credentials: "same-origin", cache: "no-store" });
+    const money = got.ok ? ((await got.json()) as { money?: { received: number; spent: number; left: number } | null }).money : null;
+    const aed = (n: number) => `AED ${n.toLocaleString("en-US")}`;
+    const moneyLine = money
+      ? `The money: ${aed(money.received)} came in from partners, and ${aed(money.spent)} has been spent so far, ${money.left >= 0 ? `with ${aed(money.left)} left` : `${aed(-money.left)} more than came in`}. The line-by-line statement is below on this page, and receipts are there for anyone who'd like to see them.`
+      : "";
+    const res = await send({
+      action: "update",
+      title: "What the teams built",
+      body: [
+        `On 21 November ${order.length} teams showed what they built over five weeks, working, not on slides. Here is each one, in their own words.`,
+        forPartners,
+        moneyLine,
+        "Thank you for carrying this with us. None of it happens without you.",
+      ]
+        .filter(Boolean)
+        .join("\n\n"),
     });
     const out = (await res.json().catch(() => ({}))) as { error?: string };
-    setNote(res.ok ? "Posted on every partner's page. Send each a nudge from the partner panel (/hp)." : (out.error ?? "That didn't post. Try again."));
+    if (!res.ok) return setNote(out.error ?? "That didn't post. Try again.");
+    if (money) await send({ action: "statement", on: true });
+    setNote("The final report is on every partner's page, with the money statement. Send each a nudge from the partner panel (/hp).");
   };
 
   return (
@@ -165,7 +182,7 @@ export default function Showcase({ list, owner, busy, act, setNote }: { list: Pa
         <div className="mt-3 flex flex-wrap gap-2">
           {owner && (
             <button type="button" disabled={busy || !sums.some((x) => x.s)} className={btn} style={{ background: INK, color: Y }} onClick={postToPartners}>
-              Post to partners as an update
+              Post the final report to partners
             </button>
           )}
           <button type="button" className={`${btn} border border-[#ccc]`} onClick={() => navigator.clipboard?.writeText(forPartners).then(() => setNote("Partner version copied."))}>
