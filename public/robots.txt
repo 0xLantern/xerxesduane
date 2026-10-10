@@ -37,5 +37,7 @@ Disallow: /ministry
 Disallow: /hack
 Disallow: /hp
 Disallow: /partners
+Disallow: /ht
+Disallow: /teams
 
 Sitemap: https://www.xerxesduane.com/sitemap.xml

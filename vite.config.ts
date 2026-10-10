@@ -60,7 +60,7 @@ export default defineConfig(({ isSsrBuild }) => {
         // never prerendered, so it only exists in the client build.
         // letters.html is the partner letters on ministry.xerxesduane.com, the same way.
         // join.html is the private briefing there (/join, /join/<code>).
-        input: { main: 'index.html', work: 'work.html', letters: 'letters.html', partners: 'partners.html', join: 'join.html' },
+        input: { main: 'index.html', work: 'work.html', letters: 'letters.html', partners: 'partners.html', join: 'join.html', teams: 'teams.html' },
         output: {
           manualChunks(id) {
             if (id.includes('node_modules')) {

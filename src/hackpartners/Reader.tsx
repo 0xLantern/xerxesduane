@@ -50,7 +50,108 @@ type Payload = {
   /** The Champion who sent this link; replies go to them. */
   from?: { name: string; whatsapp: string };
   response?: Kind | null;
+  /** Their own gift has been received. */
+  gave?: boolean;
+  /** Notes from Xerxes to every partner, newest first. */
+  updates?: Update[];
+  /** The money statement, once Xerxes switches it on. */
+  money?: Money | null;
 };
+type Update = { id: string; title: string; body: string; at: number };
+type Money = { received: number; spent: number; left: number; lines: { item: string; planned: number; spent: number }[] };
+
+/**
+ * Updates since this device last looked are marked "New". Which ones were
+ * seen is kept on this device only, and nothing is sent anywhere.
+ */
+function Updates({ updates }: { updates: Update[] }) {
+  const KEY = "hackp-updates-seen";
+  const [seenAt] = useState(() => {
+    try {
+      return Number(localStorage.getItem(KEY)) || 0;
+    } catch {
+      return 0;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(KEY, String(Math.max(...updates.map((u) => u.at))));
+    } catch {
+      /* private mode: everything just stays unmarked */
+    }
+  }, [updates]);
+  const day = (t: number) => new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", timeZone: "Asia/Dubai" }).format(new Date(t));
+  return (
+    <Section>
+      <h2 className="font-display text-[1.2rem] font-bold text-[#131313]">Updates</h2>
+      <div className="mt-3 space-y-3">
+        {updates.map((u) => (
+          <Box key={u.id} tone={u.at > seenAt ? "yellow" : "panel"}>
+            <p className="text-[0.78rem] font-bold uppercase tracking-wide text-[#7a7468]">
+              {day(u.at)}
+              {u.at > seenAt && (
+                <span className="ml-2 rounded-full px-2 py-0.5 text-[0.68rem] text-white" style={{ background: O }}>
+                  New
+                </span>
+              )}
+            </p>
+            <h3 className="mt-1 font-display text-[1.1rem] font-bold">{u.title}</h3>
+            <div className="mt-2 space-y-2 text-[0.95rem] leading-relaxed text-[#3a3a3a]">
+              {u.body.split(/\n{2,}/).map((para, i) => (
+                <p key={i} className="whitespace-pre-line">
+                  {para}
+                </p>
+              ))}
+            </div>
+            <p className="mt-2 text-[0.85rem] font-bold">Xerxes</p>
+          </Box>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+/** What came in and what went out, line by line. Totals only: never who gave. */
+function Statement({ money }: { money: Money }) {
+  return (
+    <Section>
+      <Box>
+        <h2 className="font-display text-[1.05rem] font-bold">How the money is used</h2>
+        <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+          {[
+            ["Received", money.received],
+            ["Spent", money.spent],
+            ["Left", money.left],
+          ].map(([label, n]) => (
+            <div key={label} className="rounded-xl px-2 py-2.5" style={{ background: "#f6f3ee" }}>
+              <p className="text-[0.75rem] font-semibold text-[#7a7468]">{label}</p>
+              <p className="font-display text-[1.1rem] font-extrabold tabular-nums">{aed(Number(n))}</p>
+            </div>
+          ))}
+        </div>
+        <table className="mt-4 w-full text-[0.88rem]">
+          <thead>
+            <tr className="text-left text-[0.75rem] text-[#7a7468]">
+              <th className="pb-2 font-semibold">Item</th>
+              <th className="pb-2 text-right font-semibold">Planned</th>
+              <th className="pb-2 text-right font-semibold">Spent</th>
+            </tr>
+          </thead>
+          <tbody>
+            {money.lines.map((l) => (
+              <tr key={l.item} className="border-t border-[#efebe3]">
+                <td className="py-1.5 pr-2 font-semibold">{l.item}</td>
+                <td className="py-1.5 text-right tabular-nums">{l.planned ? l.planned.toLocaleString("en-US") : "·"}</td>
+                <td className="py-1.5 text-right tabular-nums">{l.spent ? l.spent.toLocaleString("en-US") : "·"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="mt-2 text-[0.8rem] text-[#7a7468]">Updated as receipts come in. Ask Xerxes if you'd like to see any of them.</p>
+      </Box>
+    </Section>
+  );
+}
 
 /**
  * The four answers. Each tap records the answer (api/hack-partners/respond.ts)
@@ -310,6 +411,9 @@ export default function Reader({ code }: { code: string }) {
         </header>
 
         <main className="mx-auto max-w-3xl px-5 pb-16 sm:px-8">
+          {/* ---- updates, newest first, before everything else ---- */}
+          {data.updates && data.updates.length > 0 && <Updates updates={data.updates} />}
+
           {/* ---- program ---- */}
           <Section>
             <h2 className="font-display text-[1.2rem] font-bold text-[#131313]">The program</h2>
@@ -361,6 +465,11 @@ export default function Reader({ code }: { code: string }) {
                 <p className="mt-2 text-[0.82rem] leading-snug text-[#5a5640]">{c.ask.shareNote}</p>
               </Box>
             </div>
+            {data.gave && (
+              <p className="mt-5 rounded-2xl px-4 py-3 text-[0.95rem] font-semibold" style={{ background: INK, color: Y }}>
+                We've received your gift. Thank you for carrying this with us! 🙏
+              </p>
+            )}
             <Answers code={code} data={data} />
           </Section>
 
@@ -406,6 +515,8 @@ export default function Reader({ code }: { code: string }) {
               </ul>
             </Box>
           </Section>
+
+          {data.money && <Statement money={data.money} />}
 
           <Section className="grid gap-3 lg:grid-cols-2">
             <Box>
