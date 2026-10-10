@@ -17,6 +17,9 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://www.xerxesduane.com/brand/og/about.jpg">
 <meta name="color-scheme" content="light">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=JetBrains+Mono:wght@500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -42,11 +45,6 @@
 }
 </script>
 <style>
-  /* Self-hosted: the site's CSP blocks fonts.googleapis.com, so the Google
-     Fonts link this page used to carry never loaded in production. */
-  @font-face { font-family: "Plus Jakarta Sans"; font-style: normal; font-weight: 200 800; font-display: swap; src: url("/fonts/plus-jakarta-sans-var.woff2") format("woff2"); }
-  @font-face { font-family: "Fraunces"; font-style: normal; font-weight: 600; font-display: swap; src: url("/fonts/fraunces-600.woff2") format("woff2"); }
-  @font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 500; font-display: swap; src: url("/fonts/jetbrains-mono-500.woff2") format("woff2"); }
   :root {
     --navy: #112244;
     --ink: #17233a;
@@ -102,6 +100,11 @@
   .org { font-weight: 700; font-size: 18px; color: var(--navy); }
   .org-sub { display: block; font-weight: 400; font-size: 14px; color: var(--soft); }
   .dates { font-family: var(--mono); font-size: 13px; color: var(--soft); white-space: nowrap; }
+  .at { font-size: 16px; color: var(--soft); }
+  .at::before { content: " · "; color: var(--faint); }
+  .sub { font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-deep); margin: 14px 0 8px; }
+  .sub span { text-transform: none; letter-spacing: 0.02em; color: var(--soft); }
+  .ehead + ul { margin-top: 10px; }
   .role { font-size: 15px; font-weight: 600; color: var(--accent-deep); margin: 4px 0 10px; }
 
   ul { list-style: none; margin: 0; padding: 0; }
@@ -169,81 +172,112 @@
       <section class="profile">
         <h2>Profile</h2>
         <p class="lead">Church communications leader and minister with 9+ years in church, missions and digital ministry. I help churches communicate less but better: one clear voice, stories that point to Jesus, and simple systems that protect creative teams from noise.</p>
-        <p>At CAMACOP (3,700+ churches) I owned the communications policy and annual roadmap, managed 2 staff and 15 volunteers, and built the national Facebook page from zero to 35K followers. At Fellowship Dubai, after a one-year staff apprenticeship, I serve in the Communications team, where my 48 sermon reels in 2026 have drawn 232K+ views. Master of Divinity; delegate to the 4th Lausanne Congress.</p>
+        <p>At CAMACOP, a denomination of 3,700+ churches, I set up the digital ministry, owned the communications policy and annual roadmap, managed 2 staff and 15 volunteers, and grew the national Facebook page from zero to 35K followers. At Fellowship Dubai my 48 sermon reels in 2026 have drawn 232K+ views, and I have trained volunteers to run Alpha across two sites. Master of Divinity; 4th Lausanne Congress delegate, selected for the Young Leaders Gathering 2027.</p>
       </section>
 
       <section>
         <h2>Experience</h2>
-
         <div class="entry">
-          <div class="ehead"><span class="org">Great Commission Network (GCN), Switzerland</span><span class="dates">Sep 2026 to present</span></div>
-          <p class="role">Head of Technology (remote, part-time)</p>
+          <div class="ehead"><span><span class="org">Head of Technology</span><span class="at">Great Commission Network</span></span><span class="dates">Sep 2026 – Present</span></div>
           <ul>
-            <li>Lead GCN's digital platform, the global church and ministry directory on <a href="https://gcn.live">gcn.live</a>: architecture, data model and roadmap, directing the external agency that builds and runs it.</li>
+            <li>Remote and part-time, based in Dubai: lead GCN's global church and ministry directory on <a href="https://gcn.live">gcn.live</a>: architecture, data model and roadmap, directing the external agency that builds and runs it.</li>
           </ul>
         </div>
-
         <div class="entry">
-          <div class="ehead"><span class="org">Fellowship Dubai, Dubai</span><span class="dates">Sep 2025 to present</span></div>
-          <p class="role">Apprentice, GO Ministry (staff), Sep 2025 to Sep 2026<br>Volunteer, Communications and Digital &amp; Online Ministry, Sep 2026 to present</p>
+          <div class="ehead"><span><span class="org">Ministry Apprentice &amp; Volunteer</span><span class="at">Fellowship Dubai</span></span><span class="dates">Sep 2025 – Present</span></div>
+          <p class="sub">Communications <span>· volunteer</span></p>
           <ul>
-            <li>Produced 48 sermon reels for Facebook and Instagram from January to October 2026: 232K+ views and 9,300+ interactions, with the top reel at 25.8K views. Raising output from 1 to 4 reels a month to 9 to 12 lifted monthly reel views from a 16K average to 53K in July.</li>
-            <li>Photographed, filmed and edited the weekly baptisms, typically 5 to 10 people a week, and covered every testimony, in coordination with the Communications team.</li>
-            <li>Directed the small groups testimony video with the Graphic Designer, working alongside the Communications Director and Videographer.</li>
-            <li>Taught the Communications Director and Graphic Designer to manage the website favicon, WhatsApp link previews and event redirect links.</li>
-            <li>Created the 20th anniversary timeline for an 8 × 2 m LED wall: 1,800+ member photos on a grapevine timeline, each beside the year their Fellowship journey began.</li>
-            <li>Built the <a href="https://alpha-atfellowship.lovable.app">Alpha mobilisation app</a>: leaders and members send around 50 personalised WhatsApp invitations per course, with graphics, scripts and host training in one place.</li>
-            <li>Coordinated Alpha and discipleship across three sites and 120 nationalities, coaching leaders to run Alpha and small groups themselves; set up a Google Drive resource hub for Alpha leaders; trained volunteers in Planning Center and attendance tracking.</li>
+            <li>Wrote and produced 48 sermon reels for Facebook and Instagram, January to October 2026: 232K+ views and 9,300+ interactions, with the top reel at 25.8K views. Raising output from 1 to 4 reels a month to 9 to 12 lifted monthly views from a 16K average to 53K in July.</li>
+            <li>Directed the small groups testimony video; photographer and videographer for Single or Knot (Young Adults) and Summer Holiday Club (Kids Ministry).</li>
+            <li>Created the 20th anniversary timeline for an 8 × 2 m LED wall: 1,800+ member photos on a grapevine, each beside the year their Fellowship journey began.</li>
+                      </ul>
+          <p class="sub">Ministry <span>· GO Ministry apprentice (staff), to Sep 2026</span></p>
+          <ul>
+            <li>Photographed, filmed and edited the weekly baptisms, typically 5 to 10 people a week, and every testimony, in coordination with the Communications team; trained a volunteer to take better baptism photos and video.</li>
+            <li>Coordinated Alpha in two sites: ran five small Alphas and two Alpha at Home courses, then trained volunteers to run them; now direct the team leaders.</li>
+            <li>Launched Alpha in Farsi, since run twice by a volunteer I trained; built a Google Drive resource hub for Alpha leaders and trained volunteers in Planning Center and attendance tracking.</li>
+            <li>Built the Alpha mobilisation app (<a href="https://alpha-atfellowship.lovable.app">alpha-atfellowship.lovable.app</a>): leaders and members send around 50 personalised WhatsApp invitations per course, with graphics, scripts and host training in one place.</li>
             <li>Built S.H.A.P.E. Discovery and the SERVE Dashboard to match people with serving teams; completed by nearly 300 people since spring 2026.</li>
+            <li>Taught Discipleshop (tools for disciples to make disciples) and led a small group; one man I discipled now leads his own group and has reached six <span style="white-space:nowrap">co-workers</span>, who now attend Fellowship regularly.</li>
             <li>Help lead worship at Fellowship's multicultural church plant in Sharjah.</li>
           </ul>
         </div>
-
+      
         <div class="entry">
-          <div class="ehead"><span><span class="org">CAMACOP National Office</span><span class="org-sub">Christian and Missionary Alliance Churches of the Philippines</span></span><span class="dates">Jul 2022 to Aug 2023</span></div>
-          <p class="role">Communications Officer</p>
+          <div class="ehead"><span><span class="org">Associate Pastor</span><span class="at">CAA Alliance Christian Church</span></span><span class="dates">Sep 2023 – Sep 2024</span></div>
           <ul>
-            <li>Pioneered the digital ministry of a denomination of 3,700+ churches, reporting to the Director; owned the communications policy and annual communications roadmap.</li>
+            <li>Handled the youth ministry and the digital ministry of the church.</li>
+          </ul>
+        </div>
+        <div class="entry">
+          <div class="ehead"><span><span class="org">Communications Officer</span><span class="at">CAMACOP National Office</span></span><span class="dates">Jul 2022 – Aug 2023</span></div>
+          <ul>
+            <li>Set up the digital ministry for CAMACOP (Christian and Missionary Alliance Churches of the Philippines), 3,700+ churches; owned its communications policy and annual roadmap, reporting to the National Director.</li>
             <li>Launched the national Facebook page and YouTube channel from zero, growing them to 35K followers and 1,100+ subscribers (61 videos, 35K+ views).</li>
-            <li>Produced a fundraising film for a floating school in Basilan that raised PHP 300,000; the building has been completed.</li>
-            <li>Managed 2 paid staff and 15 volunteers across creative, production, development and IT.</li>
-            <li>Led production and creative teams for a national assembly of 5,000+ participants, managing timelines, production and vendors.</li>
-            <li>Redirected a request for a separate ministry Facebook page into a sub-brand within the main page plus a website page, adopted by the Director; moved team coordination from Messenger groups to Slack.</li>
+            <li>Managed 2 paid staff and 15 volunteers across creative, production, development and IT; both staff took over parts of my role when I left and still serve at CAMACOP.</li>
+            <li>Led production and creative teams for a national assembly of 5,000+ participants, managing timelines, stage announcements and vendors.</li>
+            <li>Redirected the Director's request for a separate ministry Facebook page into a sub-brand inside the main page plus a web page, which she adopted; moved team coordination from Messenger to Slack.</li>
+            <li>Produced a fundraising film for a floating school in Basilan that raised PHP 300,000; the school is now built.</li>
           </ul>
         </div>
-
         <div class="entry">
-          <div class="ehead"><span><span class="org">Freelance Minister</span><span class="org-sub">Sent by my home church in the Philippines</span></span><span class="dates">2023 to 2025</span></div>
+          <div class="ehead"><span><span class="org">Volunteer</span><span class="at">ministry, media and missions</span></span><span class="dates">2023 – 2025</span></div>
           <ul>
-            <li>Filmed church-planting and mission work across the Philippines and at Phu Sang School in Phayao, Thailand; a fundraising film raised PHP 250,000 for a church building in Batanes.</li>
-            <li>Led digital outreach and discipleship training for churches in the Philippines and Thailand.</li>
+            <li>Cru Digital Strategies: helped train 5,000+ church leaders from different church organisations in digital strategy.</li>
+            <li>HELPS Ministries (Discovery Bible): Bible app marketing and sales; helped develop the mobile app.</li>
+            <li>OMF East Asia Mobilization: social media content creator and filmmaker.</li>
+            <li>Filmed church-planting and mission work across the Philippines and at Lanna Christian School, a ministry among the Thai; a fundraising film raised PHP 250,000 for a church building in Batanes.</li>
+            <li>Pampanga church vision film: director, model and co-editor. Discovery Bible teaching video: director and editor.</li>
+            <li>Led digital outreach and discipleship training for 50 churches and 10,000 people in the Philippines and Thailand.</li>
           </ul>
         </div>
-
         <div class="entry">
-          <div class="ehead"><span class="org">Indigitous #HACK</span><span class="dates">2023 to present</span></div>
-          <p class="role">Champion, Manila (2023); Coach (2024); Champion, Dubai (current)</p>
+          <div class="ehead"><span><span class="org">Champion and Coach</span><span class="at">Indigitous #HACK, a global Christian hackathon</span></span><span class="dates">2023 – Present</span></div>
           <ul>
-            <li>Recruited and led 10 volunteers to run #HACK in Manila; recognised by Indigitous for mentoring champions at Global #HACK 2024; now lead a multicultural volunteer team for #HACK Dubai.</li>
+            <li>Champion in Manila (2023), coach (2024), now champion in Dubai. Recruited and led 10 volunteers to run #HACK Manila; recognised by Indigitous for mentoring champions at Global #HACK 2024.</li>
           </ul>
         </div>
-
         <div class="entry">
-          <div class="ehead"><span class="org">Earlier ministry</span><span class="dates">2017 to 2022</span></div>
+          <div class="ehead"><span><span class="org">Worship &amp; Digital Ministry Pastor</span><span class="at">Bacolod City Alliance Church</span></span><span class="dates">2021 – 2022</span></div>
           <ul>
-            <li><strong>Worship &amp; Digital Ministry Pastor</strong>, Bacolod City Alliance Church (2021 to 2022): led the worship and Sunday service team of 12 volunteers, from worship leading to service flow and production; introduced Planning Center for the worship team and service programmes; built an e-learning platform so discipleship continued through the pandemic.</li>
-            <li><strong>Youth Pastor</strong>, Faith in Christ Fellowship, Baguio (2018 to 2021): led the youth leaders team across youth ministry, programmes and campus ministry, training student leaders to disciple others.</li>
-            <li><strong>Campus Minister</strong> (2017 to 2018).</li>
+            <li>Led the worship and Sunday service team of 12 volunteers, from worship and weekend announcements to service flow and production; introduced Planning Center; built an e-learning platform for discipleship during COVID-19.</li>
           </ul>
         </div>
-
         <div class="entry">
-          <div class="ehead"><span class="org">Digital, marketing and web work</span><span class="dates">2019 to present</span></div>
+          <div class="ehead"><span><span class="org">Youth Pastor</span><span class="at">Faith in Christ Fellowship, Baguio</span></span><span class="dates">2018 – 2021</span></div>
           <ul>
-            <li><strong>Founder, Xerxes Duane, Dubai:</strong> websites, CRM and paid media for 50+ organisations; grew a client's organic traffic by 90%.</li>
-            <li><strong>AYA Home Spa:</strong> ran the content calendar and wrote the social media and brand guidelines; Meta campaign reached 54K people with 98K video plays.</li>
-            <li><strong>We Aspire Education</strong> (2024 to 2025): qualified inbound leads up 90% through website, SEO and social media.</li>
-            <li><strong>Gilani Mobility</strong> (2025, contract): e-commerce website and SEO.</li>
+            <li>Led the youth leaders team across youth ministry, programmes and campus ministry, training student leaders to disciple others.</li>
+          </ul>
+        </div>
+        <div class="entry">
+          <div class="ehead"><span><span class="org">Campus Minister</span><span class="at">full-time campus ministry, Philippines</span></span><span class="dates">2017 – 2018</span></div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Digital, marketing and web</h2>
+        <div class="entry">
+          <div class="ehead"><span><span class="org">Founder</span><span class="at">Xerxes Duane, Dubai</span></span><span class="dates">2019 – Present</span></div>
+          <ul>
+            <li>Websites, CRM and paid media for 50+ organisations.</li>
+          </ul>
+        </div>
+        <div class="entry">
+          <div class="ehead"><span><span class="org">Web, SEO and Social Media</span><span class="at">We Aspire Education</span></span><span class="dates">Nov 2024 – Aug 2025</span></div>
+          <ul>
+            <li>Grew organic traffic and qualified inbound leads by 90% each.</li>
+          </ul>
+        </div>
+        <div class="entry">
+          <div class="ehead"><span><span class="org">E-commerce Web and SEO</span><span class="at">Gilani Mobility (contract)</span></span><span class="dates">Apr 2025 – Aug 2025</span></div>
+          <ul>
+            <li>Built the e-commerce website; grew organic traffic by 90%.</li>
+          </ul>
+        </div>
+        <div class="entry">
+          <div class="ehead"><span><span class="org">Social Media and Brand</span><span class="at">AYA Home Spa (contract)</span></span><span class="dates">Nov 2024 – Mar 2025</span></div>
+          <ul>
+            <li>Ran the content calendar and wrote the brand and social media guidelines; Meta campaign reached 54K people, 98K video plays.</li>
           </ul>
         </div>
       </section>
@@ -251,10 +285,10 @@
       <section>
         <h2>Training, speaking and community</h2>
         <ul>
-          <li>Trained 10,000+ youths and students, and helped train 5,000+ leaders across five denominations in digital outreach as a Cru Digital Strategies volunteer.</li>
-          <li>Speaker and trainer: Movement Day Middle East 2026, FaithTech Dubai 2026, the 57th CAMACOP General Assembly 2023, and churches and youth camps in the Philippines and Thailand.</li>
-          <li>Delegate to the 4th Lausanne Congress, Seoul 2024; selected for the Young Leaders Gathering 2027.</li>
-          <li>Co-lead Alpha Youth Lab and FaithTech Dubai; write daily Bible reading notes for Scripture Union Philippines; Discovery Bible ambassador since 2020.</li>
+          <li>Trained 10,000+ youths and students at camps, churches and campuses.</li>
+          <li>Speaker and trainer: Movement Day Middle East 2026, FaithTech Dubai 2026, the 57th CAMACOP General Assembly 2023, and churches and youth camps in the Philippines and Thailand; church leader workshops on AI, digital outreach, digital discipleship and the Discovery Bible App (ambassador since 2020).</li>
+          <li>Delegate to the 4th Lausanne Congress, Seoul 2024, among 5,000+ leaders from around the world; selected for the Young Leaders Gathering 2027.</li>
+          <li>Co-lead Alpha Youth Lab and FaithTech Dubai; write daily Bible reading notes for Scripture Union Philippines.</li>
           <li>Developed a volunteer who now leads the communications team at my home church in the Philippines.</li>
         </ul>
       </section>
@@ -295,12 +329,12 @@
       <section>
         <h2>Training and certifications</h2>
         <ul>
-          <li>Communicating a Clear Vision for Missional Innovation (Indigitous, 2026)</li>
+          <li>Perspectives on the World Christian Movement (Fellowship Dubai)</li>
+          <li>Indigitous: Communicating a Clear Vision for Missional Innovation (2026); Innovation Designer, with OneHope (2025)</li>
           <li>Church Communications and Digital Strategy (Pontifical University of the Holy Cross)</li>
           <li>Ministry Sciences and Communications (Christian Leaders)</li>
-          <li>Innovation Designer (Indigitous and OneHope, 2025)</li>
           <li>HubSpot Social Media and Semrush Brand Voice (2026)</li>
-          <li>Christian-Muslim dialogue intensive (Silsilah, Zamboanga)</li>
+          <li>Christian-Muslim dialogue, one-month intensive (Silsilah Dialogue Movement, Zamboanga)</li>
         </ul>
       </section>
 

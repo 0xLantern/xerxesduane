@@ -361,6 +361,7 @@ const TRAINING: { heading: string; items: TrainingItem[] }[] = [
     heading: "Missions",
     items: [
       { label: "Leadership Lab: Communicating a Clear Vision for Missional Innovation", detail: "Indigitous, 2026" },
+      { label: "Perspectives on the World Christian Movement", detail: "Fellowship Dubai" },
       { label: "Introduction to Strategic Missions", detail: "AIMS & Asian Center for Missions, 2025", href: "/ministry/credentials/aims-strategic-missions.pdf" },
       { label: "Pre-Candidate Orientation Training", detail: "Pioneers in Asia, 2024", href: "/ministry/credentials/pioneers-in-asia-orientation.webp" },
       { label: "Digital Missions Launchpad", detail: "Discipleship.Space, Cru Philippines & Indigitous, 2022", href: "/ministry/credentials/digital-missions-launchpad.pdf" },
@@ -428,9 +429,14 @@ const ROAD: { years: string; title: string; body: string }[] = [
     body: "At the National Office, where I started the denomination's digital ministry: pioneering its social media ministry, its websites and YouTube, and the filming of its church-planting ministry.",
   },
   {
+    years: "2023–2024",
+    title: "Associate Pastor, CAA Alliance Christian Church",
+    body: "Handled the youth ministry and the digital ministry of the church.",
+  },
+  {
     years: "2023–2025",
     title: "Freelance missionary",
-    body: "Sent out by my home church in the Philippines. On mission to islands across the Philippines and to Phayao, Thailand, filming church-planting ministries. One fundraising film helped fund a church-planting building in Batanes.",
+    body: "Sent out by my home church in the Philippines. On mission to islands across the Philippines and to Phayao, Thailand, filming church-planting ministries, and a content creator and filmmaker for OMF East Asia Mobilization. One fundraising film helped fund a church-planting building in Batanes.",
   },
   {
     years: "2023–2024",
@@ -450,7 +456,7 @@ const ROAD: { years: string; title: string; body: string }[] = [
   {
     years: "2025–2026",
     title: "Fellowship Dubai",
-    body: "An apprenticeship from September 2025 to September 2026: coordinating Alpha and discipleship, coaching leaders to run Alpha themselves, and helping with communications and digital outreach. I now continue there as a volunteer.",
+    body: "An apprenticeship from September 2025 to September 2026: coordinating Alpha in two sites and training volunteers to run it, launching Alpha in Farsi, teaching Discipleshop, and helping with communications and digital outreach. I now continue there as a volunteer.",
   },
   {
     years: "2026–present",
@@ -467,6 +473,10 @@ const ALONGSIDE = [
   {
     title: "The Discovery Bible (HELPS Ministries)",
     body: "Since 2020, as an ambassador, I have taught and coached pastors, churches, and denominations in this exegetical study tool: theological and pastoral training, not only software.",
+  },
+  {
+    title: "OMF East Asia Mobilization",
+    body: "As a volunteer, a social media content creator and filmmaker for mission mobilization.",
   },
   {
     title: "Ratio Christi",
@@ -991,9 +1001,10 @@ export default function Ministry() {
                         The denomination saw that work and brought me into the National Office of
                         CMA-Philippines as Communications Officer, from 2022 to 2023. There I started
                         the organization&rsquo;s digital ministry: pioneering its social media ministry,
-                        its websites and YouTube, and the filming of its church-planting ministry. From
-                        2023 to 2025 my home church in the Philippines sent me out as a freelance
-                        missionary, on mission to islands across the Philippines and to Phayao,
+                        its websites and YouTube, and the filming of its church-planting ministry.
+                        From 2023 to 2024 I served as associate pastor at CAA Alliance Christian
+                        Church, handling its youth and digital ministry, and from 2023 to 2025 my
+                        home church in the Philippines sent me out as a freelance missionary, on mission to islands across the Philippines and to Phayao,
                         Thailand, filming church-planting ministries.
                         That road led me to Indigitous #HACK in Manila, then to the 4th Lausanne
                         Congress in Seoul, South Korea, and on to Dubai.
@@ -1002,8 +1013,9 @@ export default function Ministry() {
                       <p>
                         From September 2025 to September 2026 I served an apprenticeship with{" "}
                         <Ext href="https://fellowshipdubai.com/">Fellowship Dubai</Ext>, coordinating
-                        Alpha and discipleship across the church, coaching leaders to run Alpha
-                        themselves, and helping with the church&rsquo;s communications and digital
+                        Alpha in two sites and training volunteers to run it, launching Alpha in
+                        Farsi, teaching Discipleshop (tools for disciples to make disciples), and
+                        helping with the church&rsquo;s communications and digital
                         outreach. With the apprenticeship complete, I now:
                       </p>
                       <ul className="list-disc space-y-1.5 pl-5">
@@ -1102,7 +1114,9 @@ export default function Ministry() {
                     Theological Seminary there. Then, from 2021 to 2022, during the pandemic, I
                     served as worship and digital ministry pastor at Bacolod City Alliance Church,
                     and from 2022 to 2023 as Communications Officer at the National Office of
-                    CMA-Philippines, where I started its digital ministry.
+                    CMA-Philippines, where I started its digital ministry. From 2023 to 2024 I was
+                    associate pastor at CAA Alliance Christian Church, handling its youth and digital
+                    ministry.
                   </p>
                   <p>
                     From 2023 to 2025 my home church in the Philippines sent me out as a freelance
