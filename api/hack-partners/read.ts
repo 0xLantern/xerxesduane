@@ -23,8 +23,12 @@ import {
   parse,
   redis,
   underLimit,
+  statement,
+  type Gift,
   type Invite,
   type Seen,
+  type Spend,
+  type Update,
 } from "./_lib";
 
 export const config = { runtime: "edge" };
@@ -56,10 +60,12 @@ export default handle(async (req) => {
   const d = u.searchParams.get("d") ?? "";
   if (!CODE.test(c) || Date.now() > EXPIRES_AT) return reply({ error: GONE }, 404);
 
-  const [rawInvite, rawSeen, rawPlaces] = await redis([
+  const [rawInvite, rawSeen, rawPlaces, rawUpdates, statementOn] = await redis([
     ["HGET", `${K}invites`, c],
     ["GET", `${K}seen:${c}`],
     ["GET", `${K}places`],
+    ["LRANGE", `${K}updates`, 0, 49],
+    ["GET", `${K}statement`],
   ]);
   const invite = parse<Invite>(rawInvite);
   if (!invite) return reply({ error: GONE }, 404);
@@ -106,6 +112,24 @@ export default handle(async (req) => {
   }
 
   const taken = Math.max(0, Math.min(CONTENT.ask.places, Number(rawPlaces) || 0));
+  const updates = (Array.isArray(rawUpdates) ? rawUpdates : []).map((r) => parse<Update>(r)).filter((x): x is Update => !!x);
+
+  // The money statement, once the owner has switched it on: totals only, never who gave.
+  let money = null;
+  if (statementOn === "1") {
+    const [all, rawSpend] = await redis([
+      ["HGETALL", `${K}invites`],
+      ["LRANGE", `${K}spend`, 0, 199],
+    ]);
+    const flat = Array.isArray(all) ? (all as string[]) : [];
+    const gifts: Gift[] = [];
+    for (let i = 0; i + 1 < flat.length; i += 2) {
+      const g = parse<Invite>(flat[i + 1])?.gift;
+      if (g) gifts.push(g);
+    }
+    const spend = (Array.isArray(rawSpend) ? rawSpend : []).map((r) => parse<Spend>(r)).filter((x): x is Spend => !!x);
+    money = statement(gifts, spend, CONTENT.budget);
+  }
   return reply({
     // How they are greeted, and what the watermark says (src/hackpartners/greet.ts).
     name: greetName(invite.name),
@@ -116,5 +140,9 @@ export default handle(async (req) => {
     // Replies go to whoever sent the link.
     from: championContact(invite.by),
     response: invite.response?.kind ?? null,
+    // Whether this partner's own gift has been received, so their page can say thank you.
+    gave: !!invite.gift,
+    updates,
+    money,
   });
 });

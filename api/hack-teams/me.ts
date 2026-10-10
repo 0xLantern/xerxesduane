@@ -40,6 +40,7 @@ import {
   type Prefs,
   type Seen,
   type Skill,
+  type Summary,
 } from "./_lib";
 
 export const config = { runtime: "edge" };
@@ -102,9 +103,10 @@ async function view(person: Person, owner: boolean) {
   if (!announced || !person.team) return { ...base, team: null };
 
   const n = person.team;
-  const [all, rawCheckins] = await redis([
+  const [all, rawCheckins, rawSummary] = await redis([
     ["HGETALL", `${K}people`],
     ["LRANGE", `${K}checkins:${n}`, 0, 49],
+    ["GET", `${K}summary:${n}`],
   ]);
   const flat = Array.isArray(all) ? (all as string[]) : [];
   const members: { name: string; role: string; you: boolean }[] = [];
@@ -114,7 +116,7 @@ async function view(person: Person, owner: boolean) {
   }
   members.sort((a, b) => Number(b.you) - Number(a.you) || a.name.localeCompare(b.name));
   const checkins = (Array.isArray(rawCheckins) ? rawCheckins : []).map((r) => parse<CheckIn>(r)).filter((x): x is CheckIn => !!x);
-  return { ...base, team: { n, role: person.role ?? "", members, brief: briefFor(n), checkins } };
+  return { ...base, team: { n, role: person.role ?? "", members, brief: briefFor(n), checkins, summary: parse<Summary>(rawSummary) } };
 }
 
 export default handle(async (req) => {
@@ -182,6 +184,22 @@ export default handle(async (req) => {
         PANEL,
       );
     }
+    return reply(await view(person, false));
+  }
+
+  if (b.action === "summary") {
+    if (!announced || !person.team) return reply({ error: "The summary opens once you're in a team." }, 409);
+    const summary: Summary = {
+      built: clean(b.built, 700),
+      helps: clean(b.helps, 500),
+      works: clean(b.works, 500),
+      next: clean(b.next, 500),
+      public: clean(b.public, 200),
+      by: greetName(person.name),
+      at: Date.now(),
+    };
+    if (!summary.built) return reply({ error: "Say what your team built." }, 400);
+    await redis([["SET", `${K}summary:${person.team}`, JSON.stringify(summary)]]);
     return reply(await view(person, false));
   }
 

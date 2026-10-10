@@ -7,6 +7,7 @@
 //   POST {action:"assign", code, team, role}    place one person (team 0 takes them out)
 //   POST {action:"assignMany", assignments}     place many at once (the panel's "Suggest teams")
 //   POST {action:"announce", on}                show (or hide) the teams on everyone's page
+//   POST {action:"show", order, present, qa, start}   the 21 November running order and timings
 //
 // Two ways in, as on the partner panel: the owner signed in with the /letters
 // login, or a co-Champion by their HACKP_CHAMPIONS secret in the
@@ -31,9 +32,12 @@ import {
   requireOwner,
   sameOrigin,
   underLimit,
+  SHOW_DEFAULT,
   type CheckIn,
   type Person,
   type Seen,
+  type Show,
+  type Summary,
 } from "./_lib";
 
 export const config = { runtime: "edge" };
@@ -73,12 +77,18 @@ export default handle(async (req) => {
     const people = await everyone();
     const extra = await redis([
       ["GET", `${K}published`],
+      ["GET", `${K}show`],
       ...people.map((p) => ["GET", `${K}seen:${p.code}`]),
       ...CHALLENGE_NS.map((n) => ["LRANGE", `${K}checkins:${n}`, 0, 19]),
+      ...CHALLENGE_NS.map((n) => ["GET", `${K}summary:${n}`]),
     ]);
     const announced = extra[0] === "1";
-    const seen = extra.slice(1, 1 + people.length);
-    const lists = extra.slice(1 + people.length);
+    const show: Show = parse<Show>(extra[1]) ?? { order: [], ...SHOW_DEFAULT };
+    const seen = extra.slice(2, 2 + people.length);
+    const lists = extra.slice(2 + people.length, 2 + people.length + CHALLENGE_NS.length);
+    const sums = extra.slice(2 + people.length + CHALLENGE_NS.length);
+    const summaries: Record<number, Summary | null> = {};
+    CHALLENGE_NS.forEach((n, i) => (summaries[n] = parse<Summary>(sums[i])));
     const rows = people
       .map((p, i) => {
         const s = parse<Seen>(seen[i]) ?? { devices: [], countries: [] };
@@ -89,7 +99,7 @@ export default handle(async (req) => {
     CHALLENGE_NS.forEach((n, i) => {
       checkins[n] = (Array.isArray(lists[i]) ? (lists[i] as unknown[]) : []).map((r) => parse<CheckIn>(r)).filter((x): x is CheckIn => !!x);
     });
-    return json({ people: rows, announced, checkins, expiresAt: EXPIRES_AT, me }, 200, noStore);
+    return json({ people: rows, announced, checkins, summaries, show, expiresAt: EXPIRES_AT, me }, 200, noStore);
   }
 
   if (req.method !== "POST") return errorResponse("Method not allowed.", 405);
@@ -126,6 +136,15 @@ export default handle(async (req) => {
   if (action === "announce") {
     await redis([b.on ? ["SET", `${K}published`, "1"] : ["DEL", `${K}published`]]);
     return json({ announced: !!b.on }, 200, noStore);
+  }
+
+  if (action === "show") {
+    const order = (Array.isArray(b.order) ? b.order : []).map(Number).filter((n, i, a) => isChallenge(n) && a.indexOf(n) === i);
+    const minutes = (v: unknown, d: number) => Math.max(1, Math.min(30, Math.round(Number(v) || d)));
+    const start = /^([01]\d|2[0-3]):[0-5]\d$/.test(String(b.start ?? "")) ? String(b.start) : SHOW_DEFAULT.start;
+    const show: Show = { order, present: minutes(b.present, SHOW_DEFAULT.present), qa: minutes(b.qa, SHOW_DEFAULT.qa), start };
+    await redis([["SET", `${K}show`, JSON.stringify(show)]]);
+    return json({ show }, 200, noStore);
   }
 
   // The rest act on one person.

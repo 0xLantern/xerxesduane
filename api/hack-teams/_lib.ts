@@ -19,6 +19,8 @@
 //   seen:<code>        Seen JSON: devices and countries it was opened from
 //   published          "1" once the Champions have announced the teams
 //   checkins:<n>       list, newest first: CheckIn JSON for challenge n's team
+//   summary:<n>        Summary JSON: challenge n's one-page summary for showcase night
+//   show               Show JSON: the 21 November running order and timings
 //
 // Who may run the panel: the owner (the /letters login), or a co-Champion by
 // the same secret as their partner panel (HACKP_CHAMPIONS), at
@@ -85,6 +87,19 @@ export type CheckIn = {
   help: string;
   at: number;
 };
+
+/**
+ * A team's one-page summary for showcase night. Everything but `public` is
+ * for the Champions and the partners; `public` is the one line the team
+ * agrees could be shared beyond them, for example with Indigitous.
+ */
+export type Summary = { built: string; helps: string; works: string; next: string; public: string; by: string; at: number };
+
+/** The 21 November running order: which teams, in what order, and for how long. */
+export type Show = { order: number[]; present: number; qa: number; start: string };
+
+/** As the public program has it: presentations from 6:40, five minutes and two for questions. */
+export const SHOW_DEFAULT: Omit<Show, "order"> = { present: 5, qa: 2, start: "18:40" };
 
 /** Plain text from a form field: one line or a few, trimmed and capped. */
 export function clean(v: unknown, max: number): string {

@@ -16,6 +16,7 @@ import { HOURS, SKILLS, type Hours, type Skill } from "./shared";
 
 type Prefs = { first: number; second: number | null; skills: Skill[]; hours: Hours; dinner: "yes" | "no"; note: string; at: number };
 type CheckIn = { by: string; did: string; next: string; help: string; at: number };
+type Summary = { built: string; helps: string; works: string; next: string; public: string; by: string; at: number };
 type Brief = {
   n: number;
   title: string;
@@ -39,7 +40,14 @@ type Payload = {
   expiresAt: number;
   prefs: Prefs | null;
   announced: boolean;
-  team: null | { n: number; role: string; members: { name: string; role: string; you: boolean }[]; brief: Brief | null; checkins: CheckIn[] };
+  team: null | {
+    n: number;
+    role: string;
+    members: { name: string; role: string; you: boolean }[];
+    brief: Brief | null;
+    checkins: CheckIn[];
+    summary: Summary | null;
+  };
 };
 
 const INK = "#131313";
@@ -396,6 +404,7 @@ function TeamView({
       {b && <BriefView b={b} />}
       <Dates n={team.n} />
       <CheckIns team={team} owner={data.owner} post={post} />
+      <OnePager summary={team.summary} owner={data.owner} post={post} />
 
       <Card>
         <h2 className="font-display text-[1.2rem] font-bold">How you'll be judged</h2>
@@ -562,6 +571,72 @@ function Dates({ n }: { n: number }) {
       </ol>
       {kit && <p className="mt-3 text-[0.82rem] text-[#6a6a6a]">Website kit teams: Team 01's page structure is settled by the 29 October check-in, so Teams 02 and 03 can build on it.</p>}
       {n === 7 && <p className="mt-3 text-[0.82rem] text-[#6a6a6a]">Provision: get the legal question answered in week 1.</p>}
+    </Card>
+  );
+}
+
+/**
+ * The team's one-page summary for 21 November. One shared copy per team: the
+ * latest save wins, and it says who saved it. The Champions read it out on
+ * the night and turn it into the partners' report.
+ */
+function OnePager({ summary, owner, post }: { summary: Summary | null; owner: boolean; post: (b: Record<string, unknown>) => Promise<string | null> }) {
+  const [built, setBuilt] = useState(summary?.built ?? "");
+  const [helps, setHelps] = useState(summary?.helps ?? "");
+  const [works, setWorks] = useState(summary?.works ?? "");
+  const [next, setNext] = useState(summary?.next ?? "");
+  const [pub, setPub] = useState(summary?.public ?? "");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(summary ? `Last saved by ${summary.by}, ${when(summary.at)}.` : "");
+  const field = "mt-1 w-full rounded-2xl border-2 border-[#d9d4c8] px-4 py-2.5 text-[0.95rem] font-normal focus:border-[#131313] focus:outline-none";
+  const save = async () => {
+    setBusy(true);
+    const err = await post({ action: "summary", built, helps, works, next, public: pub });
+    setBusy(false);
+    setMsg(err ?? "Saved for the whole team. Thank you!");
+  };
+  return (
+    <Card>
+      <h2 className="font-display text-[1.2rem] font-bold">Your one-pager for 21 November</h2>
+      <p className="mt-1 text-[0.85rem] text-[#6a6a6a]">
+        One shared copy for the team: whoever saves last wins. Have it ready for the practice run on 19 November. The Champions use it on the night and in the report to
+        partners.
+      </p>
+      <label className="mt-4 block text-[0.9rem] font-bold">
+        What did you build?
+        <textarea value={built} onChange={(e) => setBuilt(e.target.value)} maxLength={700} rows={3} className={field} />
+      </label>
+      <label className="mt-3 block text-[0.9rem] font-bold">
+        Who does it help, and how?
+        <textarea value={helps} onChange={(e) => setHelps(e.target.value)} maxLength={500} rows={2} className={field} />
+      </label>
+      <label className="mt-3 block text-[0.9rem] font-bold">
+        What works today, and who tested it?
+        <textarea value={works} onChange={(e) => setWorks(e.target.value)} maxLength={500} rows={2} className={field} />
+      </label>
+      <label className="mt-3 block text-[0.9rem] font-bold">
+        What's next for it?
+        <textarea value={next} onChange={(e) => setNext(e.target.value)} maxLength={500} rows={2} className={field} />
+      </label>
+      <label className="mt-3 block text-[0.9rem] font-bold">
+        One line we could share publicly <span className="font-normal text-[#6a6a6a]">(optional)</span>
+        <input value={pub} onChange={(e) => setPub(e.target.value)} maxLength={200} className={field} />
+        <span className="mt-1 block text-[0.78rem] font-normal text-[#6a6a6a]">For people beyond the partners, such as the wider #HACK network. No names, places or who it's for.</span>
+      </label>
+      <button
+        type="button"
+        onClick={save}
+        disabled={busy || owner || !built.trim()}
+        className="mt-4 rounded-full px-5 py-2.5 font-display font-extrabold transition hover:-translate-y-0.5 disabled:opacity-50"
+        style={{ background: Y, color: INK }}
+      >
+        {busy ? "Saving…" : "Save the one-pager"}
+      </button>
+      {msg && (
+        <p className="mt-2 text-[0.9rem] font-semibold text-[#333]" aria-live="polite">
+          {msg}
+        </p>
+      )}
     </Card>
   );
 }

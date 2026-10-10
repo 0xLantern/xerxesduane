@@ -15,7 +15,11 @@
 // Storage is the site's Redis, under hackp:v1:
 //   invites            hash, code -> Invite JSON
 //   seen:<code>        Seen JSON: devices and countries it was opened from
-//   places             how many of the ten places are taken (owner sets it)
+//   places             how many of the ten places are taken (set by hand, or
+//                      worked out from recorded gifts: AED 300 a place)
+//   updates            list, newest first: Update JSON the owner posts for every partner
+//   spend              list, newest first: Spend JSON, what the money went on
+//   statement          "1" while partners can see the money statement
 //
 // The owner signs in with the same login as /letters (api/work/session).
 export { errorResponse, handle, isOwner, json, randomToken, readJson, redis, requireOwner, sameOrigin, underLimit } from "../work/_lib";
@@ -73,7 +77,42 @@ export type Invite = {
   by?: string;
   /** What the partner tapped on their page, if anything. The latest tap wins. */
   response?: { kind: ResponseKind; at: number };
+  /** A gift a Champion has recorded as received. Never shown to other partners. */
+  gift?: Gift;
 };
+
+export type Gift = { amount: number; kind: "money" | "in-kind"; note: string; at: number };
+
+/** A note for every partner, posted from the owner's panel. Shown newest first. */
+export type Update = { id: string; title: string; body: string; at: number; by: string };
+
+/** One thing the money went on, against a line of the budget. */
+export type Spend = { id: string; item: string; amount: number; note: string; at: number };
+
+/** One place is AED 300; two friends sharing give AED 150 each. */
+export const PLACE_AED = 300;
+
+/** Places taken, from the gifts received. */
+export const placesFromGifts = (total: number, max: number) => Math.max(0, Math.min(max, Math.floor(total / PLACE_AED)));
+
+/**
+ * The money statement partners see once the owner switches it on: what came
+ * in (as one total, never who gave), and what went out against each budget
+ * line. Spending on anything not in the budget is shown as "Other".
+ */
+export function statement(gifts: Gift[], spend: Spend[], budget: { item: string; total: number }[]) {
+  const received = gifts.reduce((s, g) => s + g.amount, 0);
+  const lines = budget.map((b) => ({ item: b.item, planned: b.total, spent: 0 }));
+  let other = 0;
+  for (const x of spend) {
+    const line = lines.find((l) => l.item === x.item);
+    if (line) line.spent += x.amount;
+    else other += x.amount;
+  }
+  if (other) lines.push({ item: "Other", planned: 0, spent: other });
+  const spent = spend.reduce((s, x) => s + x.amount, 0);
+  return { received, spent, left: received - spent, lines };
+}
 
 /** The four answers a partner can give on their page. */
 export const RESPONSE_KINDS = ["in", "share", "pray", "notnow"] as const;

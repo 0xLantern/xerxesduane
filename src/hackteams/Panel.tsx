@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { CHALLENGES } from "../data/hack";
+import Showcase from "./Showcase";
 import { greetName } from "../hackpartners/greet";
 import type { Hours, Skill } from "./shared";
 import { suggestTeams } from "./suggest";
@@ -29,7 +30,17 @@ type Row = {
   countries: string[];
 };
 type CheckIn = { by: string; did: string; next: string; help: string; at: number };
-type List = { people: Row[]; announced: boolean; checkins: Record<number, CheckIn[]>; expiresAt: number; me: string };
+type Summary = { built: string; helps: string; works: string; next: string; public: string; by: string; at: number };
+type Show = { order: number[]; present: number; qa: number; start: string };
+type List = {
+  people: Row[];
+  announced: boolean;
+  checkins: Record<number, CheckIn[]>;
+  summaries: Record<number, Summary | null>;
+  show: Show;
+  expiresAt: number;
+  me: string;
+};
 
 const INK = "#131313";
 const Y = "#EFE974";
@@ -67,6 +78,8 @@ const message = (r: Row, announced: boolean, from: string) =>
         from,
       ]
   ).join("\n");
+
+export type { List as PanelList };
 
 export default function Panel({ champion }: { champion?: string }) {
   const [state, setState] = useState<"loading" | "login" | "off" | "error" | "ready">("loading");
@@ -320,6 +333,9 @@ export default function Panel({ champion }: { champion?: string }) {
           </div>
         </div>
       )}
+
+      {/* Keyed so a saved running order or a newly placed team resets the draft. */}
+      {list.announced && <Showcase key={JSON.stringify(list.show) + [...new Set(placed.map((p) => p.team))].sort().join()} list={list} owner={owner} busy={busy} act={act} setNote={setNote} />}
 
       <p className="mt-6 text-[0.8rem] text-white/45">
         {owner

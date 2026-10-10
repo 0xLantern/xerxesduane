@@ -22,13 +22,32 @@ type Row = {
   countries: string[];
   /** What the partner tapped on their page, if anything. */
   response?: { kind: "in" | "share" | "pray" | "notnow"; at: number };
+  /** A gift recorded as received. */
+  gift?: { amount: number; kind: "money" | "in-kind"; note: string; at: number };
+};
+type Update = { id: string; title: string; body: string; at: number; by: string };
+type Spend = { id: string; item: string; amount: number; note: string; at: number };
+type Money = {
+  budget: { item: string; total: number; each: number }[];
+  spend: Spend[];
+  statementOn: boolean;
+  received: number;
+  spent: number;
+  left: number;
+  gifts: number;
+  lines: { item: string; planned: number; spent: number }[];
 };
 type List = {
   invites: Row[];
   places: { taken: number; total: number };
   expiresAt: number;
   me: { role: "owner" | "champion"; name: string };
+  updates: Update[];
+  /** The owner's only. */
+  money: Money | null;
 };
+
+const aed = (n: number) => `AED ${n.toLocaleString("en-US")}`;
 
 const INK = "#131313";
 const Y = "#EFE974";
@@ -56,6 +75,10 @@ const message = (name: string, link: string, from: string) =>
 
 const btn = "rounded-full px-3 py-1.5 text-[0.8rem] font-semibold transition hover:-translate-y-0.5 disabled:opacity-50";
 
+/** When there's a new update on their page. Says nothing about what it is, in case the chat is seen. */
+const nudge = (name: string, link: string, from: string) =>
+  [`Hi ${greetName(name)}! 😊 There's a new update for you on your private page:`, link, "", "Thank you for standing with us 🙏", from].join("\n");
+
 /** A soft follow-up with the same link. No deadline, no pressure. */
 const reminder = (name: string, link: string, from: string) =>
   [
@@ -67,8 +90,9 @@ const reminder = (name: string, link: string, from: string) =>
   ].join("\n");
 
 /** Where each link stands: the partner's answer if they gave one, otherwise whether they opened it. */
-type Status = "in" | "share" | "pray" | "notnow" | "opened" | "unopened";
+type Status = "gave" | "in" | "share" | "pray" | "notnow" | "opened" | "unopened";
 const STATUS: Record<Status, { label: string; style: { background: string; color: string } }> = {
+  gave: { label: "Gift received", style: { background: "#131313", color: "#EFE974" } },
   in: { label: "In", style: { background: "#16a34a", color: "#fff" } },
   share: { label: "Sharing a place", style: { background: "#86efac", color: "#14532d" } },
   pray: { label: "Praying", style: { background: "#dbeafe", color: "#1e3a8a" } },
@@ -76,7 +100,7 @@ const STATUS: Record<Status, { label: string; style: { background: string; color
   opened: { label: "Opened, no answer yet", style: { background: "#FBF6C9", color: "#713f12" } },
   unopened: { label: "Not opened yet", style: { background: "#fee2e2", color: "#7f1d1d" } },
 };
-const status = (r: Row): Status => r.response?.kind ?? (r.openedAt ? "opened" : "unopened");
+const status = (r: Row): Status => (r.gift ? "gave" : (r.response?.kind ?? (r.openedAt ? "opened" : "unopened")));
 
 export default function Owner({ team }: { team?: string }) {
   const [state, setState] = useState<"loading" | "login" | "off" | "error" | "ready">("loading");
@@ -217,6 +241,9 @@ export default function Owner({ team }: { team?: string }) {
         </div>
       )}
 
+      {owner && list?.money && <MoneyPanel money={list.money} busy={busy} act={act} setNote={setNote} />}
+      {owner && list && <UpdatesPanel updates={list.updates} busy={busy} act={act} />}
+
       {list && list.invites.length > 0 && (
         <p className="mt-3 flex flex-wrap gap-1.5 text-[0.8rem]">
           {(Object.keys(STATUS) as Status[]).map((s) => {
@@ -234,7 +261,7 @@ export default function Owner({ team }: { team?: string }) {
 
       <ul className="mt-4 space-y-2">
         {list?.invites.length === 0 && <li className="text-white/60">No links yet. Make the first one above.</li>}
-        {list?.invites.map((r) => (
+        {list && list.invites.map((r) => (
           <li key={r.code} className="rounded-2xl bg-white p-4 text-[#131313]">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <p className="font-display text-[1.05rem] font-bold">
@@ -252,9 +279,21 @@ export default function Owner({ team }: { team?: string }) {
               </span>
               {r.response && <span className="ml-2 text-[0.75rem] text-[#6a6a6a]">{when(r.response.at)}</span>}
             </p>
+            <GiftLine r={r} busy={busy} act={act} />
             <div className="mt-3 flex flex-wrap gap-2">
               {/* Before an answer, the nudge; after one, nothing to chase. The first send is still there either way. */}
-              {!r.response && (
+              {list.updates.length > 0 && (
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(nudge(r.name, r.link, from))}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={btn}
+                  style={{ background: INK, color: Y }}
+                >
+                  Tell them about the update
+                </a>
+              )}
+              {!r.response && !r.gift && (
                 <a
                   href={`https://wa.me/?text=${encodeURIComponent(reminder(r.name, r.link, from))}`}
                   target="_blank"
@@ -306,6 +345,224 @@ export default function Owner({ team }: { team?: string }) {
           : "Don't open a partner's link yourself: it would use one of their two device slots."}
       </p>
     </Shell>
+  );
+}
+
+type Act = (body: Record<string, unknown>, done: string) => Promise<void>;
+
+/** Record a gift as received. Places taken follow the total: every AED 300 fills one. */
+function GiftLine({ r, busy, act }: { r: Row; busy: boolean; act: Act }) {
+  const [open, setOpen] = useState(false);
+  const [amount, setAmount] = useState("300");
+  const [kind, setKind] = useState<"money" | "in-kind">("money");
+  const [note, setNote] = useState("");
+  if (r.gift)
+    return (
+      <p className="mt-2 flex flex-wrap items-center gap-2 text-[0.82rem]">
+        <span className="font-semibold">
+          Received {aed(r.gift.amount)}
+          {r.gift.kind === "in-kind" ? " in kind" : ""} · {when(r.gift.at)}
+          {r.gift.note ? ` · ${r.gift.note}` : ""}
+        </span>
+        <button
+          type="button"
+          className="text-[0.78rem] text-[#9A3412] underline"
+          disabled={busy}
+          onClick={() => window.confirm(`Clear ${r.name}'s recorded gift?`) && act({ action: "gift", code: r.code, amount: 0 }, "Gift cleared.")}
+        >
+          clear
+        </button>
+      </p>
+    );
+  if (!open)
+    return (
+      <button type="button" className="mt-2 text-[0.8rem] font-semibold underline" onClick={() => setOpen(true)}>
+        Record a gift received
+      </button>
+    );
+  return (
+    <form
+      className="mt-2 flex flex-wrap items-center gap-2 rounded-xl p-2 text-[0.82rem]"
+      style={{ background: "#f6f3ee" }}
+      onSubmit={(e) => {
+        e.preventDefault();
+        act({ action: "gift", code: r.code, amount: Number(amount), kind, note }, `Gift from ${r.name} recorded. Places taken updated.`).then(() => setOpen(false));
+      }}
+    >
+      <label className="flex items-center gap-1">
+        AED
+        <input value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ""))} inputMode="numeric" className="w-20 rounded-full border border-[#ccc] px-2 py-1" />
+      </label>
+      <select value={kind} onChange={(e) => setKind(e.target.value as "money" | "in-kind")} className="rounded-full border border-[#ccc] px-2 py-1">
+        <option value="money">Money</option>
+        <option value="in-kind">In kind</option>
+      </select>
+      <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional)" maxLength={120} className="min-w-0 flex-1 rounded-full border border-[#ccc] px-3 py-1" />
+      <button type="submit" disabled={busy || !Number(amount)} className={btn} style={{ background: INK, color: Y }}>
+        Save
+      </button>
+      <button type="button" className="text-[0.78rem] underline" onClick={() => setOpen(false)}>
+        cancel
+      </button>
+    </form>
+  );
+}
+
+/** Notes every partner sees at the top of their page. */
+function UpdatesPanel({ updates, busy, act }: { updates: Update[]; busy: boolean; act: Act }) {
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const field = "w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-white placeholder:text-white/40 focus:outline-none focus:ring-2";
+  return (
+    <div className="mt-4 rounded-2xl border border-white/15 p-4 text-white">
+      <h2 className="font-display text-[1.1rem] font-bold">Updates for partners</h2>
+      <p className="mt-1 text-[0.8rem] text-white/60">
+        Shown at the top of every partner's page, newest first, the moment you post. Then send each one a nudge from their row. Keep names and places out: partners
+        may show it to someone.
+      </p>
+      <form
+        className="mt-3 space-y-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          act({ action: "update", title, body }, "Update posted. Every partner's page shows it now.").then(() => {
+            setTitle("");
+            setBody("");
+          });
+        }}
+      >
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title, e.g. The teams have formed" maxLength={100} className={field} />
+        <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={5} maxLength={4000} placeholder="What happened, in a few short paragraphs." className={field} />
+        <button type="submit" disabled={busy || !title.trim() || !body.trim()} className={btn} style={{ background: Y, color: INK }}>
+          Post update
+        </button>
+      </form>
+      {updates.length > 0 && (
+        <ul className="mt-4 space-y-2">
+          {updates.map((u) => (
+            <li key={u.id} className="rounded-xl bg-white/5 px-3 py-2">
+              <p className="text-[0.75rem] text-white/50">{when(u.at)}</p>
+              <p className="font-semibold">{u.title}</p>
+              <p className="line-clamp-2 text-[0.82rem] text-white/70">{u.body}</p>
+              <button
+                type="button"
+                disabled={busy}
+                className="mt-1 text-[0.75rem] text-red-300 underline"
+                onClick={() => window.confirm(`Take down "${u.title}"? It disappears from every partner's page.`) && act({ action: "deleteUpdate", id: u.id }, "Update taken down.")}
+              >
+                Take down
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** Gifts received, what was spent, and the statement partners can see. */
+function MoneyPanel({ money, busy, act, setNote }: { money: Money; busy: boolean; act: Act; setNote: (s: string) => void }) {
+  const [item, setItem] = useState(money.budget[0]?.item ?? "");
+  const [amount, setAmount] = useState("");
+  const [memo, setMemo] = useState("");
+  const text = [
+    "#HACK2026 Dubai: how the money is used",
+    "",
+    `Received: ${aed(money.received)} from ${money.gifts} ${money.gifts === 1 ? "gift" : "gifts"}`,
+    `Spent: ${aed(money.spent)}`,
+    `Left: ${aed(money.left)}`,
+    "",
+    ...money.lines.map((l) => `${l.item}: ${aed(l.spent)} spent${l.planned ? ` of ${aed(l.planned)} planned` : ""}`),
+  ].join("\n");
+  return (
+    <div className="mt-4 rounded-2xl bg-white p-4 text-[#131313]">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="font-display text-[1.1rem] font-bold">Money</h2>
+        <p className="text-[0.85rem]">
+          Received <strong>{aed(money.received)}</strong> · spent <strong>{aed(money.spent)}</strong> · left <strong>{aed(money.left)}</strong>
+        </p>
+      </div>
+      <p className="mt-1 text-[0.78rem] text-[#6a6a6a]">Record gifts on each partner's row below. Places taken follow them: every AED 300 fills one.</p>
+
+      <form
+        className="mt-3 flex flex-wrap items-center gap-2 text-[0.85rem]"
+        onSubmit={(e) => {
+          e.preventDefault();
+          act({ action: "spend", item, amount: Number(amount), note: memo }, "Spending recorded.").then(() => {
+            setAmount("");
+            setMemo("");
+          });
+        }}
+      >
+        <select value={item} onChange={(e) => setItem(e.target.value)} className="rounded-full border border-[#ccc] px-3 py-1.5">
+          {money.budget.map((b) => (
+            <option key={b.item}>{b.item}</option>
+          ))}
+          <option>Other</option>
+        </select>
+        <label className="flex items-center gap-1">
+          AED
+          <input value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ""))} inputMode="numeric" className="w-24 rounded-full border border-[#ccc] px-3 py-1.5" />
+        </label>
+        <input value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="What, e.g. Canva Pro, 6 weeks" maxLength={120} className="min-w-0 flex-1 rounded-full border border-[#ccc] px-3 py-1.5" />
+        <button type="submit" disabled={busy || !Number(amount)} className={btn} style={{ background: INK, color: Y }}>
+          Add spending
+        </button>
+      </form>
+
+      <table className="mt-3 w-full text-[0.82rem]">
+        <thead className="text-left text-[0.72rem] uppercase tracking-wide text-[#8a7f75]">
+          <tr>
+            <th className="py-1">Budget line</th>
+            <th className="text-right">Planned</th>
+            <th className="text-right">Spent</th>
+          </tr>
+        </thead>
+        <tbody>
+          {money.lines.map((l) => (
+            <tr key={l.item} className="border-t border-[#eee]" style={l.planned && l.spent > l.planned ? { color: "#b91c1c" } : undefined}>
+              <td className="py-1">{l.item}</td>
+              <td className="text-right tabular-nums">{l.planned ? l.planned.toLocaleString("en-US") : "·"}</td>
+              <td className="text-right tabular-nums">{l.spent ? l.spent.toLocaleString("en-US") : "·"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {money.spend.length > 0 && (
+        <details className="mt-2 text-[0.8rem]">
+          <summary className="cursor-pointer font-semibold">Every spending line ({money.spend.length})</summary>
+          <ul className="mt-1 space-y-1">
+            {money.spend.map((x) => (
+              <li key={x.id} className="flex flex-wrap items-center gap-2">
+                <span>
+                  {when(x.at)} · {x.item} · {aed(x.amount)}
+                  {x.note ? ` · ${x.note}` : ""}
+                </span>
+                <button type="button" disabled={busy} className="text-[#9A3412] underline" onClick={() => window.confirm("Remove this line?") && act({ action: "deleteSpend", id: x.id }, "Line removed.")}>
+                  remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          disabled={busy}
+          className={btn}
+          style={money.statementOn ? { background: INK, color: Y } : { background: Y, color: INK }}
+          onClick={() => act({ action: "statement", on: !money.statementOn }, money.statementOn ? "Statement hidden from partners." : "Partners can see the statement now.")}
+        >
+          {money.statementOn ? "Hide the statement from partners" : "Show the statement to partners"}
+        </button>
+        <button type="button" className={`${btn} border border-[#ccc]`} onClick={() => navigator.clipboard?.writeText(text).then(() => setNote("Statement copied."))}>
+          Copy statement
+        </button>
+        <span className="text-[0.75rem] text-[#6a6a6a]">Partners see totals and budget lines only, never who gave.</span>
+      </div>
+    </div>
   );
 }
 
